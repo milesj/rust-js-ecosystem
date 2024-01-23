@@ -1,9 +1,10 @@
 #![allow(clippy::from_over_into)]
 
 use super::workspace_protocol::WorkspaceProtocol;
+use miette::IntoDiagnostic;
 use once_cell::sync::Lazy;
 use regex::Regex;
-use semver::{Error, Version, VersionReq};
+use semver::{Version, VersionReq};
 use serde::Deserialize;
 use std::fmt::{self, Display};
 use std::path::PathBuf;
@@ -36,11 +37,13 @@ pub enum VersionProtocol {
 }
 
 impl FromStr for VersionProtocol {
-    type Err = Error;
+    type Err = miette::Report;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         if value.is_empty() || value == "*" {
-            return Ok(VersionProtocol::Requirement(VersionReq::parse("*")?));
+            return Ok(VersionProtocol::Requirement(
+                VersionReq::parse("*").into_diagnostic()?,
+            ));
         }
 
         if let Some(index) = value.find(':') {
@@ -52,7 +55,10 @@ impl FromStr for VersionProtocol {
                     let mut parts = value.split('#');
 
                     return Ok(VersionProtocol::Git {
-                        url: parts.next().expect("Missing Git URL!").to_owned(),
+                        url: parts
+                            .next()
+                            .ok_or_else(|| miette::miette!("Missing Git URL."))?
+                            .to_owned(),
                         commit: parts.next().map(|p| p.to_owned()),
                     });
                 }
@@ -72,12 +78,12 @@ impl FromStr for VersionProtocol {
             return Ok(VersionProtocol::GitHub {
                 owner: caps
                     .name("owner")
-                    .expect("Missing GitHub user or organization!")
+                    .ok_or_else(|| miette::miette!("Missing GitHub user or organization!"))?
                     .as_str()
                     .to_owned(),
                 repo: caps
                     .name("repo")
-                    .expect("Missing GitHub repository name!")
+                    .ok_or_else(|| miette::miette!("Missing GitHub repository name!"))?
                     .as_str()
                     .to_owned(),
                 commit: caps.name("commit").map(|c| c.as_str().to_owned()),
@@ -86,19 +92,23 @@ impl FromStr for VersionProtocol {
 
         if value.contains('-') {
             let mut parts = value.split('-');
-            let l = parts.next().unwrap();
-            let r = parts.next().unwrap();
+            let l = parts
+                .next()
+                .ok_or_else(|| miette::miette!("Missing start range."))?;
+            let r = parts
+                .next()
+                .ok_or_else(|| miette::miette!("Missing stop range."))?;
 
-            return Ok(VersionProtocol::Requirement(VersionReq::parse(&format!(
-                ">={l}, <={r}"
-            ))?));
+            return Ok(VersionProtocol::Requirement(
+                VersionReq::parse(&format!(">={l}, <={r}")).into_diagnostic()?,
+            ));
         }
 
         if value.contains("||") {
             let mut ranges = vec![];
 
             for range in value.split("||") {
-                ranges.push(VersionReq::parse(range.trim())?);
+                ranges.push(VersionReq::parse(range.trim()).into_diagnostic()?);
             }
 
             return Ok(VersionProtocol::Range(ranges));
@@ -110,15 +120,19 @@ impl FromStr for VersionProtocol {
             || value.contains('<')
             || value.contains('=')
         {
-            return Ok(VersionProtocol::Requirement(VersionReq::parse(value)?));
+            return Ok(VersionProtocol::Requirement(
+                VersionReq::parse(value).into_diagnostic()?,
+            ));
         }
 
-        Ok(VersionProtocol::Version(Version::parse(value)?))
+        Ok(VersionProtocol::Version(
+            Version::parse(value).into_diagnostic()?,
+        ))
     }
 }
 
 impl TryFrom<String> for VersionProtocol {
-    type Error = Error;
+    type Error = miette::Report;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::from_str(&value)

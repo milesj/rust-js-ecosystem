@@ -1,6 +1,7 @@
 #![allow(clippy::from_over_into)]
 
-use semver::{Error, Version};
+use miette::IntoDiagnostic;
+use semver::Version;
 use serde::Deserialize;
 use std::fmt::{self, Display};
 use std::path::PathBuf;
@@ -30,7 +31,7 @@ pub enum WorkspaceProtocol {
 }
 
 impl FromStr for WorkspaceProtocol {
-    type Err = Error;
+    type Err = miette::Report;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         let mut alias = None;
@@ -45,7 +46,9 @@ impl FromStr for WorkspaceProtocol {
         match &value[0..1] {
             "*" => {
                 if value.len() != 1 {
-                    panic!("Wildcard workspace does not support versions.");
+                    return Err(miette::miette!(
+                        "Wildcard workspaces (workspace:*) does not support versions."
+                    ));
                 }
 
                 return Ok(WorkspaceProtocol::Any { alias });
@@ -54,7 +57,7 @@ impl FromStr for WorkspaceProtocol {
                 let mut version = None;
 
                 if value.len() > 1 {
-                    version = Some(Version::parse(&value[1..])?);
+                    version = Some(Version::parse(&value[1..]).into_diagnostic()?);
                 }
 
                 if value.starts_with('^') {
@@ -69,12 +72,14 @@ impl FromStr for WorkspaceProtocol {
             _ => {}
         };
 
-        Ok(WorkspaceProtocol::Version(Version::parse(value)?))
+        Ok(WorkspaceProtocol::Version(
+            Version::parse(value).into_diagnostic()?,
+        ))
     }
 }
 
 impl TryFrom<String> for WorkspaceProtocol {
-    type Error = Error;
+    type Error = miette::Report;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::from_str(&value)
