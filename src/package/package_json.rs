@@ -1,4 +1,5 @@
 use super::version_protocol::VersionProtocol;
+use semver::Version;
 use serde::Deserialize;
 use starbase_utils::json;
 use std::collections::BTreeMap;
@@ -10,6 +11,7 @@ pub type DependenciesMap = BTreeMap<String, VersionProtocol>;
 #[serde(default, rename_all = "camelCase")]
 pub struct PackageJson {
     pub name: String,
+    pub version: Option<Version>,
     pub dependencies: Option<DependenciesMap>,
     pub dependencies_meta: Option<BTreeMap<String, DependencyMeta>>,
     pub dev_dependencies: Option<DependenciesMap>,

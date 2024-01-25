@@ -29,6 +29,8 @@ pub enum VersionProtocol {
         owner: String,
         repo: String,
     },
+    Link(PathBuf),
+    Portal(PathBuf),
     Range(Vec<VersionReq>),
     Requirement(VersionReq),
     Url(String),
@@ -64,6 +66,12 @@ impl FromStr for VersionProtocol {
                 }
                 "file" => {
                     return Ok(VersionProtocol::File(PathBuf::from(&value[index + 1..])));
+                }
+                "link" => {
+                    return Ok(VersionProtocol::Link(PathBuf::from(&value[index + 1..])));
+                }
+                "portal" => {
+                    return Ok(VersionProtocol::Portal(PathBuf::from(&value[index + 1..])));
                 }
                 "workspace" => {
                     return Ok(VersionProtocol::Workspace(WorkspaceProtocol::from_str(
@@ -168,6 +176,8 @@ impl Display for VersionProtocol {
                         .map(|c| format!("{github}#{c}"))
                         .unwrap_or_else(|| github)
                 }
+                VersionProtocol::Link(path) => format!("link:{}", path.display()),
+                VersionProtocol::Portal(path) => format!("portal:{}", path.display()),
                 VersionProtocol::Range(range) => range
                     .iter()
                     .map(|r| r.to_string())
