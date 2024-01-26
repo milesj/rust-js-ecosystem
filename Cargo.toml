@@ -20,3 +20,6 @@ starbase_utils = { version = "0.3.11", default-features = false, features = [
 	"json",
 	"yaml",
 ] }
+
+[dev-dependencies]
+starbase_sandbox = "0.1.13"

@@ -2,6 +2,7 @@ use super::package_json::PackageJson;
 use petgraph::graph::NodeIndex;
 use std::path::{Path, PathBuf};
 
+#[derive(Debug)]
 pub struct Package {
     pub manifest: PackageJson,
     pub root: PathBuf,
@@ -32,7 +33,7 @@ impl Package {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum DependencyType {
     Development,
     Production,

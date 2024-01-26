@@ -1,0 +1,9 @@
+{
+  "name": "foo",
+  "version": "0.0.0",
+  "devDependencies": {
+    "bar": "workspace:~0.0.0",
+    "qux": "workspace:0.0.0",
+    "react": "*"
+  }
+}

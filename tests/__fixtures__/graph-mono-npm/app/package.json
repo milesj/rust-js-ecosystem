@@ -1,0 +1,12 @@
+{
+  "name": "app",
+  "version": "0.0.0",
+  "dependencies": {
+    "bar": "0.0.0",
+    "baz": "1.0.0"
+  },
+  "devDependencies": {
+    "foo": "*",
+    "vite": "^5"
+  }
+}

@@ -1,0 +1,18 @@
+---
+source: tests/package_graph_test.rs
+expression: graph.to_dot()
+---
+digraph {
+    0 [ label = "\"monorepo\"" ]
+    1 [ label = "\"app\"" ]
+    2 [ label = "\"bar\"" ]
+    3 [ label = "\"baz\"" ]
+    4 [ label = "\"foo\"" ]
+    5 [ label = "\"qux\"" ]
+    1 -> 2 [ label = "Production" ]
+    1 -> 4 [ label = "Development" ]
+    2 -> 3 [ label = "Production" ]
+    4 -> 2 [ label = "Development" ]
+    4 -> 5 [ label = "Development" ]
+}
+

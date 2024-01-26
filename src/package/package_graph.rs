@@ -5,11 +5,12 @@ use super::pnpm_configs::PnpmWorkspace;
 use super::version_protocol::VersionProtocol;
 use super::workspace_protocol::WorkspaceProtocol;
 use petgraph::graph::DiGraph;
+use semver::Version;
 use starbase_utils::glob;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-pub type PackageGraphType = DiGraph<u8, DependencyType>;
+pub type PackageGraphType = DiGraph<String, DependencyType>;
 
 pub struct PackageGraph {
     pub cwd: PathBuf,
@@ -18,11 +19,19 @@ pub struct PackageGraph {
     pub root: PathBuf,
     pub root_package: Package,
 
-    graph: DiGraph<u8, DependencyType>,
+    graph: PackageGraphType,
     package_globs: Vec<String>,
 }
 
 impl PackageGraph {
+    pub fn generate<T: AsRef<Path>>(working_dir: T) -> miette::Result<PackageGraph> {
+        let mut graph = Self::load_from(working_dir)?;
+        graph.load_workspace_packages()?;
+        graph.generate_graph()?;
+
+        Ok(graph)
+    }
+
     pub fn load_from<T: AsRef<Path>>(working_dir: T) -> miette::Result<PackageGraph> {
         let working_dir = working_dir.as_ref();
 
@@ -65,7 +74,7 @@ impl PackageGraph {
 
         while let Some(dir) = current_dir {
             // pnpm
-            if dir.join("pnpm-lock.yaml").exists() {
+            if dir.join("pnpm-lock.yaml").exists() || dir.join("pnpm-workspace.yaml").exists() {
                 return Some((dir.to_owned(), PackageManager::Pnpm));
             }
             // yarn
@@ -100,7 +109,10 @@ impl PackageGraph {
         let mut packages = BTreeMap::new();
         let mut index = 1; // Root is 0
 
-        for dir in glob::walk(&self.root, &self.package_globs)? {
+        let mut dirs = glob::walk(&self.root, &self.package_globs)?;
+        dirs.sort();
+
+        for dir in dirs {
             if !dir.is_dir() {
                 continue;
             }
@@ -127,7 +139,7 @@ impl PackageGraph {
     pub fn generate_graph(&mut self) -> miette::Result<()> {
         let mut graph = DiGraph::new();
 
-        graph.add_node(self.root_package.index);
+        graph.add_node(self.root_package.manifest.name.clone());
 
         if self.package_globs.is_empty() {
             self.graph = graph;
@@ -138,7 +150,7 @@ impl PackageGraph {
         // First pass, create nodes
         {
             for package in self.packages.values_mut() {
-                package.node_index = graph.add_node(package.index);
+                package.node_index = graph.add_node(package.manifest.name.clone());
             }
         }
 
@@ -155,12 +167,40 @@ impl PackageGraph {
             }
         };
 
-        let mut add_edges = |graph: &mut PackageGraphType,
-                             package: &Package,
-                             deps: &DependenciesMap,
-                             dep_type: DependencyType| {
+        let add_edge_via_version = |graph: &mut PackageGraphType,
+                                    package: &Package,
+                                    dep_package: &Package,
+                                    version: Option<&Version>,
+                                    dep_type: DependencyType| {
+            if version.is_none() || version == dep_package.manifest.version.as_ref() {
+                graph.add_edge(package.node_index, dep_package.node_index, dep_type);
+            }
+        };
+
+        let add_edges = |graph: &mut PackageGraphType,
+                         package: &Package,
+                         deps: &DependenciesMap,
+                         dep_type: DependencyType| {
             for (name, version) in deps {
                 match version {
+                    // npm
+                    VersionProtocol::Requirement(req) => {
+                        if req.comparators.is_empty() {
+                            if let Some(dep_package) = self.packages.get(name) {
+                                graph.add_edge(
+                                    package.node_index,
+                                    dep_package.node_index,
+                                    dep_type,
+                                );
+                            }
+                        }
+                    }
+                    VersionProtocol::Version(ver) => {
+                        if let Some(dep_package) = self.packages.get(name) {
+                            add_edge_via_version(graph, package, dep_package, Some(ver), dep_type);
+                        }
+                    }
+                    // pnpm, yarn
                     VersionProtocol::File(path)
                     | VersionProtocol::Link(path)
                     | VersionProtocol::Portal(path) => {
@@ -182,18 +222,13 @@ impl PackageGraph {
                             }
                             WorkspaceProtocol::Version(ver) => {
                                 if let Some(dep_package) = self.packages.get(name) {
-                                    if dep_package
-                                        .manifest
-                                        .version
-                                        .as_ref()
-                                        .is_some_and(|v| v == ver)
-                                    {
-                                        self.graph.add_edge(
-                                            package.node_index,
-                                            dep_package.node_index,
-                                            dep_type,
-                                        );
-                                    }
+                                    add_edge_via_version(
+                                        graph,
+                                        package,
+                                        dep_package,
+                                        Some(ver),
+                                        dep_type,
+                                    );
                                 }
 
                                 continue;
@@ -203,15 +238,13 @@ impl PackageGraph {
                         if let Some(dep_package) =
                             self.packages.get(alias.as_deref().unwrap_or(name))
                         {
-                            if version.is_none()
-                                || version.as_ref() == dep_package.manifest.version.as_ref()
-                            {
-                                self.graph.add_edge(
-                                    package.node_index,
-                                    dep_package.node_index,
-                                    dep_type,
-                                );
-                            }
+                            add_edge_via_version(
+                                graph,
+                                package,
+                                dep_package,
+                                version.as_ref(),
+                                dep_type,
+                            );
                         }
                     }
                     _ => {}
@@ -239,5 +272,9 @@ impl PackageGraph {
         self.graph = graph;
 
         Ok(())
+    }
+
+    pub fn to_dot(&self) -> String {
+        format!("{:?}", petgraph::dot::Dot::new(&self.graph))
     }
 }

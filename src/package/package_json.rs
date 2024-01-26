@@ -7,7 +7,7 @@ use std::path::Path;
 
 pub type DependenciesMap = BTreeMap<String, VersionProtocol>;
 
-#[derive(Default, Deserialize)]
+#[derive(Debug, Default, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct PackageJson {
     pub name: String,
@@ -27,7 +27,7 @@ impl PackageJson {
     }
 }
 
-#[derive(Default, Deserialize)]
+#[derive(Debug, Default, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct DependencyMeta {
     // pnpm - https://pnpm.io/package_json#dependenciesmeta
@@ -38,7 +38,7 @@ pub struct DependencyMeta {
     pub unplugged: bool,
 }
 
-#[derive(Default, Deserialize)]
+#[derive(Debug, Default, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct PeerDependencyMeta {
     pub optional: bool,
