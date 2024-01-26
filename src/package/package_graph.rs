@@ -9,14 +9,17 @@ use starbase_utils::glob;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
+pub type PackageGraphType = DiGraph<u8, DependencyType>;
+
 pub struct PackageGraph {
-    cwd: PathBuf,
+    pub cwd: PathBuf,
+    pub manager: PackageManager,
+    pub packages: BTreeMap<String, Package>,
+    pub root: PathBuf,
+    pub root_package: Package,
+
     graph: DiGraph<u8, DependencyType>,
-    manager: PackageManager,
     package_globs: Vec<String>,
-    packages: BTreeMap<String, Package>,
-    root: PathBuf,
-    root_package: Package,
 }
 
 impl PackageGraph {
@@ -122,110 +125,118 @@ impl PackageGraph {
     }
 
     pub fn generate_graph(&mut self) -> miette::Result<()> {
-        self.graph.add_node(self.root_package.index);
+        let mut graph = DiGraph::new();
+
+        graph.add_node(self.root_package.index);
 
         if self.package_globs.is_empty() {
+            self.graph = graph;
+
             return Ok(());
         }
 
         // First pass, create nodes
         {
             for package in self.packages.values_mut() {
-                package.node_index = self.graph.add_node(package.index);
+                package.node_index = graph.add_node(package.index);
             }
         }
 
         // Second pass, connect edges
-        let mut add_edges =
-            |package: &Package, deps: &DependenciesMap, dep_type: DependencyType| {
-                for (name, version) in deps {
-                    match version {
-                        VersionProtocol::File(path)
-                        | VersionProtocol::Link(path)
-                        | VersionProtocol::Portal(path) => {
-                            if let Some(dep_package) = self.packages.get(name) {
-                                if package.root.join(path) != dep_package.root {
-                                    self.graph.add_edge(
-                                        package.node_index,
-                                        dep_package.node_index,
-                                        dep_type,
-                                    );
-                                }
-                            }
+        let add_edge_via_path = |graph: &mut PackageGraphType,
+                                 package: &Package,
+                                 dep_package: &Package,
+                                 path: &Path,
+                                 dep_type: DependencyType| {
+            if path.is_absolute() && path == dep_package.root
+                || path.is_relative() && package.root.join(path) == dep_package.root
+            {
+                graph.add_edge(package.node_index, dep_package.node_index, dep_type);
+            }
+        };
+
+        let mut add_edges = |graph: &mut PackageGraphType,
+                             package: &Package,
+                             deps: &DependenciesMap,
+                             dep_type: DependencyType| {
+            for (name, version) in deps {
+                match version {
+                    VersionProtocol::File(path)
+                    | VersionProtocol::Link(path)
+                    | VersionProtocol::Portal(path) => {
+                        if let Some(dep_package) = self.packages.get(name) {
+                            add_edge_via_path(graph, package, dep_package, path, dep_type);
                         }
-                        VersionProtocol::Workspace(ws) => {
-                            let (alias, version) = match ws {
-                                WorkspaceProtocol::Any { alias } => (alias, &None),
-                                WorkspaceProtocol::Tilde { alias, version } => (alias, version),
-                                WorkspaceProtocol::Caret { alias, version } => (alias, version),
-                                WorkspaceProtocol::File(path) => {
-                                    if let Some(dep_package) = self.packages.get(name) {
-                                        if package.root.join(path) != dep_package.root {
-                                            self.graph.add_edge(
-                                                package.node_index,
-                                                dep_package.node_index,
-                                                dep_type,
-                                            );
-                                        }
-                                    }
-
-                                    continue;
+                    }
+                    VersionProtocol::Workspace(ws) => {
+                        let (alias, version) = match ws {
+                            WorkspaceProtocol::Any { alias } => (alias, &None),
+                            WorkspaceProtocol::Tilde { alias, version } => (alias, version),
+                            WorkspaceProtocol::Caret { alias, version } => (alias, version),
+                            WorkspaceProtocol::File(path) => {
+                                if let Some(dep_package) = self.packages.get(name) {
+                                    add_edge_via_path(graph, package, dep_package, path, dep_type);
                                 }
-                                WorkspaceProtocol::Version(ver) => {
-                                    if let Some(dep_package) = self.packages.get(name) {
-                                        if dep_package
-                                            .manifest
-                                            .version
-                                            .as_ref()
-                                            .is_some_and(|v| v == ver)
-                                        {
-                                            self.graph.add_edge(
-                                                package.node_index,
-                                                dep_package.node_index,
-                                                dep_type,
-                                            );
-                                        }
+
+                                continue;
+                            }
+                            WorkspaceProtocol::Version(ver) => {
+                                if let Some(dep_package) = self.packages.get(name) {
+                                    if dep_package
+                                        .manifest
+                                        .version
+                                        .as_ref()
+                                        .is_some_and(|v| v == ver)
+                                    {
+                                        self.graph.add_edge(
+                                            package.node_index,
+                                            dep_package.node_index,
+                                            dep_type,
+                                        );
                                     }
-
-                                    continue;
                                 }
-                            };
 
-                            if let Some(dep_package) =
-                                self.packages.get(alias.as_deref().unwrap_or(name))
+                                continue;
+                            }
+                        };
+
+                        if let Some(dep_package) =
+                            self.packages.get(alias.as_deref().unwrap_or(name))
+                        {
+                            if version.is_none()
+                                || version.as_ref() == dep_package.manifest.version.as_ref()
                             {
-                                if version.is_none()
-                                    || version.as_ref() == dep_package.manifest.version.as_ref()
-                                {
-                                    self.graph.add_edge(
-                                        package.node_index,
-                                        dep_package.node_index,
-                                        dep_type,
-                                    );
-                                }
+                                self.graph.add_edge(
+                                    package.node_index,
+                                    dep_package.node_index,
+                                    dep_type,
+                                );
                             }
                         }
-                        _ => {}
-                    };
-                }
-            };
+                    }
+                    _ => {}
+                };
+            }
+        };
 
         let mut packages = vec![&self.root_package];
         packages.extend(self.packages.values());
 
         for package in packages {
             if let Some(deps) = &package.manifest.dependencies {
-                add_edges(package, deps, DependencyType::Production);
+                add_edges(&mut graph, package, deps, DependencyType::Production);
             }
 
             if let Some(deps) = &package.manifest.dev_dependencies {
-                add_edges(package, deps, DependencyType::Development);
+                add_edges(&mut graph, package, deps, DependencyType::Development);
             }
 
             if let Some(deps) = &package.manifest.peer_dependencies {
-                add_edges(package, deps, DependencyType::Peer);
+                add_edges(&mut graph, package, deps, DependencyType::Peer);
             }
         }
+
+        self.graph = graph;
 
         Ok(())
     }

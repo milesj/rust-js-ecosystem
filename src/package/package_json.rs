@@ -31,17 +31,17 @@ impl PackageJson {
 #[serde(default, rename_all = "camelCase")]
 pub struct DependencyMeta {
     // pnpm - https://pnpm.io/package_json#dependenciesmeta
-    injected: bool,
+    pub injected: bool,
     // yarn - https://yarnpkg.com/configuration/manifest#dependenciesMeta
-    built: bool,
-    optional: bool,
-    unplugged: bool,
+    pub built: bool,
+    pub optional: bool,
+    pub unplugged: bool,
 }
 
 #[derive(Default, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct PeerDependencyMeta {
-    optional: bool,
+    pub optional: bool,
 }
 
 #[derive(Debug, Deserialize)]

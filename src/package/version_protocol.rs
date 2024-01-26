@@ -10,22 +10,26 @@ use std::fmt::{self, Display};
 use std::path::PathBuf;
 use std::str::FromStr;
 
+static PROTOCOL: Lazy<Regex> = Lazy::new(|| Regex::new("^(?<protocol>[a-z+]+):").unwrap());
+
 static GITHUB: Lazy<Regex> = Lazy::new(|| {
-    Regex::new("(?<owner>[A-Za-z0-9_.-]+)/(?<repo>[A-Za-z0-9_.-]+)(?:#(?<commit>[a-z0-9]+))")
-        .unwrap()
+    Regex::new(
+        "(?<owner>[A-Za-z0-9_.-]+)/(?<repo>[A-Za-z0-9_.-]+)(?:#(?<commit>[A-Za-z0-9_.-/]+))?",
+    )
+    .unwrap()
 });
 
 // https://docs.npmjs.com/cli/v10/configuring-npm/package-json#dependencies
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 #[serde(untagged, into = "String", try_from = "String")]
 pub enum VersionProtocol {
     File(PathBuf),
     Git {
-        commit: Option<String>,
+        reference: Option<String>,
         url: String,
     },
     GitHub {
-        commit: Option<String>,
+        reference: Option<String>,
         owner: String,
         repo: String,
     },
@@ -48,8 +52,11 @@ impl FromStr for VersionProtocol {
             ));
         }
 
-        if let Some(index) = value.find(':') {
-            match &value[0..index] {
+        if let Some(caps) = PROTOCOL.captures(value) {
+            let protocol = caps.name("protocol").unwrap().as_str();
+            let index = protocol.len();
+
+            match protocol {
                 "http" | "https" => {
                     return Ok(VersionProtocol::Url(value.to_owned()));
                 }
@@ -61,7 +68,7 @@ impl FromStr for VersionProtocol {
                             .next()
                             .ok_or_else(|| miette::miette!("Missing Git URL."))?
                             .to_owned(),
-                        commit: parts.next().map(|p| p.to_owned()),
+                        reference: parts.next().map(|p| p.to_owned()),
                     });
                 }
                 "file" => {
@@ -84,17 +91,9 @@ impl FromStr for VersionProtocol {
 
         if let Some(caps) = GITHUB.captures(value) {
             return Ok(VersionProtocol::GitHub {
-                owner: caps
-                    .name("owner")
-                    .ok_or_else(|| miette::miette!("Missing GitHub user or organization!"))?
-                    .as_str()
-                    .to_owned(),
-                repo: caps
-                    .name("repo")
-                    .ok_or_else(|| miette::miette!("Missing GitHub repository name!"))?
-                    .as_str()
-                    .to_owned(),
-                commit: caps.name("commit").map(|c| c.as_str().to_owned()),
+                owner: caps.name("owner").unwrap().as_str().to_owned(),
+                repo: caps.name("repo").unwrap().as_str().to_owned(),
+                reference: caps.name("commit").map(|c| c.as_str().to_owned()),
             });
         }
 
@@ -160,18 +159,18 @@ impl Display for VersionProtocol {
             "{}",
             match self {
                 VersionProtocol::File(path) => format!("file:{}", path.display()),
-                VersionProtocol::Git { commit, url } => commit
+                VersionProtocol::Git { reference, url } => reference
                     .as_ref()
                     .map(|c| format!("{url}#{c}"))
                     .unwrap_or_else(|| url.to_owned()),
                 VersionProtocol::GitHub {
-                    commit,
+                    reference,
                     owner,
                     repo,
                 } => {
                     let github = format!("{owner}/{repo}");
 
-                    commit
+                    reference
                         .as_ref()
                         .map(|c| format!("{github}#{c}"))
                         .unwrap_or_else(|| github)
@@ -186,7 +185,7 @@ impl Display for VersionProtocol {
                 VersionProtocol::Requirement(req) => req.to_string(),
                 VersionProtocol::Url(url) => url.to_owned(),
                 VersionProtocol::Version(ver) => ver.to_string(),
-                VersionProtocol::Workspace(ws) => ws.to_string(),
+                VersionProtocol::Workspace(ws) => format!("workspace:{ws}"),
             }
         )
     }

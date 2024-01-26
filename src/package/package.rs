@@ -10,7 +10,7 @@ pub struct Package {
     // The root package is always 0.
     pub index: u8,
 
-    // Index in the graph.
+    // Index in the package graph.
     pub node_index: NodeIndex,
 }
 

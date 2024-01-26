@@ -7,7 +7,7 @@ use std::fmt::{self, Display};
 use std::path::PathBuf;
 use std::str::FromStr;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 #[serde(untagged, into = "String", try_from = "String")]
 pub enum WorkspaceProtocol {
     // *
@@ -47,7 +47,7 @@ impl FromStr for WorkspaceProtocol {
             "*" => {
                 if value.len() != 1 {
                     return Err(miette::miette!(
-                        "Wildcard workspaces (workspace:*) does not support versions."
+                        "Wildcard workspace (workspace:*) does not support versions."
                     ));
                 }
 
@@ -110,7 +110,7 @@ impl Display for WorkspaceProtocol {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "workspace:{}",
+            "{}",
             match self {
                 WorkspaceProtocol::Any { alias } => format_variant('*', alias.as_ref(), None),
                 WorkspaceProtocol::Tilde { alias, version } =>
