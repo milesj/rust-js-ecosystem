@@ -12,13 +12,22 @@ pub type DependenciesMap = BTreeMap<String, VersionProtocol>;
 pub struct PackageJson {
     pub name: String,
     pub version: Option<Version>,
+
+    // Dependencies
     pub dependencies: Option<DependenciesMap>,
     pub dependencies_meta: Option<BTreeMap<String, DependencyMeta>>,
     pub dev_dependencies: Option<DependenciesMap>,
     pub peer_dependencies: Option<DependenciesMap>,
     pub peer_dependencies_meta: Option<BTreeMap<String, PeerDependencyMeta>>,
     pub bundle_dependencies: Option<Vec<String>>,
+    pub optional_dependencies: Option<DependenciesMap>,
+
+    // Workspaces
     pub workspaces: Option<Workspaces>,
+
+    // For all other fields we don't want to explicitly support
+    #[serde(flatten)]
+    pub unknown: BTreeMap<String, serde_json::Value>,
 }
 
 impl PackageJson {

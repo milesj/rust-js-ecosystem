@@ -280,6 +280,10 @@ impl PackageGraph {
             if let Some(deps) = &package.manifest.peer_dependencies {
                 add_edges(&mut graph, package, deps, DependencyType::Peer);
             }
+
+            if let Some(deps) = &package.manifest.optional_dependencies {
+                add_edges(&mut graph, package, deps, DependencyType::Optional);
+            }
         }
 
         self.graph = graph;

@@ -17,7 +17,7 @@ mod polyrepo {
 mod monorepo {
     use super::*;
 
-    mod local_protocol_relationships {
+    mod local_relationships {
         use super::*;
 
         #[test]
@@ -180,6 +180,28 @@ mod monorepo {
             assert_eq!(
                 graph.dependencies_of("ws-version").unwrap(),
                 vec![("a".into(), DependencyType::Production)]
+            );
+        }
+
+        #[test]
+        fn supports_peer() {
+            let sandbox = create_sandbox("graph-protocols");
+            let graph = PackageGraph::generate(sandbox.path()).unwrap();
+
+            assert_eq!(
+                graph.dependencies_of("peer-deps").unwrap(),
+                vec![("a".into(), DependencyType::Peer)]
+            );
+        }
+
+        #[test]
+        fn supports_optional() {
+            let sandbox = create_sandbox("graph-protocols");
+            let graph = PackageGraph::generate(sandbox.path()).unwrap();
+
+            assert_eq!(
+                graph.dependencies_of("optional-deps").unwrap(),
+                vec![("a".into(), DependencyType::Optional)]
             );
         }
     }

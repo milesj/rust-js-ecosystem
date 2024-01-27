@@ -1,0 +1,6 @@
+{
+  "name": "peer-deps",
+  "peerDependencies": {
+    "a": "*"
+  }
+}

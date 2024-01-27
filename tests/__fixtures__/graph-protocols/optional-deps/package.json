@@ -1,0 +1,6 @@
+{
+  "name": "optional-deps",
+  "optionalDependencies": {
+    "a": "*"
+  }
+}
