@@ -1,0 +1,9 @@
+{
+  "name": "ver",
+  "dependencies": {
+    "a": "1.0.0"
+  },
+  "devDependencies": {
+    "b": "0.0.0"
+  }
+}

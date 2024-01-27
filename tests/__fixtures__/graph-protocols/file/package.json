@@ -1,0 +1,9 @@
+{
+  "name": "file",
+  "dependencies": {
+    "a": "file:../a"
+  },
+  "devDependencies": {
+    "b": "file:../unknown"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "portal",
+  "dependencies": {
+    "a": "portal:../a"
+  },
+  "devDependencies": {
+    "b": "portal:../unknown"
+  }
+}

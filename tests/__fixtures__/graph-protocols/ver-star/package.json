@@ -1,0 +1,9 @@
+{
+  "name": "ver-star",
+  "dependencies": {
+    "a": "*"
+  },
+  "devDependencies": {
+    "b": "*"
+  }
+}

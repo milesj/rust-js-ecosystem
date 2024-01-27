@@ -1,0 +1,9 @@
+{
+  "name": "ws-file",
+  "dependencies": {
+    "a": "workspace:../a"
+  },
+  "devDependencies": {
+    "b": "workspace:../unknown"
+  }
+}

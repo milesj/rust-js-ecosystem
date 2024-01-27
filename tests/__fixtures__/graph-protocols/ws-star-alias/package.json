@@ -1,0 +1,9 @@
+{
+  "name": "ws-star-alias",
+  "dependencies": {
+    "a-alias": "workspace:a@*"
+  },
+  "devDependencies": {
+    "b-alias": "workspace:b@*"
+  }
+}

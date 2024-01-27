@@ -1,0 +1,9 @@
+{
+  "name": "ws-caret",
+  "dependencies": {
+    "a": "workspace:^"
+  },
+  "devDependencies": {
+    "b": "workspace:^0.0.0"
+  }
+}

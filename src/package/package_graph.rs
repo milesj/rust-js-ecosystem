@@ -4,7 +4,11 @@ use super::package_manager::PackageManager;
 use super::pnpm_configs::PnpmWorkspace;
 use super::version_protocol::VersionProtocol;
 use super::workspace_protocol::WorkspaceProtocol;
+use clean_path::Clean;
+use miette::miette;
 use petgraph::graph::DiGraph;
+use petgraph::visit::EdgeRef;
+use petgraph::Direction;
 use semver::Version;
 use starbase_utils::glob;
 use std::collections::BTreeMap;
@@ -161,7 +165,7 @@ impl PackageGraph {
                                  path: &Path,
                                  dep_type: DependencyType| {
             if path.is_absolute() && path == dep_package.root
-                || path.is_relative() && package.root.join(path) == dep_package.root
+                || path.is_relative() && package.root.join(path).clean() == dep_package.root
             {
                 graph.add_edge(package.node_index, dep_package.node_index, dep_type);
             }
@@ -185,8 +189,17 @@ impl PackageGraph {
                 match version {
                     // npm
                     VersionProtocol::Requirement(req) => {
-                        if req.comparators.is_empty() {
-                            if let Some(dep_package) = self.packages.get(name) {
+                        if let Some(dep_package) = self.packages.get(name) {
+                            if
+                            // *
+                            req.comparators.is_empty()
+                                // ~, ^, etc
+                                || dep_package
+                                    .manifest
+                                    .version
+                                    .as_ref()
+                                    .is_some_and(|ver| req.matches(ver))
+                            {
                                 graph.add_edge(
                                     package.node_index,
                                     dep_package.node_index,
@@ -272,6 +285,46 @@ impl PackageGraph {
         self.graph = graph;
 
         Ok(())
+    }
+
+    pub fn dependencies_of(&self, name: &str) -> miette::Result<Vec<(String, DependencyType)>> {
+        let package = self
+            .packages
+            .get(name)
+            .ok_or_else(|| miette!("Unknown package {name}"))?;
+
+        let deps = self
+            .graph
+            .edges_directed(package.node_index, Direction::Outgoing)
+            .map(|edge| {
+                (
+                    self.graph.node_weight(edge.target()).unwrap().to_owned(),
+                    edge.weight().to_owned(),
+                )
+            })
+            .collect();
+
+        Ok(deps)
+    }
+
+    pub fn dependents_of(&self, name: &str) -> miette::Result<Vec<(String, DependencyType)>> {
+        let package = self
+            .packages
+            .get(name)
+            .ok_or_else(|| miette!("Unknown package {name}"))?;
+
+        let deps = self
+            .graph
+            .edges_directed(package.node_index, Direction::Incoming)
+            .map(|edge| {
+                (
+                    self.graph.node_weight(edge.target()).unwrap().to_owned(),
+                    edge.weight().to_owned(),
+                )
+            })
+            .collect();
+
+        Ok(deps)
     }
 
     pub fn to_dot(&self) -> String {

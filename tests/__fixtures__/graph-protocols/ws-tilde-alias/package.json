@@ -1,0 +1,9 @@
+{
+  "name": "ws-tilde-alias",
+  "dependencies": {
+    "a-alias": "workspace:a@~"
+  },
+  "devDependencies": {
+    "b-alias": "workspace:b@~0.0.0"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "link",
+  "dependencies": {
+    "a": "link:../a"
+  },
+  "devDependencies": {
+    "b": "link:../unknown"
+  }
+}

@@ -33,7 +33,7 @@ impl Package {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum DependencyType {
     Development,
     Production,
