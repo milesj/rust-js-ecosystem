@@ -13,4 +13,5 @@ starbase_utils = { workspace = true, optional = true, features = ["yaml"] }
 
 [features]
 default = []
-loader = ["dep:miette", "dep:starbase_utils"]
+loader = ["miette", "dep:starbase_utils"]
+miette = ["dep:miette"]

@@ -21,5 +21,6 @@ node_package_json = { path = ".", features = ["protocols"] }
 
 [features]
 default = []
+loader = ["miette", "dep:starbase_utils"]
+miette = ["dep:miette"]
 protocols = []
-loader = ["dep:miette", "dep:starbase_utils"]

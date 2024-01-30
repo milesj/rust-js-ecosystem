@@ -20,6 +20,7 @@ static GITHUB: Lazy<Regex> = Lazy::new(|| {
 });
 
 #[derive(Debug, Error)]
+#[cfg_attr(feature = "miette", derive(miette::Diagnostic))]
 pub enum VersionProtocolError {
     #[error("Missing start version for range.")]
     RangeMissingStartVersion,

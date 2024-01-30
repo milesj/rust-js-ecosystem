@@ -8,6 +8,7 @@ use std::str::FromStr;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
+#[cfg_attr(feature = "miette", derive(miette::Diagnostic))]
 pub enum WorkspaceProtocolError {
     #[error("Star workspace (workspace:*) does not support versions.")]
     StarNoVersion,
