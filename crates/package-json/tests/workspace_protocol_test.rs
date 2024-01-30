@@ -1,4 +1,4 @@
-use graphity::WorkspaceProtocol;
+use node_package_json::WorkspaceProtocol;
 use semver::Version;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -22,7 +22,7 @@ fn star_with_alias() {
 }
 
 #[test]
-#[should_panic(expected = "Wildcard workspace (workspace:*) does not support versions.")]
+#[should_panic(expected = "StarNoVersion")]
 fn errors_star_more_info() {
     WorkspaceProtocol::from_str("*1.2.3").unwrap();
 }

@@ -1,0 +1,20 @@
+[package]
+name = "node_package_json"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+once_cell = { workspace = true }
+regex = { workspace = true }
+semver = { workspace = true, features = ["serde"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+node_package_json = { path = ".", features = ["protocols"] }
+
+[features]
+default = []
+protocols = []

@@ -1,4 +1,4 @@
-use graphity::VersionProtocol;
+use node_package_json::VersionProtocol;
 use semver::VersionReq;
 use std::path::PathBuf;
 use std::str::FromStr;
