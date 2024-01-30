@@ -1,0 +1,23 @@
+[package]
+name = "node_package_graph"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+node_package_json = { version = "0.0.1", path = "../package-json", features = [
+	"loader",
+	"protocols",
+] }
+node_package_managers = { version = "0.0.1", path = "../package-managers", features = [
+	"loader",
+] }
+
+clean-path = "0.2.1"
+miette = { workspace = true }
+petgraph = { workspace = true }
+starbase_utils = { workspace = true, features = ["glob"] }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+starbase_sandbox = { workspace = true }

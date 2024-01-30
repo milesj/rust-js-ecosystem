@@ -1,15 +1,13 @@
-use super::package::{DependencyType, Package};
-use super::package_json::{DependenciesMap, PackageJson, Workspaces};
-use super::package_manager::PackageManager;
-use super::pnpm_configs::PnpmWorkspace;
-use super::version_protocol::VersionProtocol;
-use super::workspace_protocol::WorkspaceProtocol;
+use crate::package::{DependencyType, Package};
+use crate::package_graph_error::PackageGraphError;
 use clean_path::Clean;
-use miette::miette;
+use node_package_json::{
+    DependenciesMap, PackageJson, Version, VersionProtocol, WorkspaceProtocol, Workspaces,
+};
+use node_package_managers::{pnpm::PnpmWorkspaceYaml, PackageManager};
 use petgraph::graph::DiGraph;
 use petgraph::visit::EdgeRef;
 use petgraph::Direction;
-use semver::Version;
 use starbase_utils::glob;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -52,7 +50,7 @@ impl PackageGraph {
             let ws_file = root.join("pnpm-workspace.yaml");
 
             if ws_file.exists() {
-                package_globs = PnpmWorkspace::load(ws_file)?.packages;
+                package_globs = PnpmWorkspaceYaml::load(ws_file)?.packages;
             }
         } else if let Some(workspaces) = &root_manifest.workspaces {
             package_globs = match workspaces {
@@ -77,8 +75,14 @@ impl PackageGraph {
         let mut current_dir = Some(starting_dir);
 
         while let Some(dir) = current_dir {
+            // bun
+            if dir.join("bun.lockb").exists() {
+                return Some((dir.to_owned(), PackageManager::Bun));
+            }
             // pnpm
-            if dir.join("pnpm-lock.yaml").exists() || dir.join("pnpm-workspace.yaml").exists() {
+            else if dir.join("pnpm-lock.yaml").exists()
+                || dir.join("pnpm-workspace.yaml").exists()
+            {
                 return Some((dir.to_owned(), PackageManager::Pnpm));
             }
             // yarn
@@ -295,7 +299,7 @@ impl PackageGraph {
         let package = self
             .packages
             .get(name)
-            .ok_or_else(|| miette!("Unknown package {name}"))?;
+            .ok_or_else(|| PackageGraphError::UnknownPackage(name.to_owned()))?;
 
         let deps = self
             .graph
@@ -315,7 +319,7 @@ impl PackageGraph {
         let package = self
             .packages
             .get(name)
-            .ok_or_else(|| miette!("Unknown package {name}"))?;
+            .ok_or_else(|| PackageGraphError::UnknownPackage(name.to_owned()))?;
 
         let deps = self
             .graph

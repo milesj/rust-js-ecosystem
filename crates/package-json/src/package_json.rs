@@ -31,7 +31,7 @@ pub struct PackageJson {
 
 #[cfg(feature = "loader")]
 impl PackageJson {
-    pub fn load<T: AsRef<Path>>(file: T) -> miette::Result<Self> {
+    pub fn load<T: AsRef<std::path::Path>>(file: T) -> miette::Result<Self> {
         Ok(starbase_utils::json::read_file(file.as_ref())?)
     }
 }

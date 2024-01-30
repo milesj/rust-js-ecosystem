@@ -1,4 +1,4 @@
-use super::package_json::PackageJson;
+use node_package_json::PackageJson;
 use petgraph::graph::NodeIndex;
 use std::path::{Path, PathBuf};
 

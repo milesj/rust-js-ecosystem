@@ -9,7 +9,7 @@ pub struct PnpmWorkspaceYaml {
 
 #[cfg(feature = "loader")]
 impl PnpmWorkspaceYaml {
-    pub fn load<T: AsRef<Path>>(file: T) -> miette::Result<Self> {
+    pub fn load<T: AsRef<std::path::Path>>(file: T) -> miette::Result<Self> {
         Ok(starbase_utils::yaml::read_file(file.as_ref())?)
     }
 }

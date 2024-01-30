@@ -1,5 +1,5 @@
 ---
-source: tests/package_graph_test.rs
+source: crates/package-graph/tests/package_graph_test.rs
 expression: graph.to_dot()
 ---
 digraph {
