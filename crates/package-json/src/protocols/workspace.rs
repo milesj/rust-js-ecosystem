@@ -1,5 +1,3 @@
-#![allow(clippy::from_over_into)]
-
 use semver::Version;
 use serde::Deserialize;
 use std::fmt::{self, Display};
@@ -17,8 +15,8 @@ pub enum WorkspaceProtocolError {
     Semver(#[from] semver::Error),
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
-#[serde(untagged, into = "String", try_from = "String")]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[serde(untagged, try_from = "String")]
 pub enum WorkspaceProtocol {
     // *
     Any {
@@ -89,12 +87,6 @@ impl TryFrom<String> for WorkspaceProtocol {
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::from_str(&value)
-    }
-}
-
-impl Into<String> for WorkspaceProtocol {
-    fn into(self) -> String {
-        self.to_string()
     }
 }
 

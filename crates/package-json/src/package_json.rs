@@ -1,15 +1,35 @@
-use super::protocols::VersionProtocol;
+use crate::import_export::*;
+use crate::protocols::VersionProtocol;
+use indexmap::IndexMap;
 use semver::Version;
 use serde::Deserialize;
 use std::collections::BTreeMap;
+use std::path::PathBuf;
+
+// Note: We only support fields that we actually need and
+// are useful. Everything else can be accessed with `other_fields`.
+//
+// Why not support all fields? Because it's unsafe. There are
+// far too many packages out there, many with invalid fields,
+// values, or types, that would fail the serde process.
 
 pub type DependenciesMap = BTreeMap<String, VersionProtocol>;
+pub type EnginesMap = IndexMap<String, VersionProtocol>;
+pub type ScriptsMap = IndexMap<String, String>;
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 #[serde(default, rename_all = "camelCase")]
 pub struct PackageJson {
     pub name: Option<String>,
     pub version: Option<Version>,
+    pub scripts: Option<ScriptsMap>,
+
+    // Entry points
+    pub main: Option<PathBuf>,
+    pub module: Option<PathBuf>,
+    pub browser: Option<BrowserField>,
+    pub imports: Option<ImportExportMap>,
+    pub exports: Option<ImportExportField>,
 
     // Dependencies
     pub dependencies: Option<DependenciesMap>,
@@ -20,13 +40,17 @@ pub struct PackageJson {
     pub bundle_dependencies: Option<Vec<String>>,
     pub optional_dependencies: Option<DependenciesMap>,
 
+    // Constraints
+    pub engines: Option<EnginesMap>,
+    pub package_manager: Option<String>,
+
     // Workspaces
     pub workspaces: Option<WorkspacesField>,
 
     // For all other fields we don't want to explicitly support,
     // but consumers may want to access for some reason
     #[serde(flatten)]
-    pub unknown: BTreeMap<String, serde_json::Value>,
+    pub other_fields: BTreeMap<String, serde_json::Value>,
 }
 
 #[cfg(feature = "loader")]
@@ -36,7 +60,14 @@ impl PackageJson {
     }
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[serde(untagged)]
+pub enum BrowserField {
+    String(String),
+    Map(BTreeMap<PathBuf, serde_json::Value>),
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 #[serde(default, rename_all = "camelCase")]
 pub struct DependencyMetaField {
     // pnpm - https://pnpm.io/package_json#dependenciesmeta
@@ -47,13 +78,13 @@ pub struct DependencyMetaField {
     pub unplugged: bool,
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 #[serde(default, rename_all = "camelCase")]
 pub struct PeerDependencyMetaField {
     pub optional: bool,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(untagged, rename_all = "camelCase")]
 pub enum WorkspacesField {
     Globs(Vec<String>),

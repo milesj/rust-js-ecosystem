@@ -132,8 +132,7 @@ impl PackageGraph {
             let manifest_file = dir.join("package.json");
 
             if manifest_file.exists() {
-                let manifest = PackageJson::load(manifest_file)?;
-                let mut package = Package::new(dir, manifest);
+                let mut package = Package::new(dir, PackageJson::load(manifest_file)?);
                 package.index = index;
 
                 packages.insert(package.get_name()?.to_owned(), package);

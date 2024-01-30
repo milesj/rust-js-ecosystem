@@ -1,5 +1,3 @@
-#![allow(clippy::from_over_into)]
-
 use super::workspace::*;
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -39,8 +37,8 @@ pub enum VersionProtocolError {
 }
 
 // https://docs.npmjs.com/cli/v10/configuring-npm/package-json#dependencies
-#[derive(Debug, Deserialize, PartialEq)]
-#[serde(untagged, into = "String", try_from = "String")]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[serde(untagged, try_from = "String")]
 pub enum VersionProtocol {
     File(PathBuf),
     Git {
@@ -155,12 +153,6 @@ impl TryFrom<String> for VersionProtocol {
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::from_str(&value)
-    }
-}
-
-impl Into<String> for VersionProtocol {
-    fn into(self) -> String {
-        self.to_string()
     }
 }
 

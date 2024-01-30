@@ -5,8 +5,7 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-once_cell = { workspace = true }
-regex = { workspace = true }
+indexmap = { workspace = true, features = ["serde"] }
 semver = { workspace = true, features = ["serde"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
@@ -16,6 +15,10 @@ thiserror = { workspace = true }
 miette = { workspace = true, optional = true }
 starbase_utils = { workspace = true, optional = true, features = ["json"] }
 
+# protocols
+once_cell = { workspace = true, optional = true }
+regex = { workspace = true, optional = true }
+
 [dev-dependencies]
 node_package_json = { path = ".", features = ["protocols"] }
 
@@ -23,4 +26,4 @@ node_package_json = { path = ".", features = ["protocols"] }
 default = []
 loader = ["miette", "dep:starbase_utils"]
 miette = ["dep:miette"]
-protocols = []
+protocols = ["dep:once_cell", "dep:regex"]
