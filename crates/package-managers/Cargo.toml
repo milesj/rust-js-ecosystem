@@ -5,7 +5,10 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
+package-lock-json-parser = "0.4.0"
+rustc-hash = { workspace = true }
 serde = { workspace = true }
+yarn-lock-parser = "0.6.0"
 
 # loader
 miette = { workspace = true, optional = true }
