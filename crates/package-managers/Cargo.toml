@@ -1,0 +1,16 @@
+[package]
+name = "node_package_managers"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+serde = { workspace = true }
+
+# loader
+miette = { workspace = true, optional = true }
+starbase_utils = { workspace = true, optional = true, features = ["yaml"] }
+
+[features]
+default = []
+loader = ["dep:miette", "dep:starbase_utils"]

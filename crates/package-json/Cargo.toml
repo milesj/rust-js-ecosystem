@@ -12,9 +12,14 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 
+# loader
+miette = { workspace = true, optional = true }
+starbase_utils = { workspace = true, optional = true, features = ["json"] }
+
 [dev-dependencies]
 node_package_json = { path = ".", features = ["protocols"] }
 
 [features]
 default = []
 protocols = []
+loader = ["dep:miette", "dep:starbase_utils"]

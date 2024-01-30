@@ -23,16 +23,18 @@ pub struct PackageJson {
     // Workspaces
     pub workspaces: Option<Workspaces>,
 
-    // For all other fields we don't want to explicitly support
+    // For all other fields we don't want to explicitly support,
+    // but consumers may want to access for some reason
     #[serde(flatten)]
     pub unknown: BTreeMap<String, serde_json::Value>,
 }
 
-// impl PackageJson {
-//     pub fn load<T: AsRef<Path>>(file: T) -> miette::Result<Self> {
-//         Ok(json::read_file(file.as_ref())?)
-//     }
-// }
+#[cfg(feature = "loader")]
+impl PackageJson {
+    pub fn load<T: AsRef<Path>>(file: T) -> miette::Result<Self> {
+        Ok(starbase_utils::json::read_file(file.as_ref())?)
+    }
+}
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
