@@ -2,7 +2,7 @@ use crate::package::{DependencyType, Package};
 use crate::package_graph_error::PackageGraphError;
 use clean_path::Clean;
 use node_package_json::{
-    DependenciesMap, PackageJson, Version, VersionProtocol, WorkspaceProtocol, Workspaces,
+    DependenciesMap, PackageJson, Version, VersionProtocol, WorkspaceProtocol, WorkspacesField,
 };
 use node_package_managers::{pnpm::PnpmWorkspaceYaml, PackageManager};
 use petgraph::graph::DiGraph;
@@ -54,8 +54,8 @@ impl PackageGraph {
             }
         } else if let Some(workspaces) = &root_manifest.workspaces {
             package_globs = match workspaces {
-                Workspaces::Globs(globs) => globs.to_owned(),
-                Workspaces::Config { packages, .. } => packages.to_owned(),
+                WorkspacesField::Globs(globs) => globs.to_owned(),
+                WorkspacesField::Config { packages, .. } => packages.to_owned(),
             };
         }
 
@@ -109,6 +109,10 @@ impl PackageGraph {
         None
     }
 
+    pub fn is_workspaces_enabled(&self) -> bool {
+        !self.package_globs.is_empty() && !self.packages.is_empty()
+    }
+
     pub fn load_workspace_packages(&mut self) -> miette::Result<()> {
         if self.package_globs.is_empty() {
             return Ok(());
@@ -129,12 +133,10 @@ impl PackageGraph {
 
             if manifest_file.exists() {
                 let manifest = PackageJson::load(manifest_file)?;
-                let name = manifest.name.clone();
-
                 let mut package = Package::new(dir, manifest);
                 package.index = index;
 
-                packages.insert(name, package);
+                packages.insert(package.get_name()?.to_owned(), package);
                 index += 1;
             }
         }
@@ -147,7 +149,17 @@ impl PackageGraph {
     pub fn generate_graph(&mut self) -> miette::Result<()> {
         let mut graph = DiGraph::new();
 
-        graph.add_node(self.root_package.manifest.name.clone());
+        // Name is optional for the workspace root
+        graph.add_node(if self.is_workspaces_enabled() {
+            self.root_package
+                .manifest
+                .name
+                .as_deref()
+                .unwrap_or("(root)")
+                .to_owned()
+        } else {
+            self.root_package.get_name()?.to_owned()
+        });
 
         if self.package_globs.is_empty() {
             self.graph = graph;
@@ -158,7 +170,7 @@ impl PackageGraph {
         // First pass, create nodes
         {
             for package in self.packages.values_mut() {
-                package.node_index = graph.add_node(package.manifest.name.clone());
+                package.node_index = graph.add_node(package.get_name()?.to_owned());
             }
         }
 

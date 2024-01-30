@@ -1,3 +1,4 @@
+use crate::package_graph_error::PackageGraphError;
 use node_package_json::PackageJson;
 use petgraph::graph::NodeIndex;
 use std::path::{Path, PathBuf};
@@ -30,6 +31,14 @@ impl Package {
         let manifest: PackageJson = PackageJson::load(root.join("package.json"))?;
 
         Ok(Self::new(root.to_owned(), manifest))
+    }
+
+    pub fn get_name(&self) -> miette::Result<&str> {
+        Ok(self
+            .manifest
+            .name
+            .as_deref()
+            .ok_or_else(|| PackageGraphError::MissingPackageName(self.root.clone()))?)
     }
 }
 

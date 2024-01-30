@@ -8,20 +8,20 @@ pub type DependenciesMap = BTreeMap<String, VersionProtocol>;
 #[derive(Debug, Default, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct PackageJson {
-    pub name: String,
+    pub name: Option<String>,
     pub version: Option<Version>,
 
     // Dependencies
     pub dependencies: Option<DependenciesMap>,
-    pub dependencies_meta: Option<BTreeMap<String, DependencyMeta>>,
+    pub dependencies_meta: Option<BTreeMap<String, DependencyMetaField>>,
     pub dev_dependencies: Option<DependenciesMap>,
     pub peer_dependencies: Option<DependenciesMap>,
-    pub peer_dependencies_meta: Option<BTreeMap<String, PeerDependencyMeta>>,
+    pub peer_dependencies_meta: Option<BTreeMap<String, PeerDependencyMetaField>>,
     pub bundle_dependencies: Option<Vec<String>>,
     pub optional_dependencies: Option<DependenciesMap>,
 
     // Workspaces
-    pub workspaces: Option<Workspaces>,
+    pub workspaces: Option<WorkspacesField>,
 
     // For all other fields we don't want to explicitly support,
     // but consumers may want to access for some reason
@@ -38,7 +38,7 @@ impl PackageJson {
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
-pub struct DependencyMeta {
+pub struct DependencyMetaField {
     // pnpm - https://pnpm.io/package_json#dependenciesmeta
     pub injected: bool,
     // yarn - https://yarnpkg.com/configuration/manifest#dependenciesMeta
@@ -49,13 +49,13 @@ pub struct DependencyMeta {
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
-pub struct PeerDependencyMeta {
+pub struct PeerDependencyMetaField {
     pub optional: bool,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged, rename_all = "camelCase")]
-pub enum Workspaces {
+pub enum WorkspacesField {
     Globs(Vec<String>),
     Config {
         packages: Vec<String>,
