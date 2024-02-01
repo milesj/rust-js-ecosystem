@@ -1,6 +1,7 @@
 use crate::package_graph_error::PackageGraphError;
 use node_package_json::PackageJson;
 use petgraph::graph::NodeIndex;
+use starbase_utils::json;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
@@ -26,19 +27,18 @@ impl Package {
         }
     }
 
-    pub fn load<T: AsRef<Path>>(root: T) -> miette::Result<Self> {
+    pub fn load<T: AsRef<Path>>(root: T) -> Result<Self, PackageGraphError> {
         let root = root.as_ref();
-        let manifest: PackageJson = PackageJson::load(root.join("package.json"))?;
+        let manifest: PackageJson = json::read_file(root.join("package.json"))?;
 
         Ok(Self::new(root.to_owned(), manifest))
     }
 
-    pub fn get_name(&self) -> miette::Result<&str> {
-        Ok(self
-            .manifest
+    pub fn get_name(&self) -> Result<&str, PackageGraphError> {
+        self.manifest
             .name
             .as_deref()
-            .ok_or_else(|| PackageGraphError::MissingPackageName(self.root.clone()))?)
+            .ok_or_else(|| PackageGraphError::MissingPackageName(self.root.clone()))
     }
 }
 

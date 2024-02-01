@@ -1,6 +1,5 @@
-use crate::import_export::*;
 use crate::protocols::VersionProtocol;
-use indexmap::IndexMap;
+use crate::{import_export::*, FxIndexMap};
 use semver::Version;
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -14,8 +13,8 @@ use std::path::PathBuf;
 // values, or types, that would fail the serde process.
 
 pub type DependenciesMap = BTreeMap<String, VersionProtocol>;
-pub type EnginesMap = IndexMap<String, VersionProtocol>;
-pub type ScriptsMap = IndexMap<String, String>;
+pub type EnginesMap = FxIndexMap<String, VersionProtocol>;
+pub type ScriptsMap = FxIndexMap<String, String>;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 #[serde(default, rename_all = "camelCase")]
@@ -51,13 +50,6 @@ pub struct PackageJson {
     // but consumers may want to access for some reason
     #[serde(flatten)]
     pub other_fields: BTreeMap<String, serde_json::Value>,
-}
-
-#[cfg(feature = "loader")]
-impl PackageJson {
-    pub fn load<T: AsRef<std::path::Path>>(file: T) -> miette::Result<Self> {
-        Ok(starbase_utils::json::read_file(file.as_ref())?)
-    }
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]

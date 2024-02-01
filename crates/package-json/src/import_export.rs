@@ -1,7 +1,7 @@
-use indexmap::IndexMap;
+use crate::FxIndexMap;
 use serde::Deserialize;
 
-pub type ImportExportMap = IndexMap<String, String>;
+pub type ImportExportMap = FxIndexMap<String, String>;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 #[serde(untagged)]

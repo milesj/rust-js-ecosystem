@@ -6,18 +6,19 @@ license = "MIT"
 
 [dependencies]
 node_package_json = { version = "0.0.1", path = "../package-json", features = [
-	"loader",
 	"protocols",
 ] }
-node_package_managers = { version = "0.0.1", path = "../package-managers", features = [
-	"loader",
-] }
+node_package_managers = { version = "0.0.1", path = "../package-managers" }
 
 clean-path = "0.2.1"
-miette = { workspace = true }
+miette = { workspace = true, optional = true }
 petgraph = { workspace = true }
-starbase_utils = { workspace = true, features = ["glob"] }
+starbase_utils = { workspace = true, features = ["glob", "json", "yaml"] }
 thiserror = { workspace = true }
 
 [dev-dependencies]
 starbase_sandbox = { workspace = true }
+
+[features]
+default = []
+miette = ["dep:miette", "starbase_utils/miette"]
