@@ -9,9 +9,17 @@ use thiserror::Error;
 #[cfg_attr(feature = "miette", derive(miette::Diagnostic))]
 pub enum WorkspaceProtocolError {
     #[error("Star workspace (workspace:*) does not support versions.")]
+    #[cfg_attr(
+        feature = "miette",
+        diagnostic(code(package_json::workspace::no_version_with_star))
+    )]
     StarNoVersion,
 
     #[error("Failed to parse version: {0}")]
+    #[cfg_attr(
+        feature = "miette",
+        diagnostic(code(package_json::workspace::invalid_version))
+    )]
     Semver(#[from] semver::Error),
 }
 

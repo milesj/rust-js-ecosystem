@@ -21,18 +21,25 @@ static GITHUB: Lazy<Regex> = Lazy::new(|| {
 #[cfg_attr(feature = "miette", derive(miette::Diagnostic))]
 pub enum VersionProtocolError {
     #[error("Missing start version for range.")]
+    #[cfg_attr(
+        feature = "miette",
+        diagnostic(code(package_json::version::missing_range_start))
+    )]
     RangeMissingStartVersion,
 
     #[error("Missing stop version for range.")]
+    #[cfg_attr(
+        feature = "miette",
+        diagnostic(code(package_json::version::missing_range_stop))
+    )]
     RangeMissingStopVersion,
 
-    #[error("Star workspace (workspace:*) does not support versions.")]
-    StarNoVersion,
-
     #[error("Failed to parse version or requirement: {0}")]
+    #[cfg_attr(feature = "miette", diagnostic(code(package_json::version::invalid)))]
     Semver(#[from] semver::Error),
 
     #[error(transparent)]
+    #[cfg_attr(feature = "miette", diagnostic(transparent))]
     Workspace(#[from] WorkspaceProtocolError),
 }
 
