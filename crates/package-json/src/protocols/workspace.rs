@@ -1,5 +1,3 @@
-#![allow(clippy::from_over_into)]
-
 use semver::Version;
 use serde::Deserialize;
 use std::fmt::{self, Display};
@@ -11,14 +9,22 @@ use thiserror::Error;
 #[cfg_attr(feature = "miette", derive(miette::Diagnostic))]
 pub enum WorkspaceProtocolError {
     #[error("Star workspace (workspace:*) does not support versions.")]
+    #[cfg_attr(
+        feature = "miette",
+        diagnostic(code(package_json::workspace::no_version_with_star))
+    )]
     StarNoVersion,
 
     #[error("Failed to parse version: {0}")]
+    #[cfg_attr(
+        feature = "miette",
+        diagnostic(code(package_json::workspace::invalid_version))
+    )]
     Semver(#[from] semver::Error),
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
-#[serde(untagged, into = "String", try_from = "String")]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[serde(untagged, try_from = "String")]
 pub enum WorkspaceProtocol {
     // *
     Any {
@@ -89,12 +95,6 @@ impl TryFrom<String> for WorkspaceProtocol {
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::from_str(&value)
-    }
-}
-
-impl Into<String> for WorkspaceProtocol {
-    fn into(self) -> String {
-        self.to_string()
     }
 }
 

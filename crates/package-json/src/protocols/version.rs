@@ -1,5 +1,3 @@
-#![allow(clippy::from_over_into)]
-
 use super::workspace::*;
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -23,24 +21,31 @@ static GITHUB: Lazy<Regex> = Lazy::new(|| {
 #[cfg_attr(feature = "miette", derive(miette::Diagnostic))]
 pub enum VersionProtocolError {
     #[error("Missing start version for range.")]
+    #[cfg_attr(
+        feature = "miette",
+        diagnostic(code(package_json::version::missing_range_start))
+    )]
     RangeMissingStartVersion,
 
     #[error("Missing stop version for range.")]
+    #[cfg_attr(
+        feature = "miette",
+        diagnostic(code(package_json::version::missing_range_stop))
+    )]
     RangeMissingStopVersion,
 
-    #[error("Star workspace (workspace:*) does not support versions.")]
-    StarNoVersion,
-
     #[error("Failed to parse version or requirement: {0}")]
+    #[cfg_attr(feature = "miette", diagnostic(code(package_json::version::invalid)))]
     Semver(#[from] semver::Error),
 
     #[error(transparent)]
+    #[cfg_attr(feature = "miette", diagnostic(transparent))]
     Workspace(#[from] WorkspaceProtocolError),
 }
 
 // https://docs.npmjs.com/cli/v10/configuring-npm/package-json#dependencies
-#[derive(Debug, Deserialize, PartialEq)]
-#[serde(untagged, into = "String", try_from = "String")]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[serde(untagged, try_from = "String")]
 pub enum VersionProtocol {
     File(PathBuf),
     Git {
@@ -155,12 +160,6 @@ impl TryFrom<String> for VersionProtocol {
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::from_str(&value)
-    }
-}
-
-impl Into<String> for VersionProtocol {
-    fn into(self) -> String {
-        self.to_string()
     }
 }
 

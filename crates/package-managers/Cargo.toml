@@ -11,11 +11,5 @@ serde = { workspace = true }
 serde_yaml = { workspace = true }
 yarn-lock-parser = "0.6.0"
 
-# loader
-miette = { workspace = true, optional = true }
-starbase_utils = { workspace = true, optional = true, features = ["yaml"] }
-
 [features]
 default = []
-loader = ["miette", "dep:starbase_utils"]
-miette = ["dep:miette"]

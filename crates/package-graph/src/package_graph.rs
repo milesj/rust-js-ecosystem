@@ -2,13 +2,13 @@ use crate::package::{DependencyType, Package};
 use crate::package_graph_error::PackageGraphError;
 use clean_path::Clean;
 use node_package_json::{
-    DependenciesMap, PackageJson, Version, VersionProtocol, WorkspaceProtocol, Workspaces,
+    DependenciesMap, PackageJson, Version, VersionProtocol, WorkspaceProtocol, WorkspacesField,
 };
 use node_package_managers::{pnpm::PnpmWorkspaceYaml, PackageManager};
 use petgraph::graph::DiGraph;
 use petgraph::visit::EdgeRef;
 use petgraph::Direction;
-use starbase_utils::glob;
+use starbase_utils::{glob, json, yaml};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -26,7 +26,7 @@ pub struct PackageGraph {
 }
 
 impl PackageGraph {
-    pub fn generate<T: AsRef<Path>>(working_dir: T) -> miette::Result<PackageGraph> {
+    pub fn generate<T: AsRef<Path>>(working_dir: T) -> Result<PackageGraph, PackageGraphError> {
         let mut graph = Self::load_from(working_dir)?;
         graph.load_workspace_packages()?;
         graph.generate_graph()?;
@@ -34,14 +34,14 @@ impl PackageGraph {
         Ok(graph)
     }
 
-    pub fn load_from<T: AsRef<Path>>(working_dir: T) -> miette::Result<PackageGraph> {
+    pub fn load_from<T: AsRef<Path>>(working_dir: T) -> Result<PackageGraph, PackageGraphError> {
         let working_dir = working_dir.as_ref();
 
         // Find the root package.json
         let (root, package_manager) = Self::find_package_root(working_dir)
             .unwrap_or_else(|| (working_dir.to_owned(), PackageManager::Npm));
 
-        let root_manifest = PackageJson::load(root.join("package.json"))?;
+        let root_manifest: PackageJson = json::read_file(root.join("package.json"))?;
 
         // Extract workspaces globs
         let mut package_globs = vec![];
@@ -50,12 +50,14 @@ impl PackageGraph {
             let ws_file = root.join("pnpm-workspace.yaml");
 
             if ws_file.exists() {
-                package_globs = PnpmWorkspaceYaml::load(ws_file)?.packages;
+                let ws: PnpmWorkspaceYaml = yaml::read_file(ws_file)?;
+
+                package_globs = ws.packages;
             }
         } else if let Some(workspaces) = &root_manifest.workspaces {
             package_globs = match workspaces {
-                Workspaces::Globs(globs) => globs.to_owned(),
-                Workspaces::Config { packages, .. } => packages.to_owned(),
+                WorkspacesField::Globs(globs) => globs.to_owned(),
+                WorkspacesField::Config { packages, .. } => packages.to_owned(),
             };
         }
 
@@ -109,7 +111,11 @@ impl PackageGraph {
         None
     }
 
-    pub fn load_workspace_packages(&mut self) -> miette::Result<()> {
+    pub fn is_workspaces_enabled(&self) -> bool {
+        !self.package_globs.is_empty() && !self.packages.is_empty()
+    }
+
+    pub fn load_workspace_packages(&mut self) -> Result<(), PackageGraphError> {
         if self.package_globs.is_empty() {
             return Ok(());
         }
@@ -128,13 +134,12 @@ impl PackageGraph {
             let manifest_file = dir.join("package.json");
 
             if manifest_file.exists() {
-                let manifest = PackageJson::load(manifest_file)?;
-                let name = manifest.name.clone();
+                let manifest: PackageJson = json::read_file(manifest_file)?;
 
                 let mut package = Package::new(dir, manifest);
                 package.index = index;
 
-                packages.insert(name, package);
+                packages.insert(package.get_name()?.to_owned(), package);
                 index += 1;
             }
         }
@@ -144,10 +149,20 @@ impl PackageGraph {
         Ok(())
     }
 
-    pub fn generate_graph(&mut self) -> miette::Result<()> {
+    pub fn generate_graph(&mut self) -> Result<(), PackageGraphError> {
         let mut graph = DiGraph::new();
 
-        graph.add_node(self.root_package.manifest.name.clone());
+        // Name is optional for the workspace root
+        graph.add_node(if self.is_workspaces_enabled() {
+            self.root_package
+                .manifest
+                .name
+                .as_deref()
+                .unwrap_or("(root)")
+                .to_owned()
+        } else {
+            self.root_package.get_name()?.to_owned()
+        });
 
         if self.package_globs.is_empty() {
             self.graph = graph;
@@ -158,7 +173,7 @@ impl PackageGraph {
         // First pass, create nodes
         {
             for package in self.packages.values_mut() {
-                package.node_index = graph.add_node(package.manifest.name.clone());
+                package.node_index = graph.add_node(package.get_name()?.to_owned());
             }
         }
 
@@ -295,7 +310,10 @@ impl PackageGraph {
         Ok(())
     }
 
-    pub fn dependencies_of(&self, name: &str) -> miette::Result<Vec<(String, DependencyType)>> {
+    pub fn dependencies_of(
+        &self,
+        name: &str,
+    ) -> Result<Vec<(String, DependencyType)>, PackageGraphError> {
         let package = self
             .packages
             .get(name)
@@ -315,7 +333,10 @@ impl PackageGraph {
         Ok(deps)
     }
 
-    pub fn dependents_of(&self, name: &str) -> miette::Result<Vec<(String, DependencyType)>> {
+    pub fn dependents_of(
+        &self,
+        name: &str,
+    ) -> Result<Vec<(String, DependencyType)>, PackageGraphError> {
         let package = self
             .packages
             .get(name)
