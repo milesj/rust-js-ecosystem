@@ -1,0 +1,11 @@
+[package]
+name = "typescript_tsconfig_json"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+rustc-hash = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
