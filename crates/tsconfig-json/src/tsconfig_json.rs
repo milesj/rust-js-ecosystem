@@ -1,13 +1,13 @@
-use std::path::PathBuf;
-
 use crate::compiler_options::CompilerOptions;
+use crate::path_types::PathType;
 use serde::Deserialize;
+use std::path::PathBuf;
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(untagged)]
 pub enum TsConfigExtends {
-    String(String),
-    Array(Vec<String>),
+    String(PathBuf),
+    Array(Vec<PathBuf>),
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
@@ -17,13 +17,13 @@ pub struct TsConfigJson {
 
     pub compiler_options: Option<CompilerOptions>,
 
-    pub exclude: Option<Vec<String>>,
+    pub exclude: Option<Vec<PathType>>,
 
     pub extends: Option<TsConfigExtends>,
 
-    pub files: Option<Vec<String>>,
+    pub files: Option<Vec<PathBuf>>,
 
-    pub include: Option<Vec<String>>,
+    pub include: Option<Vec<PathType>>,
 
     pub references: Option<Vec<ProjectReference>>,
 

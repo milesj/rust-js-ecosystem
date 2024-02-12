@@ -1,10 +1,13 @@
 #![allow(deprecated)]
 
-use rustc_hash::FxHashMap;
+use crate::path_types::PathOrUrl;
+use indexmap::IndexMap;
+use rustc_hash::{FxHashMap, FxHasher};
 use serde::Deserialize;
+use std::hash::BuildHasherDefault;
 use std::path::PathBuf;
 
-pub type CompilerOptionsPaths = FxHashMap<String, Vec<PathBuf>>;
+pub type CompilerOptionsPaths = IndexMap<String, Vec<PathBuf>, BuildHasherDefault<FxHasher>>;
 
 // https://www.typescriptlang.org/tsconfig#compilerOptions
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
@@ -99,7 +102,7 @@ pub struct CompilerOptions {
 
     pub list_files: Option<bool>,
 
-    pub map_root: Option<String>, // path or url
+    pub map_root: Option<PathOrUrl>,
 
     pub max_node_module_js_depth: Option<u32>,
 
@@ -180,7 +183,7 @@ pub struct CompilerOptions {
 
     pub source_map: Option<bool>,
 
-    pub source_root: Option<String>, // path or url
+    pub source_root: Option<PathOrUrl>,
 
     pub strict_bind_call_apply: Option<bool>,
 
