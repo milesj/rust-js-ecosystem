@@ -4,6 +4,7 @@ use crate::path_types::PathOrUrl;
 use indexmap::IndexMap;
 use rustc_hash::{FxHashMap, FxHasher};
 use serde::Deserialize;
+use std::collections::BTreeMap;
 use std::hash::BuildHasherDefault;
 use std::path::PathBuf;
 
@@ -241,6 +242,9 @@ pub struct CompilerOptions {
 
     #[deprecated]
     pub suppress_implicit_any_index_errors: Option<bool>,
+
+    #[serde(flatten)]
+    pub other_fields: BTreeMap<String, serde_json::Value>,
 }
 
 // https://www.typescriptlang.org/tsconfig#jsx

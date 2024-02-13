@@ -1,6 +1,7 @@
 use crate::compiler_options::CompilerOptions;
 use crate::path_types::PathType;
 use serde::Deserialize;
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
@@ -28,6 +29,9 @@ pub struct TsConfigJson {
     pub references: Option<Vec<ProjectReference>>,
 
     pub type_acquisition: Option<TypeAcquisition>,
+
+    #[serde(flatten)]
+    pub other_fields: BTreeMap<String, serde_json::Value>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
