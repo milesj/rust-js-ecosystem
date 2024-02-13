@@ -11,5 +11,8 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 
+[dev-dependencies]
+starbase_sandbox = { workspace = true }
+
 [features]
 default = []

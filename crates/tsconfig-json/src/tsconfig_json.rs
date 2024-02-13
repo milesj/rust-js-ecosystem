@@ -5,11 +5,12 @@ use std::collections::{BTreeMap, VecDeque};
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
+// https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-0.html#supporting-multiple-configuration-files-in-extends
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(untagged)]
-pub enum TsConfigExtends {
-    Single(PathBuf),
-    Multiple(Vec<PathBuf>),
+pub enum ExtendsField {
+    Single(String),
+    Multiple(Vec<String>),
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
@@ -21,7 +22,7 @@ pub struct TsConfigJson {
 
     pub exclude: Option<Vec<PathOrGlob>>,
 
-    pub extends: Option<TsConfigExtends>,
+    pub extends: Option<ExtendsField>,
 
     pub files: Option<Vec<PathBuf>>,
 
@@ -35,12 +36,39 @@ pub struct TsConfigJson {
     pub other_fields: BTreeMap<String, serde_json::Value>,
 }
 
+#[derive(Debug, PartialEq)]
 pub struct ResolvedTsConfigChain {
     pub path: PathBuf,
     pub config: TsConfigJson,
 }
 
 impl TsConfigJson {
+    pub fn resolve_path_in_node_modules<N: AsRef<str>, D: AsRef<Path>>(
+        package_file: N,
+        starting_dir: D,
+    ) -> Option<PathBuf> {
+        let package_file = package_file.as_ref();
+        let mut current_dir = Some(starting_dir.as_ref());
+
+        while let Some(dir) = current_dir {
+            let file_path = if package_file.ends_with(".json") {
+                dir.join("node_modules").join(package_file)
+            } else {
+                dir.join("node_modules")
+                    .join(package_file)
+                    .join("tsconfig.json")
+            };
+
+            if file_path.exists() {
+                return Some(file_path);
+            }
+
+            current_dir = dir.parent();
+        }
+
+        None
+    }
+
     pub fn resolve_extends_chain<T: AsRef<Path>>(
         path: T,
     ) -> io::Result<Vec<ResolvedTsConfigChain>> {
@@ -55,20 +83,33 @@ impl TsConfigJson {
             if let Some(extends) = &config.extends {
                 let parent_dir = path.parent().unwrap();
 
-                for extends_path in match extends {
-                    TsConfigExtends::Single(other) => vec![other],
-                    TsConfigExtends::Multiple(others) => others.iter().collect(),
+                for extends_from in match extends {
+                    ExtendsField::Single(other) => vec![other],
+                    ExtendsField::Multiple(others) => others.iter().rev().collect(),
                 } {
-                    queue.push_back(if extends_path.extension().is_none() {
-                        parent_dir.join(extends_path).join("tsconfig.json")
-                    } else {
-                        parent_dir.join(extends_path)
-                    })
+                    // File path
+                    if extends_from.starts_with('.') {
+                        queue.push_back(if extends_from.ends_with(".json") {
+                            parent_dir.join(extends_from)
+                        } else {
+                            parent_dir.join(extends_from).join("tsconfig.json")
+                        });
+                    }
+                    // Node module
+                    else if let Some(package_path) =
+                        Self::resolve_path_in_node_modules(extends_from, parent_dir)
+                    {
+                        queue.push_back(package_path);
+                    }
                 }
             }
 
             chain.push(ResolvedTsConfigChain { path, config })
         }
+
+        // Reverse so that the base file is the 0-index,
+        // and the files that overwrite it come next
+        chain.reverse();
 
         Ok(chain)
     }
