@@ -1,5 +1,5 @@
 use crate::compiler_options::CompilerOptions;
-use crate::path_types::PathType;
+use crate::path_types::PathOrGlob;
 use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -18,13 +18,13 @@ pub struct TsConfigJson {
 
     pub compiler_options: Option<CompilerOptions>,
 
-    pub exclude: Option<Vec<PathType>>,
+    pub exclude: Option<Vec<PathOrGlob>>,
 
     pub extends: Option<TsConfigExtends>,
 
     pub files: Option<Vec<PathBuf>>,
 
-    pub include: Option<Vec<PathType>>,
+    pub include: Option<Vec<PathOrGlob>>,
 
     pub references: Option<Vec<ProjectReference>>,
 

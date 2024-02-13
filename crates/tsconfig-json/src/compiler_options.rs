@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use std::hash::BuildHasherDefault;
 use std::path::PathBuf;
 
-pub type CompilerOptionsPaths = IndexMap<String, Vec<PathBuf>, BuildHasherDefault<FxHasher>>;
+pub type CompilerOptionsPathsMap = IndexMap<String, Vec<PathBuf>, BuildHasherDefault<FxHasher>>;
 
 // https://www.typescriptlang.org/tsconfig#compilerOptions
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
@@ -95,7 +95,7 @@ pub struct CompilerOptions {
 
     pub jsx_import_source: Option<String>,
 
-    pub jsx: Option<Jsx>,
+    pub jsx: Option<JsxField>,
 
     pub lib: Option<Vec<String>>,
 
@@ -107,11 +107,11 @@ pub struct CompilerOptions {
 
     pub max_node_module_js_depth: Option<u32>,
 
-    pub module: Option<Module>,
+    pub module: Option<ModuleField>,
 
-    pub module_detection: Option<ModuleDetection>,
+    pub module_detection: Option<ModuleDetectionField>,
 
-    pub module_resolution: Option<ModuleResolution>,
+    pub module_resolution: Option<ModuleResolutionField>,
 
     pub module_suffixes: Option<Vec<String>>,
 
@@ -151,7 +151,7 @@ pub struct CompilerOptions {
 
     pub out_file: Option<PathBuf>,
 
-    pub paths: Option<CompilerOptionsPaths>,
+    pub paths: Option<CompilerOptionsPathsMap>,
 
     pub plugins: Option<Vec<FxHashMap<String, serde_json::Value>>>,
 
@@ -198,7 +198,7 @@ pub struct CompilerOptions {
 
     pub strip_internal: Option<bool>,
 
-    pub target: Option<Target>,
+    pub target: Option<TargetField>,
 
     pub trace_resolution: Option<bool>,
 
@@ -249,18 +249,22 @@ pub struct CompilerOptions {
 
 // https://www.typescriptlang.org/tsconfig#jsx
 #[derive(Clone, Debug, Deserialize, PartialEq)]
-#[serde(rename_all = "kebab-case")]
-pub enum Jsx {
+pub enum JsxField {
+    #[serde(alias = "react")]
     React,
+    #[serde(alias = "react-jsx")]
     ReactJsx,
+    #[serde(alias = "react-jsxdev")]
     ReactJsxdev,
+    #[serde(alias = "react-native")]
     ReactNative,
+    #[serde(alias = "preserve")]
     Preserve,
 }
 
 // https://www.typescriptlang.org/tsconfig#module
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
-pub enum Module {
+pub enum ModuleField {
     #[serde(alias = "amd")]
     Amd,
     #[serde(alias = "commonjs")]
@@ -293,7 +297,7 @@ pub enum Module {
 
 // https://www.typescriptlang.org/tsconfig#moduleDetection
 #[derive(Clone, Debug, Deserialize, PartialEq)]
-pub enum ModuleDetection {
+pub enum ModuleDetectionField {
     #[serde(alias = "auto")]
     Auto,
     #[serde(alias = "legacy")]
@@ -304,7 +308,7 @@ pub enum ModuleDetection {
 
 // https://www.typescriptlang.org/tsconfig#moduleResolution
 #[derive(Clone, Debug, Deserialize, PartialEq)]
-pub enum ModuleResolution {
+pub enum ModuleResolutionField {
     #[serde(alias = "bundler")]
     Bundler,
     #[serde(alias = "classic")]
@@ -324,7 +328,7 @@ pub enum ModuleResolution {
 
 // https://www.typescriptlang.org/tsconfig#target
 #[derive(Clone, Debug, Deserialize, PartialEq)]
-pub enum Target {
+pub enum TargetField {
     #[serde(alias = "es3")]
     Es3,
     #[serde(alias = "es5")]
