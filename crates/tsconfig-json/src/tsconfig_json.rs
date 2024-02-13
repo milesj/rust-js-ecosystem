@@ -16,22 +16,15 @@ pub enum ExtendsField {
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TsConfigJson {
-    pub compile_on_save: Option<bool>,
-
     pub compiler_options: Option<CompilerOptions>,
-
     pub exclude: Option<Vec<PathOrGlob>>,
-
     pub extends: Option<ExtendsField>,
-
     pub files: Option<Vec<PathBuf>>,
-
     pub include: Option<Vec<PathOrGlob>>,
-
     pub references: Option<Vec<ProjectReference>>,
 
-    pub type_acquisition: Option<TypeAcquisition>,
-
+    // For all other fields we don't want to explicitly support,
+    // but consumers may want to access for some reason
     #[serde(flatten)]
     pub other_fields: BTreeMap<String, serde_json::Value>,
 }
@@ -119,16 +112,4 @@ impl TsConfigJson {
 pub struct ProjectReference {
     pub path: PathBuf,
     pub prepend: Option<bool>,
-}
-
-#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct TypeAcquisition {
-    pub enable: bool,
-
-    pub include: Option<Vec<String>>,
-
-    pub exclude: Option<Vec<String>>,
-
-    pub disable_filename_based_type_acquisition: Option<bool>,
 }

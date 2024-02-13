@@ -24,26 +24,3 @@ impl From<String> for PathOrGlob {
         Self::from(value.as_str())
     }
 }
-
-#[derive(Clone, Debug, Deserialize, PartialEq)]
-#[serde(untagged, from = "String")]
-pub enum PathOrUrl {
-    Path(PathBuf),
-    Url(String),
-}
-
-impl From<&str> for PathOrUrl {
-    fn from(value: &str) -> Self {
-        if value.starts_with("http") {
-            Self::Url(value.to_owned())
-        } else {
-            Self::Path(PathBuf::from(value))
-        }
-    }
-}
-
-impl From<String> for PathOrUrl {
-    fn from(value: String) -> Self {
-        Self::from(value.as_str())
-    }
-}
