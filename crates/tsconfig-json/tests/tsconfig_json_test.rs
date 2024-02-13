@@ -232,8 +232,6 @@ mod extends_chain {
 
     #[test]
     fn resolves_chain() {
-        use starbase_sandbox::pretty_assertions::assert_eq;
-
         let sandbox = create_empty_sandbox();
         sandbox.create_file(
             "tsconfig.json",
@@ -258,19 +256,19 @@ mod extends_chain {
             chain,
             vec![
                 TsConfigExtendsChain {
-                    path: sandbox.path().join("./nested/b.json"),
+                    path: sandbox.path().join("nested/b.json"),
                     config: TsConfigJson::default()
                 },
                 TsConfigExtendsChain {
                     path: sandbox
                         .path()
-                        .join("./nested/../node_modules/@scope/package-two/tsconfig.other.json"),
+                        .join("node_modules/@scope/package-two/tsconfig.other.json"),
                     config: TsConfigJson::default()
                 },
                 TsConfigExtendsChain {
                     path: sandbox
                         .path()
-                        .join("./nested/../node_modules/package-one/tsconfig.json"),
+                        .join("node_modules/package-one/tsconfig.json"),
                     config: TsConfigJson {
                         extends: Some(ExtendsField::Single(
                             "@scope/package-two/tsconfig.other.json".into()
@@ -279,14 +277,14 @@ mod extends_chain {
                     }
                 },
                 TsConfigExtendsChain {
-                    path: sandbox.path().join("./nested/../c.json"),
+                    path: sandbox.path().join("c.json"),
                     config: TsConfigJson {
                         extends: Some(ExtendsField::Multiple(vec!["package-one".into()])),
                         ..TsConfigJson::default()
                     }
                 },
                 TsConfigExtendsChain {
-                    path: sandbox.path().join("./nested/a.json"),
+                    path: sandbox.path().join("nested/a.json"),
                     config: TsConfigJson {
                         extends: Some(ExtendsField::Single("../c.json".into())),
                         ..TsConfigJson::default()

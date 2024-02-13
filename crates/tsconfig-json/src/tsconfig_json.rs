@@ -1,5 +1,6 @@
 use crate::compiler_options::CompilerOptions;
 use crate::path_types::PathOrGlob;
+use clean_path::Clean;
 use rustc_hash::FxHashMap;
 use serde::Deserialize;
 use std::path::{Path, PathBuf};
@@ -116,7 +117,10 @@ fn resolve_extends_chain_deep(
         }
     }
 
-    chain.push(TsConfigExtendsChain { path, config });
+    chain.push(TsConfigExtendsChain {
+        path: path.clean(),
+        config,
+    });
     chain.extend(inner_chain);
 
     Ok(())
