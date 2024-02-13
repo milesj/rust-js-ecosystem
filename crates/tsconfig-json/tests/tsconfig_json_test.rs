@@ -1,6 +1,6 @@
 use starbase_sandbox::create_empty_sandbox;
 use std::path::PathBuf;
-use typescript_tsconfig_json::{ExtendsField, PathOrGlob, ResolvedTsConfigChain, TsConfigJson};
+use typescript_tsconfig_json::{ExtendsField, PathOrGlob, TsConfigExtendsChain, TsConfigJson};
 
 #[test]
 fn handles_path_types() {
@@ -144,7 +144,7 @@ mod extends_chain {
 
         assert_eq!(
             chain,
-            vec![ResolvedTsConfigChain {
+            vec![TsConfigExtendsChain {
                 path: sandbox.path().join("tsconfig.json"),
                 config: TsConfigJson::default()
             }]
@@ -166,14 +166,14 @@ mod extends_chain {
         assert_eq!(
             chain,
             vec![
-                ResolvedTsConfigChain {
+                TsConfigExtendsChain {
                     path: sandbox.path().join("tsconfig.1.json"),
                     config: TsConfigJson {
                         include: Some(vec![PathOrGlob::Glob("dir/**/*".into())]),
                         ..TsConfigJson::default()
                     }
                 },
-                ResolvedTsConfigChain {
+                TsConfigExtendsChain {
                     path: sandbox.path().join("tsconfig.json"),
                     config: TsConfigJson {
                         extends: Some(ExtendsField::Single("./tsconfig.1.json".into())),
@@ -201,21 +201,21 @@ mod extends_chain {
         assert_eq!(
             chain,
             vec![
-                ResolvedTsConfigChain {
+                TsConfigExtendsChain {
                     path: sandbox.path().join("tsconfig.1.json"),
                     config: TsConfigJson {
                         include: Some(vec![PathOrGlob::Glob("dir/**/*".into())]),
                         ..TsConfigJson::default()
                     }
                 },
-                ResolvedTsConfigChain {
+                TsConfigExtendsChain {
                     path: sandbox.path().join("tsconfig.2.json"),
                     config: TsConfigJson {
                         exclude: Some(vec![PathOrGlob::Glob("build/**/*".into())]),
                         ..TsConfigJson::default()
                     }
                 },
-                ResolvedTsConfigChain {
+                TsConfigExtendsChain {
                     path: sandbox.path().join("tsconfig.json"),
                     config: TsConfigJson {
                         extends: Some(ExtendsField::Multiple(vec![
@@ -223,6 +223,82 @@ mod extends_chain {
                             "./tsconfig.2.json".into()
                         ])),
                         include: Some(vec![PathOrGlob::Path("file.tsx".into())]),
+                        ..TsConfigJson::default()
+                    }
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn resolves_chain() {
+        use starbase_sandbox::pretty_assertions::assert_eq;
+
+        let sandbox = create_empty_sandbox();
+        sandbox.create_file(
+            "tsconfig.json",
+            r#"{ "extends": ["./nested/b.json", "./nested/a.json"] }"#,
+        );
+        sandbox.create_file("nested/a.json", r#"{ "extends": "../c.json" }"#);
+        sandbox.create_file("nested/b.json", r#"{ }"#);
+        sandbox.create_file("c.json", r#"{ "extends": ["package-one"] }"#);
+        sandbox.create_file(
+            "node_modules/package-one/tsconfig.json",
+            r#"{ "extends": "@scope/package-two/tsconfig.other.json" }"#,
+        );
+        sandbox.create_file(
+            "node_modules/@scope/package-two/tsconfig.other.json",
+            r#"{ }"#,
+        );
+
+        let chain =
+            TsConfigJson::resolve_extends_chain(sandbox.path().join("tsconfig.json")).unwrap();
+
+        assert_eq!(
+            chain,
+            vec![
+                TsConfigExtendsChain {
+                    path: sandbox.path().join("./nested/b.json"),
+                    config: TsConfigJson::default()
+                },
+                TsConfigExtendsChain {
+                    path: sandbox
+                        .path()
+                        .join("./nested/../node_modules/@scope/package-two/tsconfig.other.json"),
+                    config: TsConfigJson::default()
+                },
+                TsConfigExtendsChain {
+                    path: sandbox
+                        .path()
+                        .join("./nested/../node_modules/package-one/tsconfig.json"),
+                    config: TsConfigJson {
+                        extends: Some(ExtendsField::Single(
+                            "@scope/package-two/tsconfig.other.json".into()
+                        )),
+                        ..TsConfigJson::default()
+                    }
+                },
+                TsConfigExtendsChain {
+                    path: sandbox.path().join("./nested/../c.json"),
+                    config: TsConfigJson {
+                        extends: Some(ExtendsField::Multiple(vec!["package-one".into()])),
+                        ..TsConfigJson::default()
+                    }
+                },
+                TsConfigExtendsChain {
+                    path: sandbox.path().join("./nested/a.json"),
+                    config: TsConfigJson {
+                        extends: Some(ExtendsField::Single("../c.json".into())),
+                        ..TsConfigJson::default()
+                    }
+                },
+                TsConfigExtendsChain {
+                    path: sandbox.path().join("tsconfig.json"),
+                    config: TsConfigJson {
+                        extends: Some(ExtendsField::Multiple(vec![
+                            "./nested/b.json".into(),
+                            "./nested/a.json".into()
+                        ])),
                         ..TsConfigJson::default()
                     }
                 },
