@@ -1,7 +1,7 @@
 use crate::compiler_options::CompilerOptions;
 use crate::path_types::PathOrGlob;
+use rustc_hash::FxHashMap;
 use serde::Deserialize;
-use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
@@ -18,7 +18,7 @@ pub struct TsConfigJson {
     // For all other fields we don't want to explicitly support,
     // but consumers may want to access for some reason
     #[serde(flatten)]
-    pub other_fields: BTreeMap<String, serde_json::Value>,
+    pub other_fields: FxHashMap<String, serde_json::Value>,
 }
 
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-0.html#supporting-multiple-configuration-files-in-extends

@@ -3,7 +3,6 @@
 use indexmap::IndexMap;
 use rustc_hash::{FxHashMap, FxHasher};
 use serde::Deserialize;
-use std::collections::BTreeMap;
 use std::hash::BuildHasherDefault;
 use std::path::PathBuf;
 
@@ -60,7 +59,7 @@ pub struct CompilerOptions {
     // For all other fields we don't want to explicitly support,
     // but consumers may want to access for some reason
     #[serde(flatten)]
-    pub other_fields: BTreeMap<String, serde_json::Value>,
+    pub other_fields: FxHashMap<String, serde_json::Value>,
 }
 
 // https://www.typescriptlang.org/tsconfig#jsx
