@@ -1,0 +1,15 @@
+[package]
+name = "node_module_graph"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+nodejs_package_json = { version = "0.1.1", path = "../package-json" }
+clean-path = { workspace = true }
+mediatype = "0.19.18"
+oxc = "0.7.0"
+petgraph = { workspace = true, features = ["graphmap"] }
+starbase_utils = { workspace = true }
+rustc-hash = { workspace = true }
+thiserror = { workspace = true }
