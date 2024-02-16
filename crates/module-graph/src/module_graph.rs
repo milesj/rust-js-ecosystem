@@ -1,12 +1,10 @@
-use crate::module::Module;
+use crate::module::*;
 use crate::module_graph_error::ModuleGraphError;
 use nodejs_package_json::PackageJson;
 use petgraph::graphmap::GraphMap;
 use petgraph::Directed;
 use rustc_hash::FxHashMap;
 use std::path::Path;
-
-pub type ModuleId = u32;
 
 pub type ModuleGraphType = GraphMap<ModuleId, (), Directed>;
 

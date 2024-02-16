@@ -210,6 +210,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fea41bba32d969b513997752735605054bc0dfa92b4c56bf1189f2e174be7a10"
 
 [[package]]
+name = "dunce"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56ce8c6da7551ec6c462cbaf3bfbc75131ebbfa1c944aeaa9dab51ca1c5f0c3b"
+
+[[package]]
 name = "either"
 version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -524,6 +530,7 @@ dependencies = [
  "mediatype",
  "nodejs_package_json",
  "oxc",
+ "oxc_resolver",
  "petgraph",
  "rustc-hash",
  "starbase_utils",
@@ -720,6 +727,24 @@ dependencies = [
  "oxc_syntax",
  "rustc-hash",
  "seq-macro",
+]
+
+[[package]]
+name = "oxc_resolver"
+version = "1.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "47777510a49fc554e7fb33101b67b6dc0bca28ea6d6fa852c113241e433a9e89"
+dependencies = [
+ "dashmap",
+ "dunce",
+ "indexmap",
+ "json-strip-comments",
+ "once_cell",
+ "rustc-hash",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tracing",
 ]
 
 [[package]]
@@ -1051,6 +1076,7 @@ version = "1.0.114"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c5f09b1bd632ef549eaa9f60a1f8de742bdbc698e6cee2095fc84dde5f549ae0"
 dependencies = [
+ "indexmap",
  "itoa",
  "ryu",
  "serde",

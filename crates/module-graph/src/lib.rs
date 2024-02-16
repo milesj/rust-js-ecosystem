@@ -1,3 +1,4 @@
+mod js;
 mod module;
 mod module_graph;
 mod module_graph_error;
