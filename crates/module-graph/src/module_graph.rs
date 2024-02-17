@@ -1,10 +1,10 @@
-use crate::{module::*, ModuleGraphError};
-use nodejs_package_json::PackageJson;
+use crate::module::*;
+use crate::module_graph_error::ModuleGraphError;
+use clean_path::Clean;
 use oxc_resolver::{ResolveOptions, Resolver};
 use petgraph::graphmap::GraphMap;
 use petgraph::Directed;
 use rustc_hash::FxHashMap;
-use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -16,19 +16,17 @@ pub enum ModuleGraphEdge {
 pub type ModuleGraphType = GraphMap<ModuleId, ModuleGraphEdge, Directed>;
 
 pub struct ModuleGraph {
-    pub cwd: PathBuf,
     pub graph: ModuleGraphType,
     pub modules: FxHashMap<ModuleId, Arc<Module>>,
     pub resolver: Resolver,
 
-    id_counter: u32,
+    id_count: u32,
     paths_to_ids: FxHashMap<PathBuf, ModuleId>,
 }
 
 impl ModuleGraph {
     pub fn new() -> Self {
         Self {
-            cwd: env::current_dir().unwrap(),
             graph: GraphMap::default(),
             modules: FxHashMap::default(),
             resolver: Resolver::new(ResolveOptions {
@@ -47,14 +45,12 @@ impl ModuleGraph {
                     ".mjs".into(),
                     ".cjs".into(),
                     ".js".into(),
-                    ".json".into(),
-                    ".node".into(),
+                    ".jsx".into(),
                 ],
                 main_fields: vec!["module".into(), "main".into()],
                 ..ResolveOptions::default()
             }),
-            // Default/empty modules are 0
-            id_counter: 1,
+            id_count: 1, // Default/empty modules are 0
             paths_to_ids: FxHashMap::default(),
         }
     }
@@ -74,17 +70,17 @@ impl ModuleGraph {
         let parent_dir = resolved_path.path().parent().unwrap();
 
         // Generate the ID and add to the graph
-        let module_id = self.graph.add_node(self.id_counter);
+        let module_id = self.graph.add_node(self.id_count);
+        let absolute_path = resolved_path.path().to_path_buf().clean();
 
-        self.id_counter += 1;
-        self.paths_to_ids
-            .insert(resolved_path.path().to_path_buf(), module_id);
+        self.id_count += 1;
+        self.paths_to_ids.insert(absolute_path.clone(), module_id);
 
         // Load and parse the module, then add to the graph
         let mut module = Module {
             id: module_id,
             fragment: resolved_path.fragment().map(|frag| frag.to_owned()),
-            path: resolved_path.path().to_path_buf(),
+            path: absolute_path,
             query: resolved_path.query().map(|query| query.to_owned()),
             ..Module::default()
         };
@@ -115,8 +111,4 @@ impl ModuleGraph {
 
         Ok(module_id)
     }
-
-    pub fn load_from_package(&self, _package_json: &PackageJson) {}
-
-    // fn parse_and_create_module() -> Result<Module, ModuleGraphError> {}
 }

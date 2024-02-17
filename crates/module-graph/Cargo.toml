@@ -11,6 +11,6 @@ mediatype = "0.19.18"
 oxc = "0.7.0"
 oxc_resolver = "1.5.1"
 petgraph = { workspace = true, features = ["graphmap"] }
-starbase_utils = { workspace = true }
+starbase_utils = { workspace = true, features = ["json", "yaml"] }
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }

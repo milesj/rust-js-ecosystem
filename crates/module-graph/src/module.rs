@@ -1,7 +1,8 @@
 use crate::js::JavaScriptModule;
+use crate::json::JsonModule;
 use crate::media::MediaModule;
 use crate::module_graph_error::ModuleGraphError;
-use crate::JsonModule;
+use crate::yaml::YamlModule;
 use mediatype::MediaTypeBuf;
 use oxc::ast::ast::BindingIdentifier;
 use oxc::span::{Atom, Span};
@@ -91,6 +92,7 @@ pub enum Source {
     JavaScript(Box<JavaScriptModule>),
     Json(Box<JsonModule>),
     Video(Box<MediaModule>),
+    Yaml(Box<YamlModule>),
 }
 
 pub trait SourceParser {
@@ -138,6 +140,7 @@ impl Module {
             Source::JavaScript(source) => &source.mime_type,
             Source::Json(source) => &source.mime_type,
             Source::Video(source) => &source.mime_type,
+            Source::Yaml(source) => &source.mime_type,
         }
     }
 
@@ -150,10 +153,11 @@ impl Module {
 
     pub(crate) fn load_and_parse_source(&mut self) -> Result<(), ModuleGraphError> {
         self.source = match self.path.extension().and_then(|ext| ext.to_str()) {
-            Some("ts" | "tsx" | "mts" | "cts" | "mjs" | "cjs" | "js") => {
+            Some("ts" | "tsx" | "mts" | "cts" | "mjs" | "cjs" | "js" | "jsx") => {
                 JavaScriptModule::parse_into_module(self)?
             }
             Some("json" | "jsonc" | "json5") => JsonModule::parse_into_module(self)?,
+            Some("yaml" | "yml") => YamlModule::parse_into_module(self)?,
             _ => MediaModule::parse_into_module(self)?,
         };
 
