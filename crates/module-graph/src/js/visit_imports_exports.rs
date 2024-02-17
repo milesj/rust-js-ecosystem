@@ -27,6 +27,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
 
                     self.module.imports.push(Import {
                         kind: ImportKind::SyncStatic,
+                        module_id: 0,
                         source: source.value.clone(),
                         span: require.span,
                         type_only: false,
@@ -44,6 +45,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
     fn visit_export_all_declaration(&mut self, export: &ExportAllDeclaration<'module>) {
         let mut record = Export {
             kind: ExportKind::Module,
+            module_id: 0,
             source: None,
             span: export.span,
             symbols: vec![],
@@ -76,6 +78,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
     fn visit_export_default_declaration(&mut self, export: &ExportDefaultDeclaration<'module>) {
         let mut record = Export {
             kind: ExportKind::Module,
+            module_id: 0,
             source: None,
             span: export.span,
             symbols: vec![],
@@ -120,6 +123,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
     fn visit_export_named_declaration(&mut self, export: &ExportNamedDeclaration<'module>) {
         let mut record = Export {
             kind: ExportKind::Module,
+            module_id: 0,
             source: None,
             span: export.span,
             symbols: vec![],
@@ -218,6 +222,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
     fn visit_import_declaration(&mut self, import: &ImportDeclaration<'module>) {
         let mut record = Import {
             kind: ImportKind::AsyncStatic,
+            module_id: 0,
             source: import.source.value.clone(),
             span: import.span,
             type_only: import.import_kind.is_type(),
@@ -276,6 +281,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
 
                 self.module.imports.push(Import {
                     kind: ImportKind::AsyncDynamic,
+                    module_id: 0,
                     source: source.value.clone(),
                     span: import.span,
                     type_only: false,
@@ -290,6 +296,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
     fn visit_static_member_expression(&mut self, expr: &StaticMemberExpression<'module>) {
         let mut record = Export {
             kind: ExportKind::Legacy,
+            module_id: 0,
             source: None,
             span: expr.span,
             symbols: vec![],
@@ -332,6 +339,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
 
                     let mut record = Import {
                         kind: ImportKind::AsyncDynamic,
+                        module_id: 0,
                         source: source.value.clone(),
                         span: import.span,
                         type_only: false,
@@ -353,6 +361,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
 
                     let mut record = Import {
                         kind: ImportKind::SyncStatic,
+                        module_id: 0,
                         source: source.value.clone(),
                         span: require.span,
                         type_only: false,

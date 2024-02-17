@@ -1,6 +1,7 @@
 use crate::js::JavaScriptModule;
 use crate::media::MediaModule;
 use crate::module_graph_error::ModuleGraphError;
+use mediatype::MediaTypeBuf;
 use oxc::ast::ast::BindingIdentifier;
 use oxc::span::{Atom, Span};
 use oxc::syntax::symbol::SymbolId;
@@ -42,6 +43,7 @@ pub enum ImportKind {
 
 pub struct Import {
     pub kind: ImportKind,
+    pub module_id: ModuleId,
     pub source: Atom,
     pub span: Span,
     pub symbols: Vec<ImportedSymbol>,
@@ -70,6 +72,7 @@ pub enum ExportKind {
 
 pub struct Export {
     pub kind: ExportKind,
+    pub module_id: ModuleId,
     pub source: Option<Atom>,
     pub span: Span,
     pub symbols: Vec<ExportedSymbol>,
@@ -78,7 +81,7 @@ pub struct Export {
 pub type ModuleId = u32;
 
 #[derive(Default)]
-pub enum ModuleSourceType {
+pub enum Source {
     #[default]
     Unknown,
     Audio(Box<MediaModule>),
@@ -87,8 +90,8 @@ pub enum ModuleSourceType {
     Video(Box<MediaModule>),
 }
 
-pub trait ModuleSource {
-    fn parse_into_module(module: &mut Module) -> Result<ModuleSourceType, ModuleGraphError>;
+pub trait SourceParser {
+    fn parse_into_module(module: &mut Module) -> Result<Source, ModuleGraphError>;
 }
 
 #[derive(Default)]
@@ -112,7 +115,7 @@ pub struct Module {
     pub query: Option<String>,
 
     /// Type of module, with associated mime and source information.
-    pub source: ModuleSourceType,
+    pub source: Source,
 }
 
 impl Module {
@@ -124,20 +127,31 @@ impl Module {
         }
     }
 
-    // pub fn get_mime_type(&self) -> &MediaTypeBuf {
-    //     match &self.type_of {
-    //         ModuleType::Audio { mime_type } => mime_type,
-    //         ModuleType::Image { mime_type } => mime_type,
-    //         ModuleType::JavaScript { mime_type, .. } => mime_type,
-    //         ModuleType::Video { mime_type } => mime_type,
-    //         _ => unreachable!(),
-    //     }
-    // }
+    pub fn get_mime_type(&self) -> &MediaTypeBuf {
+        match &self.source {
+            Source::Unknown => unreachable!(),
+            Source::Audio(source) => &source.mime_type,
+            Source::Image(source) => &source.mime_type,
+            Source::JavaScript(source) => &source.mime_type,
+            Source::Video(source) => &source.mime_type,
+        }
+    }
 
     /// Is the module an external file (in node modules)?
     pub fn is_external(&self) -> bool {
         self.path
             .components()
             .any(|comp| comp.as_os_str() == "node_modules")
+    }
+
+    pub(crate) fn load_and_parse_source(&mut self) -> Result<(), ModuleGraphError> {
+        self.source = match self.path.extension().and_then(|ext| ext.to_str()) {
+            Some("ts" | "tsx" | "mts" | "cts" | "mjs" | "cjs" | "js") => {
+                JavaScriptModule::parse_into_module(self)?
+            }
+            _ => MediaModule::parse_into_module(self)?,
+        };
+
+        Ok(())
     }
 }

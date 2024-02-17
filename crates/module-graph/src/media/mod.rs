@@ -1,4 +1,4 @@
-use crate::module::{Module, ModuleSource, ModuleSourceType};
+use crate::module::{Module, Source, SourceParser};
 use crate::module_graph_error::ModuleGraphError;
 use mediatype::names::vnd::{MICROSOFT_ICON, MOZILLA_APNG};
 use mediatype::names::x_::{MIDI, MSVIDEO};
@@ -29,8 +29,8 @@ impl MediaModule {
     }
 }
 
-impl ModuleSource for MediaModule {
-    fn parse_into_module(module: &mut Module) -> Result<ModuleSourceType, ModuleGraphError> {
+impl SourceParser for MediaModule {
+    fn parse_into_module(module: &mut Module) -> Result<Source, ModuleGraphError> {
         // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
         let mime_type = match module.path.extension().and_then(|ext| ext.to_str()) {
             // Audio
@@ -73,11 +73,11 @@ impl ModuleSource for MediaModule {
         });
 
         Ok(if source.is_audio() {
-            ModuleSourceType::Audio(source)
+            Source::Audio(source)
         } else if source.is_image() {
-            ModuleSourceType::Image(source)
+            Source::Image(source)
         } else if source.is_video() {
-            ModuleSourceType::Video(source)
+            Source::Video(source)
         } else {
             unreachable!()
         })

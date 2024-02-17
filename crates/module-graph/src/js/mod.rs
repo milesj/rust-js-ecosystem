@@ -1,6 +1,6 @@
 mod visit_imports_exports;
 
-use crate::module::{Module, ModuleSource, ModuleSourceType};
+use crate::module::{Module, Source, SourceParser};
 use crate::module_graph_error::ModuleGraphError;
 use mediatype::names::{JAVASCRIPT, TEXT};
 use mediatype::MediaTypeBuf;
@@ -22,8 +22,8 @@ pub struct JavaScriptModule {
     pub source_type: SourceType,
 }
 
-impl ModuleSource for JavaScriptModule {
-    fn parse_into_module(module: &mut Module) -> Result<ModuleSourceType, ModuleGraphError> {
+impl SourceParser for JavaScriptModule {
+    fn parse_into_module(module: &mut Module) -> Result<Source, ModuleGraphError> {
         let source_text = fs::read_file(&module.path)?;
         let source_type = SourceType::from_path(&module.path).unwrap();
 
@@ -47,7 +47,7 @@ impl ModuleSource for JavaScriptModule {
 
         drop(result);
 
-        Ok(ModuleSourceType::JavaScript(Box::new(JavaScriptModule {
+        Ok(Source::JavaScript(Box::new(JavaScriptModule {
             ast: None,
             mime_type: MediaTypeBuf::new(TEXT, JAVASCRIPT),
             package_type: JavaScriptPackageType::Unknown, // TODO
