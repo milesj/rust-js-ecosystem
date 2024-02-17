@@ -6,7 +6,12 @@ use petgraph::Directed;
 use rustc_hash::FxHashMap;
 use std::path::Path;
 
-pub type ModuleGraphType = GraphMap<ModuleId, (), Directed>;
+pub enum ModuleGraphEdge {
+    Import,
+    Export,
+}
+
+pub type ModuleGraphType = GraphMap<ModuleId, ModuleGraphEdge, Directed>;
 
 pub struct ModuleGraph {
     pub graph: ModuleGraphType,
