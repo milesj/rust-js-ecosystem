@@ -1,6 +1,7 @@
 use crate::js::JavaScriptModule;
 use crate::media::MediaModule;
 use crate::module_graph_error::ModuleGraphError;
+use crate::JsonModule;
 use mediatype::MediaTypeBuf;
 use oxc::ast::ast::BindingIdentifier;
 use oxc::span::{Atom, Span};
@@ -8,7 +9,7 @@ use oxc::syntax::symbol::SymbolId;
 use std::cell::Cell;
 use std::path::{Path, PathBuf};
 
-pub enum ImportedValueKind {
+pub enum ImportedKind {
     Default,     // import name
     DefaultType, // import type name
     Star,        // import * as name
@@ -18,14 +19,14 @@ pub enum ImportedValueKind {
 }
 
 pub struct ImportedSymbol {
-    pub kind: ImportedValueKind,
+    pub kind: ImportedKind,
     pub source_name: Option<Atom>,
     pub symbol_id: Cell<Option<SymbolId>>,
     pub name: Atom,
 }
 
 impl ImportedSymbol {
-    pub fn from_binding(kind: ImportedValueKind, binding: &BindingIdentifier) -> Self {
+    pub fn from_binding(kind: ImportedKind, binding: &BindingIdentifier) -> Self {
         Self {
             kind,
             source_name: None,
@@ -50,7 +51,7 @@ pub struct Import {
     pub type_only: bool,
 }
 
-pub enum ExportedValueKind {
+pub enum ExportedKind {
     Default,     // export default name
     DefaultType, // export default T
     Star,        // export *, export * as name
@@ -60,7 +61,7 @@ pub enum ExportedValueKind {
 }
 
 pub struct ExportedSymbol {
-    pub kind: ExportedValueKind,
+    pub kind: ExportedKind,
     pub symbol_id: Cell<Option<SymbolId>>,
     pub name: Atom,
 }
@@ -68,6 +69,7 @@ pub struct ExportedSymbol {
 pub enum ExportKind {
     Module, // export
     Legacy, // module.exports, exports.name
+    Native, // non-JS files
 }
 
 pub struct Export {
@@ -87,6 +89,7 @@ pub enum Source {
     Audio(Box<MediaModule>),
     Image(Box<MediaModule>),
     JavaScript(Box<JavaScriptModule>),
+    Json(Box<JsonModule>),
     Video(Box<MediaModule>),
 }
 
@@ -133,6 +136,7 @@ impl Module {
             Source::Audio(source) => &source.mime_type,
             Source::Image(source) => &source.mime_type,
             Source::JavaScript(source) => &source.mime_type,
+            Source::Json(source) => &source.mime_type,
             Source::Video(source) => &source.mime_type,
         }
     }
@@ -149,6 +153,7 @@ impl Module {
             Some("ts" | "tsx" | "mts" | "cts" | "mjs" | "cjs" | "js") => {
                 JavaScriptModule::parse_into_module(self)?
             }
+            Some("json" | "jsonc" | "json5") => JsonModule::parse_into_module(self)?,
             _ => MediaModule::parse_into_module(self)?,
         };
 

@@ -52,9 +52,9 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
         };
 
         let kind = if export.export_kind.is_type() {
-            ExportedValueKind::StarType
+            ExportedKind::StarType
         } else {
-            ExportedValueKind::Star
+            ExportedKind::Star
         };
 
         if let Some(namespace) = &export.exported {
@@ -97,16 +97,16 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
         if let Some(ident) = ident {
             record.symbols.push(ExportedSymbol {
                 kind: if export.declaration.is_typescript_syntax() {
-                    ExportedValueKind::DefaultType
+                    ExportedKind::DefaultType
                 } else {
-                    ExportedValueKind::Default
+                    ExportedKind::Default
                 },
                 symbol_id: ident.symbol_id.clone(),
                 name: ident.name.clone(),
             });
         } else {
             record.symbols.push(ExportedSymbol {
-                kind: ExportedValueKind::Default,
+                kind: ExportedKind::Default,
                 symbol_id: Cell::default(),
                 name: Atom::from("default"),
             });
@@ -140,7 +140,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
                     let id = d.id.as_ref().unwrap();
 
                     record.symbols.push(ExportedSymbol {
-                        kind: ExportedValueKind::Value,
+                        kind: ExportedKind::Value,
                         symbol_id: id.symbol_id.clone(),
                         name: id.name.clone(),
                     });
@@ -149,42 +149,42 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
                     let id = d.id.as_ref().unwrap();
 
                     record.symbols.push(ExportedSymbol {
-                        kind: ExportedValueKind::Value,
+                        kind: ExportedKind::Value,
                         symbol_id: id.symbol_id.clone(),
                         name: id.name.clone(),
                     });
                 }
                 Declaration::TSTypeAliasDeclaration(d) => {
                     record.symbols.push(ExportedSymbol {
-                        kind: ExportedValueKind::ValueType,
+                        kind: ExportedKind::ValueType,
                         symbol_id: d.id.symbol_id.clone(),
                         name: d.id.name.clone(),
                     });
                 }
                 Declaration::TSInterfaceDeclaration(d) => {
                     record.symbols.push(ExportedSymbol {
-                        kind: ExportedValueKind::ValueType,
+                        kind: ExportedKind::ValueType,
                         symbol_id: d.id.symbol_id.clone(),
                         name: d.id.name.clone(),
                     });
                 }
                 Declaration::TSEnumDeclaration(d) => {
                     record.symbols.push(ExportedSymbol {
-                        kind: ExportedValueKind::ValueType,
+                        kind: ExportedKind::ValueType,
                         symbol_id: d.id.symbol_id.clone(),
                         name: d.id.name.clone(),
                     });
                 }
                 Declaration::TSModuleDeclaration(d) => {
                     record.symbols.push(ExportedSymbol {
-                        kind: ExportedValueKind::ValueType,
+                        kind: ExportedKind::ValueType,
                         symbol_id: Cell::default(),
                         name: d.id.name().to_owned(),
                     });
                 }
                 Declaration::TSImportEqualsDeclaration(d) => {
                     record.symbols.push(ExportedSymbol {
-                        kind: ExportedValueKind::ValueType,
+                        kind: ExportedKind::ValueType,
                         symbol_id: d.id.symbol_id.clone(),
                         name: d.id.name.clone(),
                     });
@@ -196,9 +196,9 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
         for specifier in &export.specifiers {
             record.symbols.push(ExportedSymbol {
                 kind: if export.export_kind.is_type() || specifier.export_kind.is_type() {
-                    ExportedValueKind::ValueType
+                    ExportedKind::ValueType
                 } else {
-                    ExportedValueKind::Value
+                    ExportedKind::Value
                 },
                 symbol_id: Cell::default(), // Is this correct?
                 name: specifier.local.name().to_owned(),
@@ -235,9 +235,9 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
                     ImportDeclarationSpecifier::ImportSpecifier(spec) => {
                         let mut value = ImportedSymbol::from_binding(
                             if import.import_kind.is_type() || spec.import_kind.is_type() {
-                                ImportedValueKind::ValueType
+                                ImportedKind::ValueType
                             } else {
-                                ImportedValueKind::Value
+                                ImportedKind::Value
                             },
                             &spec.local,
                         );
@@ -249,9 +249,9 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
                     ImportDeclarationSpecifier::ImportDefaultSpecifier(spec) => {
                         record.symbols.push(ImportedSymbol::from_binding(
                             if import.import_kind.is_type() {
-                                ImportedValueKind::DefaultType
+                                ImportedKind::DefaultType
                             } else {
-                                ImportedValueKind::Default
+                                ImportedKind::Default
                             },
                             &spec.local,
                         ));
@@ -259,9 +259,9 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
                     ImportDeclarationSpecifier::ImportNamespaceSpecifier(spec) => {
                         record.symbols.push(ImportedSymbol::from_binding(
                             if import.import_kind.is_type() {
-                                ImportedValueKind::StarType
+                                ImportedKind::StarType
                             } else {
-                                ImportedValueKind::Star
+                                ImportedKind::Star
                             },
                             &spec.local,
                         ));
@@ -305,7 +305,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
         // named
         if expr.object.is_specific_id("exports") && !expr.property.name.is_empty() {
             record.symbols.push(ExportedSymbol {
-                kind: ExportedValueKind::Value,
+                kind: ExportedKind::Value,
                 symbol_id: Cell::default(),
                 name: expr.property.name.clone(),
             });
@@ -313,7 +313,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
         // default
         else if expr.object.is_specific_id("module") && expr.property.name == "exports" {
             record.symbols.push(ExportedSymbol {
-                kind: ExportedValueKind::Default,
+                kind: ExportedKind::Default,
                 symbol_id: Cell::default(),
                 name: Atom::from("default"),
             });
@@ -382,7 +382,7 @@ fn extract_require_from_expression<'expr, 'module>(
 ) -> Option<&'expr CallExpression<'module>> {
     if let Expression::CallExpression(outer) = expr {
         if outer.callee.is_specific_id("require") && outer.arguments.len() == 1 {
-            return Some(&outer);
+            return Some(outer);
         }
     }
 
@@ -394,7 +394,7 @@ fn extract_dynamic_import_from_expression<'expr, 'module>(
 ) -> Option<&'expr ImportExpression<'module>> {
     if let Expression::AwaitExpression(outer) = expr {
         if let Expression::ImportExpression(inner) = &outer.argument {
-            return Some(&inner);
+            return Some(inner);
         }
     }
 
@@ -407,9 +407,9 @@ fn import_binding_pattern(binding: &BindingPattern, list: &mut Vec<ImportedSymbo
         BindingPatternKind::BindingIdentifier(ident) => {
             list.push(ImportedSymbol {
                 kind: if depth == 0 {
-                    ImportedValueKind::Star
+                    ImportedKind::Star
                 } else {
-                    ImportedValueKind::Value
+                    ImportedKind::Value
                 },
                 source_name: None,
                 symbol_id: ident.symbol_id.clone(),
@@ -429,9 +429,9 @@ fn import_binding_pattern(binding: &BindingPattern, list: &mut Vec<ImportedSymbo
 
                     list.push(ImportedSymbol {
                         kind: if depth == 0 && prop.key.is_specific_id("default") {
-                            ImportedValueKind::Default
+                            ImportedKind::Default
                         } else {
-                            ImportedValueKind::Value
+                            ImportedKind::Value
                         },
                         source_name,
                         symbol_id: ident.symbol_id.clone(),
@@ -469,7 +469,7 @@ fn export_binding_pattern(binding: &BindingPattern, list: &mut Vec<ExportedSymbo
     match &binding.kind {
         BindingPatternKind::BindingIdentifier(ident) => {
             list.push(ExportedSymbol {
-                kind: ExportedValueKind::Value,
+                kind: ExportedKind::Value,
                 symbol_id: ident.symbol_id.clone(),
                 name: ident.name.clone(),
             });
