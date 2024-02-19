@@ -1,0 +1,18 @@
+[package]
+name = "typescript_tsconfig_json"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+clean-path = { workspace = true }
+indexmap = { workspace = true, features = ["serde"] }
+rustc-hash = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+starbase_sandbox = { workspace = true }
+
+[features]
+default = []

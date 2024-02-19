@@ -202,7 +202,7 @@ impl PackageGraph {
 
         let add_edges = |graph: &mut PackageGraphType,
                          package: &Package,
-                         deps: &DependenciesMap,
+                         deps: &DependenciesMap<VersionProtocol>,
                          dep_type: DependencyType| {
             for (name, version) in deps {
                 match version {
