@@ -1,9 +1,13 @@
+#![allow(unconditional_recursion)]
+
+use super::stats::JavaScriptStats;
 use crate::module::*;
 use oxc::ast::ast::{
     Argument, BindingPattern, BindingPatternKind, CallExpression, Declaration,
     ExportAllDeclaration, ExportDefaultDeclaration, ExportDefaultDeclarationKind,
     ExportNamedDeclaration, Expression, ImportDeclaration, ImportDeclarationSpecifier,
-    ImportExpression, StaticMemberExpression, VariableDeclarator,
+    ImportExpression, ModuleDeclaration, Program, Statement, StaticMemberExpression,
+    VariableDeclarator,
 };
 use oxc::ast::Visit;
 use oxc::span::{Atom, Span};
@@ -12,12 +16,29 @@ use std::cell::Cell;
 
 pub struct ExtractImportsExports<'module> {
     pub module: &'module mut Module,
+    pub stats: &'module mut JavaScriptStats,
     pub extracted_dynamic_imports: FxHashSet<Span>,
     pub extracted_requires: FxHashSet<Span>,
 }
 
 // TODO non-literal paths
 impl<'module> Visit<'module> for ExtractImportsExports<'module> {
+    fn visit_program(&mut self, program: &Program<'module>) {
+        Visit::visit_program(self, program);
+
+        for stmt in &program.body {
+            if let Statement::ModuleDeclaration(decl) = &stmt {
+                if let ModuleDeclaration::ImportDeclaration(_) = &**decl {
+                    self.stats.import_statements += 1;
+                } else {
+                    self.stats.export_statements += 1;
+                }
+            } else {
+                self.stats.other_statements += 1;
+            }
+        }
+    }
+
     // require()
     fn visit_call_expression(&mut self, require: &CallExpression<'module>) {
         if require.callee.is_specific_id("require") && require.arguments.len() == 1 {
@@ -33,6 +54,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
                         type_only: false,
                         symbols: vec![],
                     });
+                    self.stats.require_count += 1;
                 }
             };
         }
@@ -113,6 +135,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
         }
 
         self.module.exports.push(record);
+        self.stats.exports_default = true;
     }
 
     // export { name }
@@ -287,8 +310,28 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
                     type_only: false,
                     symbols: vec![],
                 });
+                self.stats.dynamic_import_count += 1;
             }
         };
+    }
+
+    // export =
+    fn visit_module_declaration(&mut self, decl: &ModuleDeclaration<'module>) {
+        Visit::visit_module_declaration(self, decl);
+
+        if let ModuleDeclaration::TSExportAssignment(export) = decl {
+            self.module.exports.push(Export {
+                kind: ExportKind::Module,
+                module_id: 0,
+                source: None,
+                span: export.span,
+                symbols: vec![ExportedSymbol {
+                    kind: ExportedKind::Default,
+                    symbol_id: Cell::default(),
+                    name: Atom::from("default"),
+                }],
+            });
+        }
     }
 
     // exports.name
@@ -349,6 +392,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
                     import_binding_pattern(&decl.id, &mut record.symbols, 0);
 
                     self.module.imports.push(record);
+                    self.stats.dynamic_import_count += 1;
                 }
             };
         }
@@ -371,6 +415,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
                     import_binding_pattern(&decl.id, &mut record.symbols, 0);
 
                     self.module.imports.push(record);
+                    self.stats.require_count += 1;
                 }
             };
         }
