@@ -1,3 +1,4 @@
+use crate::css::CssModule;
 use crate::js::JavaScriptModule;
 use crate::json::JsonModule;
 use crate::media::MediaModule;
@@ -88,6 +89,7 @@ pub enum Source {
     #[default]
     Unknown,
     Audio(Box<MediaModule>),
+    Css(Box<CssModule>),
     Image(Box<MediaModule>),
     JavaScript(Box<JavaScriptModule>),
     Json(Box<JsonModule>),
@@ -136,6 +138,7 @@ impl Module {
         match &self.source {
             Source::Unknown => unreachable!(),
             Source::Audio(source) => &source.mime_type,
+            Source::Css(source) => &source.mime_type,
             Source::Image(source) => &source.mime_type,
             Source::JavaScript(source) => &source.mime_type,
             Source::Json(source) => &source.mime_type,

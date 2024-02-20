@@ -1,3 +1,4 @@
+mod css;
 mod js;
 mod json;
 mod media;
@@ -6,6 +7,7 @@ mod module_graph;
 mod module_graph_error;
 mod yaml;
 
+pub use css::*;
 pub use js::*;
 pub use json::*;
 pub use media::*;
