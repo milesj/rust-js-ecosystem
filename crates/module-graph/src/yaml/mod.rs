@@ -11,6 +11,7 @@ use starbase_utils::yaml::{self, YamlValue};
 use std::cell::Cell;
 use std::sync::Arc;
 
+#[derive(Debug)]
 pub struct YamlModule {
     pub mime_type: MediaTypeBuf,
     pub source: Arc<YamlValue>,

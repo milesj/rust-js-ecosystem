@@ -7,7 +7,6 @@ use crate::module_graph_error::ModuleGraphError;
 use mediatype::names::{JAVASCRIPT, TEXT};
 use mediatype::MediaTypeBuf;
 use oxc::allocator::Allocator;
-use oxc::ast::ast::Program;
 use oxc::ast::Visit;
 use oxc::parser::Parser;
 use oxc::span::SourceType;
@@ -17,8 +16,9 @@ use std::sync::Arc;
 
 pub use self::stats::JavaScriptStats;
 
+#[derive(Debug)]
 pub struct JavaScriptModule {
-    pub ast: Option<Program<'static>>,
+    // pub ast: Option<Program<'static>>,
     pub mime_type: MediaTypeBuf,
     pub package_type: JavaScriptPackageType,
     pub source: Arc<String>,
@@ -60,7 +60,7 @@ impl SourceParser for JavaScriptModule {
         drop(result);
 
         Ok(Source::JavaScript(Box::new(JavaScriptModule {
-            ast: None,
+            // ast: None,
             mime_type: MediaTypeBuf::new(TEXT, JAVASCRIPT),
             package_type: JavaScriptPackageType::Unknown, // TODO
             source: Arc::new(source_text),

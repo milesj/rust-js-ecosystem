@@ -1,4 +1,4 @@
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct JavaScriptStats {
     pub dynamic_import_count: usize,
     pub export_statements: usize,

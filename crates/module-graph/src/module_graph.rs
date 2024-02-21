@@ -8,6 +8,7 @@ use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+#[derive(Debug)]
 pub enum ModuleGraphEdge {
     Import,
     Export,
@@ -15,6 +16,7 @@ pub enum ModuleGraphEdge {
 
 pub type ModuleGraphType = GraphMap<ModuleId, ModuleGraphEdge, Directed>;
 
+#[derive(Debug)]
 pub struct ModuleGraph {
     pub graph: ModuleGraphType,
     pub modules: FxHashMap<ModuleId, Arc<Module>>,

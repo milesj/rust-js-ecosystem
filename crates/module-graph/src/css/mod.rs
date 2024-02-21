@@ -11,6 +11,7 @@ use starbase_utils::fs;
 use std::cell::Cell;
 use std::sync::Arc;
 
+#[derive(Debug)]
 pub struct CssModule {
     pub mime_type: MediaTypeBuf,
     pub source: Arc<String>,

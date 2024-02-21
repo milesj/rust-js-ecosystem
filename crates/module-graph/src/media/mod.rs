@@ -10,6 +10,7 @@ use mediatype::MediaTypeBuf;
 use starbase_utils::fs;
 use std::sync::Arc;
 
+#[derive(Debug)]
 pub struct MediaModule {
     pub mime_type: MediaTypeBuf,
     pub source: Arc<Vec<u8>>,

@@ -11,6 +11,7 @@ use oxc::syntax::symbol::SymbolId;
 use std::cell::Cell;
 use std::path::{Path, PathBuf};
 
+#[derive(Debug)]
 pub enum ImportedKind {
     Default,     // import name
     DefaultType, // import type name
@@ -20,6 +21,7 @@ pub enum ImportedKind {
     ValueType,   // import { type T }, import type { T }
 }
 
+#[derive(Debug)]
 pub struct ImportedSymbol {
     pub kind: ImportedKind,
     pub source_name: Option<Atom>,
@@ -38,12 +40,14 @@ impl ImportedSymbol {
     }
 }
 
+#[derive(Debug)]
 pub enum ImportKind {
     AsyncStatic,  // import
     AsyncDynamic, // import()
     SyncStatic,   // require()
 }
 
+#[derive(Debug)]
 pub struct Import {
     pub kind: ImportKind,
     pub module_id: ModuleId,
@@ -53,6 +57,7 @@ pub struct Import {
     pub type_only: bool,
 }
 
+#[derive(Debug)]
 pub enum ExportedKind {
     Default,     // export default name
     DefaultType, // export default T
@@ -62,18 +67,21 @@ pub enum ExportedKind {
     ValueType,   // export type T, export { type name }
 }
 
+#[derive(Debug)]
 pub struct ExportedSymbol {
     pub kind: ExportedKind,
     pub symbol_id: Cell<Option<SymbolId>>,
     pub name: Atom,
 }
 
+#[derive(Debug)]
 pub enum ExportKind {
     Module, // export
     Legacy, // module.exports, exports.name
     Native, // non-JS files
 }
 
+#[derive(Debug)]
 pub struct Export {
     pub kind: ExportKind,
     pub module_id: ModuleId,
@@ -84,7 +92,7 @@ pub struct Export {
 
 pub type ModuleId = u32;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub enum Source {
     #[default]
     Unknown,
@@ -101,7 +109,7 @@ pub trait SourceParser {
     fn parse_into_module(module: &mut Module) -> Result<Source, ModuleGraphError>;
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Module {
     /// List of symbols being exported, and optionally the module they came from.
     pub exports: Vec<Export>,

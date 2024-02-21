@@ -10,6 +10,7 @@ use starbase_utils::json::{self, JsonValue};
 use std::cell::Cell;
 use std::sync::Arc;
 
+#[derive(Debug)]
 pub struct JsonModule {
     pub mime_type: MediaTypeBuf,
     pub source: Arc<JsonValue>,
