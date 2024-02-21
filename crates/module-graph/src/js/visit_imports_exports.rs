@@ -11,7 +11,6 @@ use oxc::ast::{AstKind, Visit};
 use oxc::span::{Atom, Span};
 use oxc::syntax::scope::ScopeFlags;
 use rustc_hash::FxHashSet;
-use std::cell::Cell;
 
 pub struct ExtractImportsExports<'module> {
     pub module: &'module mut Module,
@@ -87,21 +86,21 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
         };
 
         let kind = if export.export_kind.is_type() {
-            ExportedKind::StarType
+            ExportedKind::NamespaceType
         } else {
-            ExportedKind::Star
+            ExportedKind::Namespace
         };
 
         if let Some(namespace) = &export.exported {
             record.symbols.push(ExportedSymbol {
                 kind,
-                symbol_id: Cell::default(),
+                symbol_id: None,
                 name: namespace.name().to_owned(),
             });
         } else {
             record.symbols.push(ExportedSymbol {
                 kind,
-                symbol_id: Cell::default(),
+                symbol_id: None,
                 name: Atom::from(""),
             });
         }
@@ -135,13 +134,13 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
                 } else {
                     ExportedKind::Default
                 },
-                symbol_id: ident.symbol_id.clone(),
+                symbol_id: ident.symbol_id.clone().into_inner(),
                 name: ident.name.clone(),
             });
         } else {
             record.symbols.push(ExportedSymbol {
                 kind: ExportedKind::Default,
-                symbol_id: Cell::default(),
+                symbol_id: None,
                 name: Atom::from("default"),
             });
         }
@@ -175,7 +174,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
 
                     record.symbols.push(ExportedSymbol {
                         kind: ExportedKind::Value,
-                        symbol_id: id.symbol_id.clone(),
+                        symbol_id: id.symbol_id.clone().into_inner(),
                         name: id.name.clone(),
                     });
                 }
@@ -184,42 +183,42 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
 
                     record.symbols.push(ExportedSymbol {
                         kind: ExportedKind::Value,
-                        symbol_id: id.symbol_id.clone(),
+                        symbol_id: id.symbol_id.clone().into_inner(),
                         name: id.name.clone(),
                     });
                 }
                 Declaration::TSTypeAliasDeclaration(d) => {
                     record.symbols.push(ExportedSymbol {
                         kind: ExportedKind::ValueType,
-                        symbol_id: d.id.symbol_id.clone(),
+                        symbol_id: d.id.symbol_id.clone().into_inner(),
                         name: d.id.name.clone(),
                     });
                 }
                 Declaration::TSInterfaceDeclaration(d) => {
                     record.symbols.push(ExportedSymbol {
                         kind: ExportedKind::ValueType,
-                        symbol_id: d.id.symbol_id.clone(),
+                        symbol_id: d.id.symbol_id.clone().into_inner(),
                         name: d.id.name.clone(),
                     });
                 }
                 Declaration::TSEnumDeclaration(d) => {
                     record.symbols.push(ExportedSymbol {
                         kind: ExportedKind::ValueType,
-                        symbol_id: d.id.symbol_id.clone(),
+                        symbol_id: d.id.symbol_id.clone().into_inner(),
                         name: d.id.name.clone(),
                     });
                 }
                 Declaration::TSModuleDeclaration(d) => {
                     record.symbols.push(ExportedSymbol {
                         kind: ExportedKind::ValueType,
-                        symbol_id: Cell::default(),
+                        symbol_id: None,
                         name: d.id.name().to_owned(),
                     });
                 }
                 Declaration::TSImportEqualsDeclaration(d) => {
                     record.symbols.push(ExportedSymbol {
                         kind: ExportedKind::ValueType,
-                        symbol_id: d.id.symbol_id.clone(),
+                        symbol_id: d.id.symbol_id.clone().into_inner(),
                         name: d.id.name.clone(),
                     });
                 }
@@ -234,7 +233,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
                 } else {
                     ExportedKind::Value
                 },
-                symbol_id: Cell::default(), // Is this correct?
+                symbol_id: None, // Is this correct?
                 name: specifier.local.name().to_owned(),
             });
         }
@@ -293,9 +292,9 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
                     ImportDeclarationSpecifier::ImportNamespaceSpecifier(spec) => {
                         record.symbols.push(ImportedSymbol::from_binding(
                             if import.import_kind.is_type() {
-                                ImportedKind::StarType
+                                ImportedKind::NamespaceType
                             } else {
-                                ImportedKind::Star
+                                ImportedKind::Namespace
                             },
                             &spec.local,
                         ));
@@ -334,7 +333,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
                 span: Some(export.span),
                 symbols: vec![ExportedSymbol {
                     kind: ExportedKind::Default,
-                    symbol_id: Cell::default(),
+                    symbol_id: None,
                     name: Atom::from("default"),
                 }],
                 ..Export::default()
@@ -378,7 +377,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
         if expr.object.is_specific_id("exports") && !expr.property.name.is_empty() {
             record.symbols.push(ExportedSymbol {
                 kind: ExportedKind::Value,
-                symbol_id: Cell::default(),
+                symbol_id: None,
                 name: expr.property.name.clone(),
             });
         }
@@ -386,7 +385,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
         else if expr.object.is_specific_id("module") && expr.property.name == "exports" {
             record.symbols.push(ExportedSymbol {
                 kind: ExportedKind::Default,
-                symbol_id: Cell::default(),
+                symbol_id: None,
                 name: Atom::from("default"),
             });
         }
@@ -481,12 +480,12 @@ fn import_binding_pattern(binding: &BindingPattern, list: &mut Vec<ImportedSymbo
         BindingPatternKind::BindingIdentifier(ident) => {
             list.push(ImportedSymbol {
                 kind: if depth == 0 {
-                    ImportedKind::Star
+                    ImportedKind::Namespace
                 } else {
                     ImportedKind::Value
                 },
                 source_name: None,
-                symbol_id: ident.symbol_id.clone(),
+                symbol_id: ident.symbol_id.clone().into_inner(),
                 name: ident.name.clone(),
             });
         }
@@ -508,7 +507,7 @@ fn import_binding_pattern(binding: &BindingPattern, list: &mut Vec<ImportedSymbo
                             ImportedKind::Value
                         },
                         source_name,
-                        symbol_id: ident.symbol_id.clone(),
+                        symbol_id: ident.symbol_id.clone().into_inner(),
                         name: ident.name.clone(),
                     });
                 } else {
@@ -544,7 +543,7 @@ fn export_binding_pattern(binding: &BindingPattern, list: &mut Vec<ExportedSymbo
         BindingPatternKind::BindingIdentifier(ident) => {
             list.push(ExportedSymbol {
                 kind: ExportedKind::Value,
-                symbol_id: ident.symbol_id.clone(),
+                symbol_id: ident.symbol_id.clone().into_inner(),
                 name: ident.name.clone(),
             });
         }

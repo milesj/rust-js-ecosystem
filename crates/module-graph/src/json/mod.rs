@@ -7,7 +7,6 @@ use mediatype::MediaTypeBuf;
 use oxc::span::Atom;
 use oxc::syntax::symbol::SymbolId;
 use starbase_utils::json::{self, JsonValue};
-use std::cell::Cell;
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -34,7 +33,7 @@ impl SourceParser for JsonModule {
         // The entire document itself is a default export
         export.symbols.push(ExportedSymbol {
             kind: ExportedKind::Default,
-            symbol_id: Cell::new(create_symbol()),
+            symbol_id: create_symbol(),
             name: Atom::from("default"),
         });
 
@@ -43,7 +42,7 @@ impl SourceParser for JsonModule {
             for key in object.keys() {
                 export.symbols.push(ExportedSymbol {
                     kind: ExportedKind::Value,
-                    symbol_id: Cell::new(create_symbol()),
+                    symbol_id: create_symbol(),
                     name: Atom::from(key.as_str()),
                 });
             }

@@ -22,7 +22,7 @@ pub struct ModuleGraph {
     pub modules: FxHashMap<ModuleId, Arc<Module>>,
     pub resolver: Resolver,
 
-    id_count: u32,
+    next_id: u32,
     paths_to_ids: FxHashMap<PathBuf, ModuleId>,
 }
 
@@ -52,7 +52,7 @@ impl ModuleGraph {
                 main_fields: vec!["module".into(), "main".into()],
                 ..ResolveOptions::default()
             }),
-            id_count: 1, // Default/empty modules are 0
+            next_id: 1, // Default/empty modules are 0
             paths_to_ids: FxHashMap::default(),
         }
     }
@@ -87,9 +87,9 @@ impl ModuleGraph {
         }
 
         // Generate the ID and add to the graph
-        let module_id = self.graph.add_node(self.id_count);
+        let module_id = self.graph.add_node(self.next_id);
 
-        self.id_count += 1;
+        self.next_id += 1;
         self.paths_to_ids
             .insert(resolved_path.to_owned(), module_id);
 

@@ -8,7 +8,6 @@ use mediatype::{MediaTypeBuf, Name};
 use oxc::span::{Atom, Span};
 use oxc::syntax::symbol::SymbolId;
 use starbase_utils::fs;
-use std::cell::Cell;
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -54,7 +53,7 @@ impl SourceParser for CssModule {
                             symbols: vec![ImportedSymbol {
                                 kind: ImportedKind::Value,
                                 source_name: None,
-                                symbol_id: Cell::default(),
+                                symbol_id: None,
                                 name: Atom::from(name.as_str()),
                             }],
                             type_only: false,
@@ -70,7 +69,7 @@ impl SourceParser for CssModule {
                         kind: ExportKind::Native,
                         symbols: vec![ExportedSymbol {
                             kind: ExportedKind::Value,
-                            symbol_id: Cell::new(create_symbol()),
+                            symbol_id: create_symbol(),
                             name: Atom::from(source_name.as_str()),
                         }],
                         ..Export::default()

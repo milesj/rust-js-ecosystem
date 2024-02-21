@@ -8,24 +8,23 @@ use mediatype::MediaTypeBuf;
 use oxc::ast::ast::BindingIdentifier;
 use oxc::span::{Atom, Span};
 use oxc::syntax::symbol::SymbolId;
-use std::cell::Cell;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub enum ImportedKind {
-    Default,     // import name
-    DefaultType, // import type name
-    Star,        // import * as name
-    StarType,    // import type * as name
-    Value,       // import { value }, import { value as name }
-    ValueType,   // import { type T }, import type { T }
+    Default,       // import name
+    DefaultType,   // import type name
+    Namespace,     // import * as name
+    NamespaceType, // import type * as name
+    Value,         // import { value }, import { value as name }
+    ValueType,     // import { type T }, import type { T }
 }
 
 #[derive(Debug)]
 pub struct ImportedSymbol {
     pub kind: ImportedKind,
     pub source_name: Option<Atom>,
-    pub symbol_id: Cell<Option<SymbolId>>,
+    pub symbol_id: Option<SymbolId>,
     pub name: Atom,
 }
 
@@ -34,7 +33,7 @@ impl ImportedSymbol {
         Self {
             kind,
             source_name: None,
-            symbol_id: binding.symbol_id.clone(),
+            symbol_id: binding.symbol_id.clone().into_inner(),
             name: binding.name.clone(),
         }
     }
@@ -59,18 +58,18 @@ pub struct Import {
 
 #[derive(Debug)]
 pub enum ExportedKind {
-    Default,     // export default name
-    DefaultType, // export default T
-    Star,        // export *, export * as name
-    StarType,    // export type *, export type * as name
-    Value,       // export name, export { name }
-    ValueType,   // export type T, export { type name }
+    Default,       // export default name
+    DefaultType,   // export default T
+    Namespace,     // export *, export * as name
+    NamespaceType, // export type *, export type * as name
+    Value,         // export name, export { name }
+    ValueType,     // export type T, export { type name }
 }
 
 #[derive(Debug)]
 pub struct ExportedSymbol {
     pub kind: ExportedKind,
-    pub symbol_id: Cell<Option<SymbolId>>,
+    pub symbol_id: Option<SymbolId>,
     pub name: Atom,
 }
 
