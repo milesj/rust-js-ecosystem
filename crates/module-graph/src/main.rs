@@ -12,10 +12,10 @@ fn main() {
     // );
 
     let _ = graph.load_module_at_path(
-        cwd.join("crates/module-graph/tests/__fixtures__/files/css.module.css"),
+        cwd.join("crates/module-graph/tests/__fixtures__/files/imports.mjs"),
         None,
         None,
     );
 
-    println!("{:#?}", graph.modules);
+    println!("{:#?}", graph);
 }
