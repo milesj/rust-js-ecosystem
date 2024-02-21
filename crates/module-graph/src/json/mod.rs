@@ -4,7 +4,7 @@ use crate::module::{
 use crate::module_graph_error::ModuleGraphError;
 use mediatype::names::{APPLICATION, JSON};
 use mediatype::MediaTypeBuf;
-use oxc::span::{Atom, Span};
+use oxc::span::Atom;
 use oxc::syntax::symbol::SymbolId;
 use starbase_utils::json::{self, JsonValue};
 use std::cell::Cell;
@@ -28,10 +28,7 @@ impl SourceParser for JsonModule {
 
         let mut export = Export {
             kind: ExportKind::Native,
-            module_id: 0,
-            source: None,
-            span: Span::default(),
-            symbols: vec![],
+            ..Export::default()
         };
 
         // The entire document itself is a default export

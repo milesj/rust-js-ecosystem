@@ -68,14 +68,12 @@ impl SourceParser for CssModule {
                 for source_name in exports.keys() {
                     module.exports.push(Export {
                         kind: ExportKind::Native,
-                        module_id: 0,
-                        source: None,
-                        span: Span::default(),
                         symbols: vec![ExportedSymbol {
                             kind: ExportedKind::Value,
                             symbol_id: Cell::new(create_symbol()),
                             name: Atom::from(source_name.as_str()),
                         }],
+                        ..Export::default()
                     });
                 }
             }

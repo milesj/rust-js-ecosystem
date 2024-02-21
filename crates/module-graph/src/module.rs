@@ -74,20 +74,22 @@ pub struct ExportedSymbol {
     pub name: Atom,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub enum ExportKind {
-    Module, // export
+    #[default]
+    Modern, // export
     Legacy, // module.exports, exports.name
     Native, // non-JS files
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Export {
     pub kind: ExportKind,
-    pub module_id: ModuleId,
+    pub module_id: Option<ModuleId>,
     pub source: Option<Atom>,
-    pub span: Span,
+    pub span: Option<Span>,
     pub symbols: Vec<ExportedSymbol>,
+    pub type_only: bool,
 }
 
 pub type ModuleId = u32;
@@ -164,7 +166,8 @@ impl Module {
 
     pub(crate) fn load_and_parse_source(&mut self) -> Result<(), ModuleGraphError> {
         self.source = match self.path.extension().and_then(|ext| ext.to_str()) {
-            Some("ts" | "tsx" | "mts" | "cts" | "mjs" | "cjs" | "js" | "jsx") => {
+            Some("css") => CssModule::parse_into_module(self)?,
+            Some("js" | "jsx" | "ts" | "tsx" | "mts" | "cts" | "mjs" | "cjs") => {
                 JavaScriptModule::parse_into_module(self)?
             }
             Some("json" | "jsonc" | "json5") => JsonModule::parse_into_module(self)?,

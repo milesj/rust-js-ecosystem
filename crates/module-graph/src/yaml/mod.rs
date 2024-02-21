@@ -2,10 +2,9 @@ use crate::module::{
     Export, ExportKind, ExportedKind, ExportedSymbol, Module, Source, SourceParser,
 };
 use crate::module_graph_error::ModuleGraphError;
-use mediatype::names::x_::YAML;
 use mediatype::names::APPLICATION;
-use mediatype::MediaTypeBuf;
-use oxc::span::{Atom, Span};
+use mediatype::{MediaTypeBuf, Name};
+use oxc::span::Atom;
 use oxc::syntax::symbol::SymbolId;
 use starbase_utils::yaml::{self, YamlValue};
 use std::cell::Cell;
@@ -29,10 +28,7 @@ impl SourceParser for YamlModule {
 
         let mut export = Export {
             kind: ExportKind::Native,
-            module_id: 0,
-            source: None,
-            span: Span::default(),
-            symbols: vec![],
+            ..Export::default()
         };
 
         // The entire document itself is a default export
@@ -58,7 +54,7 @@ impl SourceParser for YamlModule {
         module.exports.push(export);
 
         Ok(Source::Yaml(Box::new(YamlModule {
-            mime_type: MediaTypeBuf::new(APPLICATION, YAML),
+            mime_type: MediaTypeBuf::new(APPLICATION, Name::new("yaml").unwrap()),
             source: Arc::new(data),
         })))
     }

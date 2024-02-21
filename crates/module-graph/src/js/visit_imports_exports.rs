@@ -1,5 +1,3 @@
-#![allow(unconditional_recursion)]
-
 use super::stats::JavaScriptStats;
 use crate::module::*;
 use oxc::ast::ast::{
@@ -9,8 +7,9 @@ use oxc::ast::ast::{
     ImportExpression, ModuleDeclaration, Program, Statement, StaticMemberExpression,
     VariableDeclarator,
 };
-use oxc::ast::Visit;
+use oxc::ast::{AstKind, Visit};
 use oxc::span::{Atom, Span};
+use oxc::syntax::scope::ScopeFlags;
 use rustc_hash::FxHashSet;
 use std::cell::Cell;
 
@@ -24,8 +23,6 @@ pub struct ExtractImportsExports<'module> {
 // TODO non-literal paths
 impl<'module> Visit<'module> for ExtractImportsExports<'module> {
     fn visit_program(&mut self, program: &Program<'module>) {
-        Visit::visit_program(self, program);
-
         for stmt in &program.body {
             if let Statement::ModuleDeclaration(decl) = &stmt {
                 if let ModuleDeclaration::ImportDeclaration(_) = &**decl {
@@ -37,6 +34,23 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
                 self.stats.other_statements += 1;
             }
         }
+
+        // Copied from trait
+        let kind = AstKind::Program(self.alloc(program));
+        self.enter_scope({
+            let mut flags = ScopeFlags::Top;
+            if program.is_strict() {
+                flags |= ScopeFlags::StrictMode;
+            }
+            flags
+        });
+        self.enter_node(kind);
+        for directive in &program.directives {
+            self.visit_directive(directive);
+        }
+        self.visit_statements(&program.body);
+        self.leave_node(kind);
+        self.leave_scope();
     }
 
     // require()
@@ -66,11 +80,10 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
     // export type * as name
     fn visit_export_all_declaration(&mut self, export: &ExportAllDeclaration<'module>) {
         let mut record = Export {
-            kind: ExportKind::Module,
-            module_id: 0,
-            source: None,
-            span: export.span,
-            symbols: vec![],
+            kind: ExportKind::Modern,
+            span: Some(export.span),
+            type_only: export.export_kind.is_type(),
+            ..Export::default()
         };
 
         let kind = if export.export_kind.is_type() {
@@ -99,11 +112,10 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
     // export default
     fn visit_export_default_declaration(&mut self, export: &ExportDefaultDeclaration<'module>) {
         let mut record = Export {
-            kind: ExportKind::Module,
-            module_id: 0,
-            source: None,
-            span: export.span,
-            symbols: vec![],
+            kind: ExportKind::Modern,
+            span: Some(export.span),
+            type_only: export.declaration.is_typescript_syntax(),
+            ..Export::default()
         };
 
         let ident = match &export.declaration {
@@ -145,11 +157,10 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
     // export type name
     fn visit_export_named_declaration(&mut self, export: &ExportNamedDeclaration<'module>) {
         let mut record = Export {
-            kind: ExportKind::Module,
-            module_id: 0,
-            source: None,
-            span: export.span,
-            symbols: vec![],
+            kind: ExportKind::Modern,
+            span: Some(export.span),
+            type_only: export.is_typescript_syntax(),
+            ..Export::default()
         };
 
         if let Some(decl) = &export.declaration {
@@ -317,21 +328,41 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
 
     // export =
     fn visit_module_declaration(&mut self, decl: &ModuleDeclaration<'module>) {
-        Visit::visit_module_declaration(self, decl);
-
         if let ModuleDeclaration::TSExportAssignment(export) = decl {
             self.module.exports.push(Export {
-                kind: ExportKind::Module,
-                module_id: 0,
-                source: None,
-                span: export.span,
+                kind: ExportKind::Modern,
+                span: Some(export.span),
                 symbols: vec![ExportedSymbol {
                     kind: ExportedKind::Default,
                     symbol_id: Cell::default(),
                     name: Atom::from("default"),
                 }],
+                ..Export::default()
             });
         }
+
+        // Copied from trait
+        let kind = AstKind::ModuleDeclaration(self.alloc(decl));
+        self.enter_node(kind);
+        match decl {
+            ModuleDeclaration::ImportDeclaration(decl) => {
+                self.visit_import_declaration(decl);
+            }
+            ModuleDeclaration::ExportAllDeclaration(decl) => {
+                self.visit_export_all_declaration(decl);
+            }
+            ModuleDeclaration::ExportDefaultDeclaration(decl) => {
+                self.visit_export_default_declaration(decl);
+            }
+            ModuleDeclaration::ExportNamedDeclaration(decl) => {
+                self.visit_export_named_declaration(decl);
+            }
+            ModuleDeclaration::TSExportAssignment(decl) => {
+                self.visit_expression(&decl.expression);
+            }
+            ModuleDeclaration::TSNamespaceExportDeclaration(_) => {}
+        }
+        self.leave_node(kind);
     }
 
     // exports.name
@@ -339,10 +370,8 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
     fn visit_static_member_expression(&mut self, expr: &StaticMemberExpression<'module>) {
         let mut record = Export {
             kind: ExportKind::Legacy,
-            module_id: 0,
-            source: None,
-            span: expr.span,
-            symbols: vec![],
+            span: Some(expr.span),
+            ..Export::default()
         };
 
         // named
