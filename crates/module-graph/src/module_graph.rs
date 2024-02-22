@@ -1,7 +1,7 @@
 use crate::module::*;
 use crate::module_graph_error::ModuleGraphError;
 use clean_path::Clean;
-use oxc_resolver::{ResolveOptions, Resolver};
+use oxc_resolver::{PackageJson as ResolvedPackageJson, ResolveOptions, Resolver};
 use petgraph::graphmap::GraphMap;
 use petgraph::Directed;
 use rustc_hash::FxHashMap;
@@ -68,6 +68,7 @@ impl ModuleGraph {
             resolved_path.path().to_path_buf().clean(),
             resolved_path.query().map(|query| query.to_owned()),
             resolved_path.fragment().map(|frag| frag.to_owned()),
+            resolved_path.package_json().map(|pkg| Arc::clone(&pkg)),
         )
     }
 
@@ -76,6 +77,7 @@ impl ModuleGraph {
         path: P,
         query: Option<String>,
         fragment: Option<String>,
+        package_json: Option<Arc<ResolvedPackageJson>>,
     ) -> Result<ModuleId, ModuleGraphError> {
         let resolved_path = path.as_ref();
 
@@ -102,7 +104,7 @@ impl ModuleGraph {
             ..Module::default()
         };
 
-        module.load_and_parse_source()?;
+        module.load_and_parse_source(package_json)?;
 
         // Load each imported and exported module, then connect edges
         let parent_dir = resolved_path.parent().unwrap();

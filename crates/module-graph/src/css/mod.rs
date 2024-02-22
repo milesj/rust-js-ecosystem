@@ -7,6 +7,7 @@ use mediatype::names::TEXT;
 use mediatype::{MediaTypeBuf, Name};
 use oxc::span::{Atom, Span};
 use oxc::syntax::symbol::SymbolId;
+use oxc_resolver::PackageJson as ResolvedPackageJson;
 use starbase_utils::fs;
 use std::sync::Arc;
 
@@ -17,7 +18,10 @@ pub struct CssModule {
 }
 
 impl SourceParser for CssModule {
-    fn parse_into_module(module: &mut Module) -> Result<Source, ModuleGraphError> {
+    fn parse_into_module(
+        module: &mut Module,
+        _package_json: Option<Arc<ResolvedPackageJson>>,
+    ) -> Result<Source, ModuleGraphError> {
         let source = fs::read_file(&module.path)?;
         let filename = fs::file_name(&module.path);
 

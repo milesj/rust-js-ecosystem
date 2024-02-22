@@ -10,6 +10,7 @@ use oxc::allocator::Allocator;
 use oxc::ast::Visit;
 use oxc::parser::Parser;
 use oxc::span::SourceType;
+use oxc_resolver::PackageJson as ResolvedPackageJson;
 use rustc_hash::FxHashSet;
 use starbase_utils::fs;
 use std::sync::Arc;
@@ -33,7 +34,10 @@ impl JavaScriptModule {
 }
 
 impl SourceParser for JavaScriptModule {
-    fn parse_into_module(module: &mut Module) -> Result<Source, ModuleGraphError> {
+    fn parse_into_module(
+        module: &mut Module,
+        _package_json: Option<Arc<ResolvedPackageJson>>,
+    ) -> Result<Source, ModuleGraphError> {
         let source_text = fs::read_file(&module.path)?;
         let source_type = SourceType::from_path(&module.path).unwrap();
         let mut stats = JavaScriptStats::default();

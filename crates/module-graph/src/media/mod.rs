@@ -7,6 +7,7 @@ use mediatype::names::{
     WEBP,
 };
 use mediatype::MediaTypeBuf;
+use oxc_resolver::PackageJson as ResolvedPackageJson;
 use starbase_utils::fs;
 use std::sync::Arc;
 
@@ -31,7 +32,10 @@ impl MediaModule {
 }
 
 impl SourceParser for MediaModule {
-    fn parse_into_module(module: &mut Module) -> Result<Source, ModuleGraphError> {
+    fn parse_into_module(
+        module: &mut Module,
+        _package_json: Option<Arc<ResolvedPackageJson>>,
+    ) -> Result<Source, ModuleGraphError> {
         // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
         let mime_type = match module.path.extension().and_then(|ext| ext.to_str()) {
             // Audio

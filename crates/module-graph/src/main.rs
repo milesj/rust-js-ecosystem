@@ -15,6 +15,7 @@ fn main() {
         cwd.join("crates/module-graph/tests/__fixtures__/files/imports.mjs"),
         None,
         None,
+        None,
     );
 
     println!("{:#?}", graph);

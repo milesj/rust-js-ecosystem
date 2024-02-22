@@ -6,6 +6,7 @@ use mediatype::names::APPLICATION;
 use mediatype::{MediaTypeBuf, Name};
 use oxc::span::Atom;
 use oxc::syntax::symbol::SymbolId;
+use oxc_resolver::PackageJson as ResolvedPackageJson;
 use starbase_utils::yaml::{self, YamlValue};
 use std::sync::Arc;
 
@@ -16,7 +17,10 @@ pub struct YamlModule {
 }
 
 impl SourceParser for YamlModule {
-    fn parse_into_module(module: &mut Module) -> Result<Source, ModuleGraphError> {
+    fn parse_into_module(
+        module: &mut Module,
+        _package_json: Option<Arc<ResolvedPackageJson>>,
+    ) -> Result<Source, ModuleGraphError> {
         let data: YamlValue = yaml::read_file(&module.path)?;
 
         let mut symbol_count: isize = -1;

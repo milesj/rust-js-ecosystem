@@ -6,6 +6,7 @@ use mediatype::names::{APPLICATION, JSON};
 use mediatype::MediaTypeBuf;
 use oxc::span::Atom;
 use oxc::syntax::symbol::SymbolId;
+use oxc_resolver::PackageJson as ResolvedPackageJson;
 use starbase_utils::json::{self, JsonValue};
 use std::sync::Arc;
 
@@ -16,7 +17,10 @@ pub struct JsonModule {
 }
 
 impl SourceParser for JsonModule {
-    fn parse_into_module(module: &mut Module) -> Result<Source, ModuleGraphError> {
+    fn parse_into_module(
+        module: &mut Module,
+        _package_json: Option<Arc<ResolvedPackageJson>>,
+    ) -> Result<Source, ModuleGraphError> {
         let data: JsonValue = json::read_file(&module.path)?;
 
         let mut symbol_count: isize = -1;
