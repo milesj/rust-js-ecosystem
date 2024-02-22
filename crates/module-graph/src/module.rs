@@ -3,8 +3,8 @@ use crate::js::JavaScriptModule;
 use crate::json::JsonModule;
 use crate::media::MediaModule;
 use crate::module_graph_error::ModuleGraphError;
+use crate::text::TextModule;
 use crate::yaml::YamlModule;
-use mediatype::MediaTypeBuf;
 use oxc::ast::ast::BindingIdentifier;
 use oxc::span::{Atom, Span};
 use oxc::syntax::symbol::SymbolId;
@@ -53,7 +53,7 @@ pub enum ImportKind {
 pub struct Import {
     pub kind: ImportKind,
     pub module_id: ModuleId,
-    pub source: Atom,
+    pub source_request: Atom,
     pub span: Span,
     pub symbols: Vec<ImportedSymbol>,
     pub type_only: bool,
@@ -105,6 +105,7 @@ pub enum Source {
     Image(Box<MediaModule>),
     JavaScript(Box<JavaScriptModule>),
     Json(Box<JsonModule>),
+    Text(Box<TextModule>),
     Video(Box<MediaModule>),
     Yaml(Box<YamlModule>),
 }
@@ -152,19 +153,6 @@ impl Module {
         }
     }
 
-    pub fn get_mime_type(&self) -> &MediaTypeBuf {
-        match &self.source {
-            Source::Unknown => unreachable!(),
-            Source::Audio(source) => &source.mime_type,
-            Source::Css(source) => &source.mime_type,
-            Source::Image(source) => &source.mime_type,
-            Source::JavaScript(source) => &source.mime_type,
-            Source::Json(source) => &source.mime_type,
-            Source::Video(source) => &source.mime_type,
-            Source::Yaml(source) => &source.mime_type,
-        }
-    }
-
     /// Is the module an external file (in node modules)?
     pub fn is_external(&self) -> bool {
         self.path
@@ -178,10 +166,8 @@ impl Module {
     ) -> Result<(), ModuleGraphError> {
         if let Some(package) = &package_json {
             if let Some(fields) = package.raw_json().as_object() {
-                if let Some(name) = fields.get("name") {
-                    if let JsonValue::String(name) = name {
-                        self.package_name = Some(name.to_owned());
-                    }
+                if let Some(JsonValue::String(name)) = fields.get("name") {
+                    self.package_name = Some(name.to_owned());
                 }
             }
         }

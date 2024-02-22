@@ -4,8 +4,6 @@ mod visit_imports_exports;
 use self::visit_imports_exports::*;
 use crate::module::{Module, Source, SourceParser};
 use crate::module_graph_error::ModuleGraphError;
-use mediatype::names::{JAVASCRIPT, TEXT};
-use mediatype::MediaTypeBuf;
 use oxc::allocator::Allocator;
 use oxc::ast::Visit;
 use oxc::parser::Parser;
@@ -20,7 +18,6 @@ pub use self::stats::JavaScriptStats;
 #[derive(Debug)]
 pub struct JavaScriptModule {
     // pub ast: Option<Program<'static>>,
-    pub mime_type: MediaTypeBuf,
     pub package_type: JavaScriptPackageType,
     pub source: Arc<String>,
     pub source_type: SourceType,
@@ -65,7 +62,6 @@ impl SourceParser for JavaScriptModule {
 
         Ok(Source::JavaScript(Box::new(JavaScriptModule {
             // ast: None,
-            mime_type: MediaTypeBuf::new(TEXT, JAVASCRIPT),
             package_type: JavaScriptPackageType::Unknown, // TODO
             source: Arc::new(source_text),
             source_type,

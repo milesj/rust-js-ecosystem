@@ -2,8 +2,6 @@ use crate::module::{
     Export, ExportKind, ExportedKind, ExportedSymbol, Module, Source, SourceParser,
 };
 use crate::module_graph_error::ModuleGraphError;
-use mediatype::names::APPLICATION;
-use mediatype::{MediaTypeBuf, Name};
 use oxc::span::Atom;
 use oxc::syntax::symbol::SymbolId;
 use oxc_resolver::PackageJson as ResolvedPackageJson;
@@ -12,7 +10,6 @@ use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct YamlModule {
-    pub mime_type: MediaTypeBuf,
     pub source: Arc<YamlValue>,
 }
 
@@ -57,7 +54,6 @@ impl SourceParser for YamlModule {
         module.exports.push(export);
 
         Ok(Source::Yaml(Box::new(YamlModule {
-            mime_type: MediaTypeBuf::new(APPLICATION, Name::new("yaml").unwrap()),
             source: Arc::new(data),
         })))
     }

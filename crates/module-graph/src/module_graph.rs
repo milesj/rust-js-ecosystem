@@ -68,7 +68,7 @@ impl ModuleGraph {
             resolved_path.path().to_path_buf().clean(),
             resolved_path.query().map(|query| query.to_owned()),
             resolved_path.fragment().map(|frag| frag.to_owned()),
-            resolved_path.package_json().map(|pkg| Arc::clone(&pkg)),
+            resolved_path.package_json().map(Arc::clone),
         )
     }
 
@@ -110,7 +110,7 @@ impl ModuleGraph {
         let parent_dir = resolved_path.parent().unwrap();
 
         for import in module.imports.iter_mut() {
-            import.module_id = self.load_module(parent_dir, &import.source)?;
+            import.module_id = self.load_module(parent_dir, &import.source_request)?;
 
             self.graph
                 .add_edge(module_id, import.module_id, ModuleGraphEdge::Import);

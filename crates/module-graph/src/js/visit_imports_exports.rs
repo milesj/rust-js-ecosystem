@@ -35,20 +35,18 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
                     }
                 }
             }
-            AstKind::ModuleDeclaration(module) => {
-                // export =
-                if let ModuleDeclaration::TSExportAssignment(export) = module {
-                    self.module.exports.push(Export {
-                        kind: ExportKind::Modern,
-                        span: Some(export.span),
-                        symbols: vec![ExportedSymbol {
-                            kind: ExportedKind::Default,
-                            symbol_id: None,
-                            name: Atom::from("default"),
-                        }],
-                        ..Export::default()
-                    });
-                }
+            // export =
+            AstKind::ModuleDeclaration(ModuleDeclaration::TSExportAssignment(export)) => {
+                self.module.exports.push(Export {
+                    kind: ExportKind::Modern,
+                    span: Some(export.span),
+                    symbols: vec![ExportedSymbol {
+                        kind: ExportedKind::Default,
+                        symbol_id: None,
+                        name: Atom::from("default"),
+                    }],
+                    ..Export::default()
+                });
             }
             _ => {}
         };
@@ -64,7 +62,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
                     self.module.imports.push(Import {
                         kind: ImportKind::SyncStatic,
                         module_id: 0,
-                        source: source.value.clone(),
+                        source_request: source.value.clone(),
                         span: require.span,
                         type_only: false,
                         symbols: vec![],
@@ -258,7 +256,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
         let mut record = Import {
             kind: ImportKind::AsyncStatic,
             module_id: 0,
-            source: import.source.value.clone(),
+            source_request: import.source.value.clone(),
             span: import.span,
             type_only: import.import_kind.is_type(),
             symbols: vec![],
@@ -317,7 +315,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
                 self.module.imports.push(Import {
                     kind: ImportKind::AsyncDynamic,
                     module_id: 0,
-                    source: source.value.clone(),
+                    source_request: source.value.clone(),
                     span: import.span,
                     type_only: false,
                     symbols: vec![],
@@ -364,7 +362,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
             self.module.imports.push(Import {
                 kind: ImportKind::SyncStatic,
                 module_id: 0,
-                source: ext_module.expression.value.clone(),
+                source_request: ext_module.expression.value.clone(),
                 span: decl.span,
                 symbols: vec![ImportedSymbol {
                     kind: ImportedKind::Default,
@@ -393,7 +391,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
                     let mut record = Import {
                         kind: ImportKind::AsyncDynamic,
                         module_id: 0,
-                        source: source.value.clone(),
+                        source_request: source.value.clone(),
                         span: import.span,
                         type_only: false,
                         symbols: vec![],
@@ -416,7 +414,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
                     let mut record = Import {
                         kind: ImportKind::SyncStatic,
                         module_id: 0,
-                        source: source.value.clone(),
+                        source_request: source.value.clone(),
                         span: require.span,
                         type_only: false,
                         symbols: vec![],

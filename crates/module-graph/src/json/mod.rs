@@ -2,8 +2,6 @@ use crate::module::{
     Export, ExportKind, ExportedKind, ExportedSymbol, Module, Source, SourceParser,
 };
 use crate::module_graph_error::ModuleGraphError;
-use mediatype::names::{APPLICATION, JSON};
-use mediatype::MediaTypeBuf;
 use oxc::span::Atom;
 use oxc::syntax::symbol::SymbolId;
 use oxc_resolver::PackageJson as ResolvedPackageJson;
@@ -12,7 +10,6 @@ use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct JsonModule {
-    pub mime_type: MediaTypeBuf,
     pub source: Arc<JsonValue>,
 }
 
@@ -55,7 +52,6 @@ impl SourceParser for JsonModule {
         module.exports.push(export);
 
         Ok(Source::Json(Box::new(JsonModule {
-            mime_type: MediaTypeBuf::new(APPLICATION, JSON),
             source: Arc::new(data),
         })))
     }

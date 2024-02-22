@@ -3,8 +3,6 @@ use crate::module_graph_error::ModuleGraphError;
 use lightningcss::css_modules::{Config, CssModuleReference};
 use lightningcss::printer::PrinterOptions;
 use lightningcss::stylesheet::{ParserOptions, StyleSheet};
-use mediatype::names::TEXT;
-use mediatype::{MediaTypeBuf, Name};
 use oxc::span::{Atom, Span};
 use oxc::syntax::symbol::SymbolId;
 use oxc_resolver::PackageJson as ResolvedPackageJson;
@@ -13,7 +11,6 @@ use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct CssModule {
-    pub mime_type: MediaTypeBuf,
     pub source: Arc<String>,
 }
 
@@ -52,7 +49,7 @@ impl SourceParser for CssModule {
                         module.imports.push(Import {
                             kind: ImportKind::SyncStatic,
                             module_id: 0,
-                            source: Atom::from(specifier.as_str()),
+                            source_request: Atom::from(specifier.as_str()),
                             span: Span::default(),
                             symbols: vec![ImportedSymbol {
                                 kind: ImportedKind::Value,
@@ -83,7 +80,6 @@ impl SourceParser for CssModule {
         }
 
         Ok(Source::Css(Box::new(CssModule {
-            mime_type: MediaTypeBuf::new(TEXT, Name::new("css").unwrap()),
             source: Arc::new(source),
         })))
     }

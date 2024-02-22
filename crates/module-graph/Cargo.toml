@@ -12,7 +12,6 @@ path = "src/main.rs"
 nodejs_package_json = { version = "0.1.1", path = "../package-json" }
 clean-path = { workspace = true }
 lightningcss = "1.0.0-alpha.53"
-mediatype = "0.19.18"
 oxc = "0.7.0"
 oxc_resolver = "1.5.1"
 petgraph = { workspace = true, features = ["graphmap"] }
