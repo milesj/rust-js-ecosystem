@@ -752,6 +752,7 @@ dependencies = [
  "oxc_resolver",
  "petgraph",
  "rustc-hash",
+ "starbase_sandbox",
  "starbase_utils",
  "thiserror",
 ]
