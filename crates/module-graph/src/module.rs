@@ -179,6 +179,9 @@ impl Module {
             }
             Some("json" | "jsonc" | "json5") => JsonModule::parse_into_module(self, package_json)?,
             Some("yaml" | "yml") => YamlModule::parse_into_module(self, package_json)?,
+            Some(
+                "gql" | "graphql" | "html" | "less" | "map" | "sass" | "scss" | "styl" | "svg",
+            ) => TextModule::parse_into_module(self, package_json)?,
             _ => MediaModule::parse_into_module(self, package_json)?,
         };
 
