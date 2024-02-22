@@ -4,12 +4,11 @@ use oxc::ast::ast::{
     Argument, BindingPattern, BindingPatternKind, CallExpression, Declaration,
     ExportAllDeclaration, ExportDefaultDeclaration, ExportDefaultDeclarationKind,
     ExportNamedDeclaration, Expression, ImportDeclaration, ImportDeclarationSpecifier,
-    ImportExpression, ModuleDeclaration, Program, Statement, StaticMemberExpression,
-    VariableDeclarator,
+    ImportExpression, ModuleDeclaration, Statement, StaticMemberExpression,
+    TSImportEqualsDeclaration, TSModuleReference, VariableDeclarator,
 };
 use oxc::ast::{AstKind, Visit};
 use oxc::span::{Atom, Span};
-use oxc::syntax::scope::ScopeFlags;
 use rustc_hash::FxHashSet;
 
 pub struct ExtractImportsExports<'module> {
@@ -21,35 +20,38 @@ pub struct ExtractImportsExports<'module> {
 
 // TODO non-literal paths
 impl<'module> Visit<'module> for ExtractImportsExports<'module> {
-    fn visit_program(&mut self, program: &Program<'module>) {
-        for stmt in &program.body {
-            if let Statement::ModuleDeclaration(decl) = &stmt {
-                if let ModuleDeclaration::ImportDeclaration(_) = &**decl {
-                    self.stats.import_statements += 1;
-                } else {
-                    self.stats.export_statements += 1;
+    fn enter_node(&mut self, kind: AstKind<'module>) {
+        match kind {
+            AstKind::Program(program) => {
+                for stmt in &program.body {
+                    if let Statement::ModuleDeclaration(decl) = &stmt {
+                        if let ModuleDeclaration::ImportDeclaration(_) = &**decl {
+                            self.stats.import_statements += 1;
+                        } else {
+                            self.stats.export_statements += 1;
+                        }
+                    } else {
+                        self.stats.other_statements += 1;
+                    }
                 }
-            } else {
-                self.stats.other_statements += 1;
             }
-        }
-
-        // Copied from trait
-        let kind = AstKind::Program(self.alloc(program));
-        self.enter_scope({
-            let mut flags = ScopeFlags::Top;
-            if program.is_strict() {
-                flags |= ScopeFlags::StrictMode;
+            AstKind::ModuleDeclaration(module) => {
+                // export =
+                if let ModuleDeclaration::TSExportAssignment(export) = module {
+                    self.module.exports.push(Export {
+                        kind: ExportKind::Modern,
+                        span: Some(export.span),
+                        symbols: vec![ExportedSymbol {
+                            kind: ExportedKind::Default,
+                            symbol_id: None,
+                            name: Atom::from("default"),
+                        }],
+                        ..Export::default()
+                    });
+                }
             }
-            flags
-        });
-        self.enter_node(kind);
-        for directive in &program.directives {
-            self.visit_directive(directive);
-        }
-        self.visit_statements(&program.body);
-        self.leave_node(kind);
-        self.leave_scope();
+            _ => {}
+        };
     }
 
     // require()
@@ -325,45 +327,6 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
         };
     }
 
-    // export =
-    fn visit_module_declaration(&mut self, decl: &ModuleDeclaration<'module>) {
-        if let ModuleDeclaration::TSExportAssignment(export) = decl {
-            self.module.exports.push(Export {
-                kind: ExportKind::Modern,
-                span: Some(export.span),
-                symbols: vec![ExportedSymbol {
-                    kind: ExportedKind::Default,
-                    symbol_id: None,
-                    name: Atom::from("default"),
-                }],
-                ..Export::default()
-            });
-        }
-
-        // Copied from trait
-        let kind = AstKind::ModuleDeclaration(self.alloc(decl));
-        self.enter_node(kind);
-        match decl {
-            ModuleDeclaration::ImportDeclaration(decl) => {
-                self.visit_import_declaration(decl);
-            }
-            ModuleDeclaration::ExportAllDeclaration(decl) => {
-                self.visit_export_all_declaration(decl);
-            }
-            ModuleDeclaration::ExportDefaultDeclaration(decl) => {
-                self.visit_export_default_declaration(decl);
-            }
-            ModuleDeclaration::ExportNamedDeclaration(decl) => {
-                self.visit_export_named_declaration(decl);
-            }
-            ModuleDeclaration::TSExportAssignment(decl) => {
-                self.visit_expression(&decl.expression);
-            }
-            ModuleDeclaration::TSNamespaceExportDeclaration(_) => {}
-        }
-        self.leave_node(kind);
-    }
-
     // exports.name
     // module.exports
     fn visit_static_member_expression(&mut self, expr: &StaticMemberExpression<'module>) {
@@ -392,6 +355,25 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
 
         if !record.symbols.is_empty() {
             self.module.exports.push(record);
+        }
+    }
+
+    // import foo =
+    fn visit_ts_import_equals_declaration(&mut self, decl: &TSImportEqualsDeclaration<'module>) {
+        if let TSModuleReference::ExternalModuleReference(ext_module) = &*decl.module_reference {
+            self.module.imports.push(Import {
+                kind: ImportKind::SyncStatic,
+                module_id: 0,
+                source: ext_module.expression.value.clone(),
+                span: decl.span,
+                symbols: vec![ImportedSymbol {
+                    kind: ImportedKind::Default,
+                    source_name: None,
+                    symbol_id: decl.id.symbol_id.clone().into_inner(),
+                    name: decl.id.name.clone(),
+                }],
+                type_only: decl.import_kind.is_type(),
+            });
         }
     }
 
