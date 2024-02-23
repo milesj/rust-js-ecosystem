@@ -746,6 +746,7 @@ name = "node_module_graph"
 version = "0.0.1"
 dependencies = [
  "clean-path",
+ "indexmap",
  "lightningcss",
  "nodejs_package_json",
  "oxc",

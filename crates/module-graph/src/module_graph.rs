@@ -1,5 +1,5 @@
-use crate::module::*;
 use crate::module_graph_error::ModuleGraphError;
+use crate::{module::*, types::FxIndexMap};
 use clean_path::Clean;
 use oxc_resolver::{PackageJson as ResolvedPackageJson, ResolveOptions, Resolver};
 use petgraph::graphmap::GraphMap;
@@ -19,7 +19,7 @@ pub type ModuleGraphType = GraphMap<ModuleId, ModuleGraphEdge, Directed>;
 #[derive(Debug)]
 pub struct ModuleGraph {
     pub graph: ModuleGraphType,
-    pub modules: FxHashMap<ModuleId, Arc<Module>>,
+    pub modules: FxIndexMap<ModuleId, Arc<Module>>,
     pub resolver: Resolver,
 
     next_id: u32,
@@ -30,7 +30,7 @@ impl ModuleGraph {
     pub fn new() -> Self {
         Self {
             graph: GraphMap::default(),
-            modules: FxHashMap::default(),
+            modules: FxIndexMap::default(),
             resolver: Resolver::new(ResolveOptions {
                 condition_names: vec![
                     "import".into(),

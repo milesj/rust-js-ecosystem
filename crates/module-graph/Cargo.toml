@@ -4,13 +4,10 @@ version = "0.0.1"
 edition = "2021"
 license = "MIT"
 
-[[bin]]
-name = "test_mg"
-path = "src/main.rs"
-
 [dependencies]
 nodejs_package_json = { version = "0.1.1", path = "../package-json" }
 clean-path = { workspace = true }
+indexmap = { workspace = true }
 lightningcss = "1.0.0-alpha.53"
 oxc = "0.7.0"
 oxc_resolver = "1.5.1"
