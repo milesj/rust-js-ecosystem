@@ -1,31 +1,41 @@
-use crate::module::{
-    Export, ExportKind, ExportedKind, ExportedSymbol, Module, Source, SourceParser,
-};
+use crate::module::*;
 use crate::module_graph_error::ModuleGraphError;
 use oxc::span::Atom;
-use oxc::syntax::symbol::SymbolId;
 use oxc_resolver::PackageJson as ResolvedPackageJson;
-use starbase_utils::yaml::{self, YamlValue};
+use starbase_utils::{fs, yaml};
 use std::sync::Arc;
+
+pub use starbase_utils::yaml::YamlValue;
 
 #[derive(Debug)]
 pub struct YamlModule {
-    pub source: Arc<YamlValue>,
+    pub data: Arc<YamlValue>,
+    pub source: Arc<String>,
 }
 
-impl SourceParser for YamlModule {
-    fn parse_into_module(
+impl ModuleSource for YamlModule {
+    fn kind(&self) -> SourceKind {
+        SourceKind::Yaml
+    }
+
+    fn source(&self) -> &[u8] {
+        self.source.as_bytes()
+    }
+
+    fn load(
         module: &mut Module,
         _package_json: Option<Arc<ResolvedPackageJson>>,
-    ) -> Result<Source, ModuleGraphError> {
-        let data: YamlValue = yaml::read_file(&module.path)?;
+    ) -> Result<Self, ModuleGraphError> {
+        let source = fs::read_file(&module.path)?;
+        let data: YamlValue = yaml::from_str(&source).unwrap(); // TODO
 
-        let mut symbol_count: isize = -1;
-        let mut create_symbol = || {
-            symbol_count += 1;
-            Some(SymbolId::new(symbol_count as usize))
-        };
+        Ok(Self {
+            data: Arc::new(data),
+            source: Arc::new(source),
+        })
+    }
 
+    fn parse(&mut self, module: &mut Module) -> Result<(), ModuleGraphError> {
         let mut export = Export {
             kind: ExportKind::Native,
             ..Export::default()
@@ -34,17 +44,17 @@ impl SourceParser for YamlModule {
         // The entire document itself is a default export
         export.symbols.push(ExportedSymbol {
             kind: ExportedKind::Default,
-            symbol_id: create_symbol(),
+            symbol_id: None,
             name: Atom::from("default"),
         });
 
         // When an object document, each direct property is an export
-        if let YamlValue::Mapping(object) = &data {
+        if let YamlValue::Mapping(object) = &*self.data {
             for key in object.keys() {
                 if let YamlValue::String(key) = key {
                     export.symbols.push(ExportedSymbol {
                         kind: ExportedKind::Value,
-                        symbol_id: create_symbol(),
+                        symbol_id: None,
                         name: Atom::from(key.as_str()),
                     });
                 }
@@ -53,8 +63,6 @@ impl SourceParser for YamlModule {
 
         module.exports.push(export);
 
-        Ok(Source::Yaml(Box::new(YamlModule {
-            source: Arc::new(data),
-        })))
+        Ok(())
     }
 }

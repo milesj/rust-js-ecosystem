@@ -1,4 +1,4 @@
-use crate::module::{Module, Source, SourceParser};
+use crate::module::*;
 use crate::module_graph_error::ModuleGraphError;
 use oxc_resolver::PackageJson as ResolvedPackageJson;
 use starbase_utils::fs;
@@ -17,11 +17,23 @@ pub struct MediaModule {
     pub source: Arc<Vec<u8>>,
 }
 
-impl SourceParser for MediaModule {
-    fn parse_into_module(
+impl ModuleSource for MediaModule {
+    fn kind(&self) -> SourceKind {
+        match self.kind {
+            MediaModuleKind::Audio => SourceKind::Audio,
+            MediaModuleKind::Image => SourceKind::Image,
+            MediaModuleKind::Video => SourceKind::Video,
+        }
+    }
+
+    fn source(&self) -> &[u8] {
+        &self.source
+    }
+
+    fn load(
         module: &mut Module,
         _package_json: Option<Arc<ResolvedPackageJson>>,
-    ) -> Result<Source, ModuleGraphError> {
+    ) -> Result<Self, ModuleGraphError> {
         // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
         let kind = match module.path.extension().and_then(|ext| ext.to_str()) {
             // Audio
@@ -43,15 +55,9 @@ impl SourceParser for MediaModule {
             }
         };
 
-        let source = Box::new(MediaModule {
+        Ok(MediaModule {
             kind,
             source: Arc::new(fs::read_file_bytes(&module.path)?),
-        });
-
-        Ok(match kind {
-            MediaModuleKind::Audio => Source::Audio(source),
-            MediaModuleKind::Image => Source::Image(source),
-            MediaModuleKind::Video => Source::Video(source),
         })
     }
 }

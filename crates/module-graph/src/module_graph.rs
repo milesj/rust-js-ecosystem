@@ -96,14 +96,10 @@ impl ModuleGraph {
             .insert(resolved_path.to_owned(), module_id);
 
         // Load and parse the module, then add to the graph
-        let mut module = Module {
-            id: module_id,
-            fragment,
-            path: resolved_path.to_owned(),
-            query,
-            ..Module::default()
-        };
-
+        let mut module = Module::new(resolved_path);
+        module.id = module_id;
+        module.fragment = fragment;
+        module.query = query;
         module.load_and_parse_source(package_json)?;
 
         // Load each imported and exported module, then connect edges

@@ -8,7 +8,8 @@ license = "MIT"
 nodejs_package_json = { version = "0.1.1", path = "../package-json" }
 clean-path = { workspace = true }
 indexmap = { workspace = true }
-lightningcss = "1.0.0-alpha.53"
+lightningcss = "1.0.0-alpha.54"
+once_cell = "1.19.0"
 oxc = "0.7.0"
 oxc_resolver = "1.5.1"
 petgraph = { workspace = true, features = ["graphmap"] }

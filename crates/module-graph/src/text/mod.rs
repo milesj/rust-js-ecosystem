@@ -1,10 +1,8 @@
-use crate::module::{Module, Source, SourceParser};
+use crate::module::*;
 use crate::module_graph_error::ModuleGraphError;
 use oxc_resolver::PackageJson as ResolvedPackageJson;
 use starbase_utils::fs;
 use std::sync::Arc;
-
-// Vue, svelte
 
 #[derive(Debug)]
 pub enum TextModuleKind {
@@ -24,12 +22,20 @@ pub struct TextModule {
     pub source: Arc<String>,
 }
 
-impl SourceParser for TextModule {
-    fn parse_into_module(
+impl ModuleSource for TextModule {
+    fn kind(&self) -> SourceKind {
+        SourceKind::Text
+    }
+
+    fn source(&self) -> &[u8] {
+        self.source.as_bytes()
+    }
+
+    fn load(
         module: &mut Module,
         _package_json: Option<Arc<ResolvedPackageJson>>,
-    ) -> Result<Source, ModuleGraphError> {
-        Ok(Source::Text(Box::new(TextModule {
+    ) -> Result<Self, ModuleGraphError> {
+        Ok(TextModule {
             kind: match module.path.extension().and_then(|ext| ext.to_str()) {
                 Some("gql" | "graphql") => TextModuleKind::Graphql,
                 Some("html") => TextModuleKind::Html,
@@ -41,6 +47,6 @@ impl SourceParser for TextModule {
                 _ => TextModuleKind::Unknown,
             },
             source: Arc::new(fs::read_file(&module.path)?),
-        })))
+        })
     }
 }

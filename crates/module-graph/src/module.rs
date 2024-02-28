@@ -1,4 +1,5 @@
 use crate::css::CssModule;
+use crate::dummy::DummyModule;
 use crate::js::JavaScriptModule;
 use crate::json::JsonModule;
 use crate::media::MediaModule;
@@ -10,6 +11,7 @@ use oxc::span::{Atom, Span};
 use oxc::syntax::symbol::SymbolId;
 use oxc_resolver::PackageJson as ResolvedPackageJson;
 use starbase_utils::json::JsonValue;
+use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -110,14 +112,38 @@ pub enum Source {
     Yaml(Box<YamlModule>),
 }
 
-pub trait SourceParser {
-    fn parse_into_module(
-        module: &mut Module,
-        package_json: Option<Arc<ResolvedPackageJson>>,
-    ) -> Result<Source, ModuleGraphError>;
+#[derive(Debug, Default)]
+pub enum SourceKind {
+    #[default]
+    Unknown,
+    Audio,
+    Css,
+    Image,
+    JavaScript,
+    Json,
+    Text,
+    Video,
+    Yaml,
 }
 
-#[derive(Debug, Default)]
+pub trait ModuleSource: fmt::Debug {
+    fn kind(&self) -> SourceKind;
+
+    fn source(&self) -> &[u8];
+
+    fn load(
+        module: &mut Module,
+        package_json: Option<Arc<ResolvedPackageJson>>,
+    ) -> Result<Self, ModuleGraphError>
+    where
+        Self: Sized;
+
+    fn parse(&mut self, _module: &mut Module) -> Result<(), ModuleGraphError> {
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
 pub struct Module {
     /// List of symbols being exported, and optionally the module they came from.
     pub exports: Vec<Export>,
@@ -141,15 +167,20 @@ pub struct Module {
     pub query: Option<String>,
 
     /// Type of module, with associated mime and source information.
-    pub source: Source,
+    pub source: Box<dyn ModuleSource>,
 }
 
 impl Module {
     pub fn new(path: &Path) -> Self {
         Self {
+            exports: Vec::new(),
+            fragment: None,
             id: 0,
+            imports: Vec::new(),
+            package_name: None,
             path: path.to_owned(),
-            ..Module::default()
+            query: None,
+            source: Box::new(DummyModule),
         }
     }
 
@@ -172,18 +203,25 @@ impl Module {
             }
         }
 
-        self.source = match self.path.extension().and_then(|ext| ext.to_str()) {
-            Some("css") => CssModule::parse_into_module(self, package_json)?,
-            Some("js" | "jsx" | "ts" | "tsx" | "mts" | "cts" | "mjs" | "cjs") => {
-                JavaScriptModule::parse_into_module(self, package_json)?
-            }
-            Some("json" | "jsonc" | "json5") => JsonModule::parse_into_module(self, package_json)?,
-            Some("yaml" | "yml") => YamlModule::parse_into_module(self, package_json)?,
-            Some(
-                "gql" | "graphql" | "html" | "less" | "map" | "sass" | "scss" | "styl" | "svg",
-            ) => TextModule::parse_into_module(self, package_json)?,
-            _ => MediaModule::parse_into_module(self, package_json)?,
-        };
+        // Load the file
+        let mut source: Box<dyn ModuleSource> =
+            match self.path.extension().and_then(|ext| ext.to_str()) {
+                Some("css") => Box::new(CssModule::load(self, package_json)?),
+                Some("js" | "jsx" | "ts" | "tsx" | "mts" | "cts" | "mjs" | "cjs") => {
+                    Box::new(JavaScriptModule::load(self, package_json)?)
+                }
+                Some("json" | "jsonc" | "json5") => Box::new(JsonModule::load(self, package_json)?),
+                Some("yaml" | "yml") => Box::new(YamlModule::load(self, package_json)?),
+                Some(
+                    "gql" | "graphql" | "html" | "less" | "map" | "sass" | "scss" | "styl" | "svg",
+                ) => Box::new(TextModule::load(self, package_json)?),
+                _ => Box::new(MediaModule::load(self, package_json)?),
+            };
+
+        // Parse the file then extract imports/exports
+        source.parse(self)?;
+
+        self.source = source;
 
         Ok(())
     }

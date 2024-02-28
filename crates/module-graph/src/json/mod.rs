@@ -1,31 +1,41 @@
-use crate::module::{
-    Export, ExportKind, ExportedKind, ExportedSymbol, Module, Source, SourceParser,
-};
+use crate::module::*;
 use crate::module_graph_error::ModuleGraphError;
 use oxc::span::Atom;
-use oxc::syntax::symbol::SymbolId;
 use oxc_resolver::PackageJson as ResolvedPackageJson;
-use starbase_utils::json::{self, JsonValue};
+use starbase_utils::{fs, json};
 use std::sync::Arc;
+
+pub use starbase_utils::json::JsonValue;
 
 #[derive(Debug)]
 pub struct JsonModule {
-    pub source: Arc<JsonValue>,
+    pub data: Arc<JsonValue>,
+    pub source: Arc<String>,
 }
 
-impl SourceParser for JsonModule {
-    fn parse_into_module(
+impl ModuleSource for JsonModule {
+    fn kind(&self) -> SourceKind {
+        SourceKind::Json
+    }
+
+    fn source(&self) -> &[u8] {
+        self.source.as_bytes()
+    }
+
+    fn load(
         module: &mut Module,
         _package_json: Option<Arc<ResolvedPackageJson>>,
-    ) -> Result<Source, ModuleGraphError> {
-        let data: JsonValue = json::read_file(&module.path)?;
+    ) -> Result<Self, ModuleGraphError> {
+        let source = fs::read_file(&module.path)?;
+        let data: JsonValue = json::from_str(&source).unwrap(); // TODO
 
-        let mut symbol_count: isize = -1;
-        let mut create_symbol = || {
-            symbol_count += 1;
-            Some(SymbolId::new(symbol_count as usize))
-        };
+        Ok(Self {
+            data: Arc::new(data),
+            source: Arc::new(source),
+        })
+    }
 
+    fn parse(&mut self, module: &mut Module) -> Result<(), ModuleGraphError> {
         let mut export = Export {
             kind: ExportKind::Native,
             ..Export::default()
@@ -34,16 +44,16 @@ impl SourceParser for JsonModule {
         // The entire document itself is a default export
         export.symbols.push(ExportedSymbol {
             kind: ExportedKind::Default,
-            symbol_id: create_symbol(),
+            symbol_id: None,
             name: Atom::from("default"),
         });
 
         // When an object document, each direct property is an export
-        if let JsonValue::Object(object) = &data {
+        if let JsonValue::Object(object) = &*self.data {
             for key in object.keys() {
                 export.symbols.push(ExportedSymbol {
                     kind: ExportedKind::Value,
-                    symbol_id: create_symbol(),
+                    symbol_id: None,
                     name: Atom::from(key.as_str()),
                 });
             }
@@ -51,8 +61,6 @@ impl SourceParser for JsonModule {
 
         module.exports.push(export);
 
-        Ok(Source::Json(Box::new(JsonModule {
-            source: Arc::new(data),
-        })))
+        Ok(())
     }
 }

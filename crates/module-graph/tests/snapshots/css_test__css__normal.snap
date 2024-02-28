@@ -11,11 +11,10 @@ expression: "generate_graph_for_file(sandbox.path(), \"styles.css\")"
         package_name: None,
         path: "/root/styles.css",
         query: None,
-        source: Css(
-            CssModule {
-                exports: {},
-                source: "@import \"./other.css\";\n\n.container {\n    display: flex;\n}\n\n.button {\n    background-color: black;\n}\n\n.button:hover {\n    background-color: white;\n}\n",
-            },
-        ),
+        source: CssModule {
+            exports: {},
+            file_name: "styles.css",
+            source: "@import \"./other.css\";\n\n.container {\n    display: flex;\n}\n\n.button {\n    background-color: black;\n}\n\n.button:hover {\n    background-color: white;\n}\n",
+        },
     },
 }

@@ -40,15 +40,14 @@ expression: "generate_graph_for_file(sandbox.path(), \"styles.module.css\")"
         package_name: None,
         path: "/private/root/utils.module.css",
         query: None,
-        source: Css(
-            CssModule {
-                exports: {
-                    "clearfix": "_2wbkJG_clearfix",
-                    "reset": "_2wbkJG_reset",
-                },
-                source: ".clearfix {\n    clear: both;\n}\n\n.reset {\n    margin: 0;\n    padding: 0;\n}\n",
+        source: CssModule {
+            exports: {
+                "clearfix": "_2wbkJG_clearfix",
+                "reset": "_2wbkJG_reset",
             },
-        ),
+            file_name: "utils.module.css",
+            source: ".clearfix {\n    clear: both;\n}\n\n.reset {\n    margin: 0;\n    padding: 0;\n}\n",
+        },
     },
     1: Module {
         exports: [
@@ -154,17 +153,16 @@ expression: "generate_graph_for_file(sandbox.path(), \"styles.module.css\")"
         package_name: None,
         path: "/root/styles.module.css",
         query: None,
-        source: Css(
-            CssModule {
-                exports: {
-                    "button": "EcQGha_button",
-                    "compose-external": "EcQGha_compose-external",
-                    "compose-global": "EcQGha_compose-global",
-                    "compose-local": "EcQGha_compose-local",
-                    "container": "EcQGha_container",
-                },
-                source: ".container {\n    display: flex;\n}\n\n.button {\n    background-color: black;\n}\n\n.button:hover {\n    background-color: white;\n}\n\n.compose-local {\n    composes: container;\n}\n\n.compose-global {\n    composes: global-class from global;\n}\n\n.compose-external {\n    composes: clearfix reset from \"./utils.module.css\";\n}\n",
+        source: CssModule {
+            exports: {
+                "button": "EcQGha_button",
+                "compose-external": "EcQGha_compose-external",
+                "compose-global": "EcQGha_compose-global",
+                "compose-local": "EcQGha_compose-local",
+                "container": "EcQGha_container",
             },
-        ),
+            file_name: "styles.module.css",
+            source: ".container {\n    display: flex;\n}\n\n.button {\n    background-color: black;\n}\n\n.button:hover {\n    background-color: white;\n}\n\n.compose-local {\n    composes: container;\n}\n\n.compose-global {\n    composes: global-class from global;\n}\n\n.compose-external {\n    composes: clearfix reset from \"./utils.module.css\";\n}\n",
+        },
     },
 }

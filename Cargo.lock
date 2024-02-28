@@ -620,9 +620,9 @@ dependencies = [
 
 [[package]]
 name = "lightningcss"
-version = "1.0.0-alpha.53"
+version = "1.0.0-alpha.54"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ae8ba2b1b450cefc6a7a6ee93868992f56f662869b90404de2a7319da18640f"
+checksum = "07d306844e5af1753490c420c0d6ae3d814b00725092d106332762827ca8f0fe"
 dependencies = [
  "ahash 0.8.8",
  "bitflags 2.4.2",
@@ -749,6 +749,7 @@ dependencies = [
  "indexmap",
  "lightningcss",
  "nodejs_package_json",
+ "once_cell",
  "oxc",
  "oxc_resolver",
  "petgraph",

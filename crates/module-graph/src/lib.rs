@@ -1,4 +1,5 @@
 mod css;
+mod dummy;
 mod js;
 mod json;
 mod media;
@@ -10,6 +11,7 @@ mod types;
 mod yaml;
 
 pub use css::*;
+pub use dummy::*;
 pub use js::*;
 pub use json::*;
 pub use media::*;
