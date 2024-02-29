@@ -1,0 +1,19 @@
+---
+source: crates/module-graph/tests/text_test.rs
+expression: "generate_graph_for_file(sandbox.path(), \"source.js.map\")"
+---
+{
+    1: Module {
+        exports: [],
+        fragment: None,
+        id: 1,
+        imports: [],
+        package_name: None,
+        path: "/root/source.js.map",
+        query: None,
+        source: TextModule {
+            kind: Sourcemap,
+            source: "{\"version\":3,\"file\":\"helpers.d.ts\",\"sourceRoot\":\"\",\"sources\":[\"../src/helpers.ts\"],\"names\":[],\"mappings\":\"AAEA,wBAAgB,UAAU,CAAC,CAAC,SAAS,MAAM,EAAE,CAAC,SAAS,MAAM,CAAC,EAAE,MAAM,EAAE,CAAC,EAAE,GAAG,EAAE,CAAC,GAAG,OAAO,CAE1F\"}\n",
+        },
+    },
+}
