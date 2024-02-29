@@ -9,7 +9,7 @@ use std::path::PathBuf;
 // Note: We only support fields that are extremely common.
 // Everything else can be accessed with `other_fields`.
 
-pub type CompilerOptionsPathsMap = IndexMap<String, Vec<PathBuf>, BuildHasherDefault<FxHasher>>;
+pub type CompilerOptionsPathsMap = IndexMap<String, Vec<String>, BuildHasherDefault<FxHasher>>;
 
 // https://www.typescriptlang.org/tsconfig#compilerOptions
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
