@@ -1,10 +1,10 @@
 use crate::package::{DependencyType, Package};
 use crate::package_graph_error::PackageGraphError;
 use clean_path::Clean;
-use node_package_json::{
+use nodejs_package_json::{
     DependenciesMap, PackageJson, Version, VersionProtocol, WorkspaceProtocol, WorkspacesField,
 };
-use node_package_managers::{pnpm::PnpmWorkspaceYaml, PackageManager};
+use nodejs_package_managers::{pnpm::PnpmWorkspaceYaml, PackageManager};
 use petgraph::graph::DiGraph;
 use petgraph::visit::EdgeRef;
 use petgraph::Direction;

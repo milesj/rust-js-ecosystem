@@ -1,4 +1,4 @@
-use node_package_graph::*;
+use nodejs_package_graph::*;
 use starbase_sandbox::{assert_snapshot, create_sandbox};
 
 mod polyrepo {

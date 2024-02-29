@@ -417,13 +417,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 
 [[package]]
-name = "node_package_graph"
+name = "nodejs_package_graph"
 version = "0.0.1"
 dependencies = [
  "clean-path",
  "miette",
- "node_package_json",
- "node_package_managers",
+ "nodejs_package_json",
+ "nodejs_package_managers",
  "petgraph",
  "starbase_sandbox",
  "starbase_utils",
@@ -431,12 +431,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "node_package_json"
+name = "nodejs_package_json"
 version = "0.0.1"
 dependencies = [
  "indexmap",
  "miette",
- "node_package_json",
+ "nodejs_package_json",
  "once_cell",
  "regex",
  "rustc-hash",
@@ -447,7 +447,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "node_package_managers"
+name = "nodejs_package_managers"
 version = "0.0.1"
 dependencies = [
  "package-lock-json-parser",

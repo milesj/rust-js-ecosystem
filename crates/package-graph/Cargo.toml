@@ -1,14 +1,14 @@
 [package]
-name = "node_package_graph"
+name = "nodejs_package_graph"
 version = "0.0.1"
 edition = "2021"
 license = "MIT"
 
 [dependencies]
-node_package_json = { version = "0.0.1", path = "../package-json", features = [
+nodejs_package_json = { version = "0.0.1", path = "../package-json", features = [
 	"protocols",
 ] }
-node_package_managers = { version = "0.0.1", path = "../package-managers" }
+nodejs_package_managers = { version = "0.0.1", path = "../package-managers" }
 clean-path = { workspace = true }
 miette = { workspace = true, optional = true }
 petgraph = { workspace = true }
@@ -20,4 +20,4 @@ starbase_sandbox = { workspace = true }
 
 [features]
 default = []
-miette = ["dep:miette", "node_package_json/miette", "starbase_utils/miette"]
+miette = ["dep:miette", "nodejs_package_json/miette", "starbase_utils/miette"]

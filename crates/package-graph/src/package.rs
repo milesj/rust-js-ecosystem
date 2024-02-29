@@ -1,5 +1,5 @@
 use crate::package_graph_error::PackageGraphError;
-use node_package_json::PackageJson;
+use nodejs_package_json::PackageJson;
 use petgraph::graph::NodeIndex;
 use starbase_utils::json;
 use std::path::{Path, PathBuf};

@@ -1,4 +1,4 @@
-use node_package_json::WorkspaceProtocol;
+use nodejs_package_json::WorkspaceProtocol;
 use semver::Version;
 use std::path::PathBuf;
 use std::str::FromStr;

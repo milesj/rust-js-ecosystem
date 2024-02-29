@@ -1,4 +1,4 @@
-use node_package_json::VersionProtocol;
+use nodejs_package_json::VersionProtocol;
 use semver::VersionReq;
 use std::path::PathBuf;
 use std::str::FromStr;
