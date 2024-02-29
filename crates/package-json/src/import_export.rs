@@ -1,7 +1,7 @@
 use crate::FxIndexMap;
 use serde::Deserialize;
 
-pub type ImportExportMap = FxIndexMap<String, String>;
+pub type ImportExportMap = FxIndexMap<ImportExportKey, ImportExportField>;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 #[serde(untagged)]
