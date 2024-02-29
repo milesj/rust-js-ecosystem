@@ -3,6 +3,8 @@ name = "nodejs_package_json"
 version = "0.0.1"
 edition = "2021"
 license = "MIT"
+description = "Shapes for Node.js package.json."
+repository = "https://github.com/rolldown-rs/js-ts-crates"
 
 [dependencies]
 indexmap = { workspace = true, features = ["serde"] }

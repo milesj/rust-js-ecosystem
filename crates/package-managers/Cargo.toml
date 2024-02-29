@@ -3,6 +3,8 @@ name = "nodejs_package_managers"
 version = "0.0.1"
 edition = "2021"
 license = "MIT"
+description = "Helpers for npm, pnpm, yarn, and bun package managers."
+repository = "https://github.com/rolldown-rs/js-ts-crates"
 
 [dependencies]
 package-lock-json-parser = "0.4.0"

@@ -3,6 +3,8 @@ name = "typescript_tsconfig_json"
 version = "0.0.1"
 edition = "2021"
 license = "MIT"
+description = "Shapes for TypeScript tsconfig.json."
+repository = "https://github.com/rolldown-rs/js-ts-crates"
 
 [dependencies]
 clean-path = { workspace = true }
