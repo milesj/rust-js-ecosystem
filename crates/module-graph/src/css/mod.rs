@@ -22,11 +22,11 @@ pub struct CssModule {
 }
 
 impl CssModule {
-    fn is_module(&self) -> bool {
+    pub fn is_module(&self) -> bool {
         self.file_name.ends_with(".module.css")
     }
 
-    fn get_style_sheet(
+    pub fn get_style_sheet(
         &self,
     ) -> Result<&StyleSheet<'static, 'static>, lightningcss::error::Error<ParserError>> {
         let source = Arc::clone(&self.source);

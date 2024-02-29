@@ -10,17 +10,19 @@ use oxc::ast::ast::{
 use oxc::ast::{AstKind, Visit};
 use oxc::span::{Atom, Span};
 use rustc_hash::FxHashSet;
+use std::marker::PhantomData;
 
-pub struct ExtractImportsExports<'module> {
+pub struct ExtractImportsExports<'ast, 'module> {
     pub module: &'module mut Module,
     pub stats: &'module mut JavaScriptStats,
     pub extracted_dynamic_imports: FxHashSet<Span>,
     pub extracted_requires: FxHashSet<Span>,
+    pub ast: PhantomData<&'ast ()>,
 }
 
 // TODO non-literal paths
-impl<'module> Visit<'module> for ExtractImportsExports<'module> {
-    fn enter_node(&mut self, kind: AstKind<'module>) {
+impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
+    fn enter_node(&mut self, kind: AstKind<'ast>) {
         match kind {
             AstKind::Program(program) => {
                 for stmt in &program.body {
@@ -53,7 +55,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
     }
 
     // require()
-    fn visit_call_expression(&mut self, require: &CallExpression<'module>) {
+    fn visit_call_expression(&mut self, require: &CallExpression<'ast>) {
         if require.callee.is_specific_id("require") && require.arguments.len() == 1 {
             if let Argument::Expression(Expression::StringLiteral(source)) = &require.arguments[0] {
                 if !self.extracted_requires.contains(&require.span) {
@@ -77,7 +79,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
     // export * as name
     // export type *
     // export type * as name
-    fn visit_export_all_declaration(&mut self, export: &ExportAllDeclaration<'module>) {
+    fn visit_export_all_declaration(&mut self, export: &ExportAllDeclaration<'ast>) {
         let mut record = Export {
             kind: ExportKind::Modern,
             span: Some(export.span),
@@ -109,7 +111,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
     }
 
     // export default
-    fn visit_export_default_declaration(&mut self, export: &ExportDefaultDeclaration<'module>) {
+    fn visit_export_default_declaration(&mut self, export: &ExportDefaultDeclaration<'ast>) {
         let mut record = Export {
             kind: ExportKind::Modern,
             span: Some(export.span),
@@ -154,7 +156,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
     // export const name
     // export let name
     // export type name
-    fn visit_export_named_declaration(&mut self, export: &ExportNamedDeclaration<'module>) {
+    fn visit_export_named_declaration(&mut self, export: &ExportNamedDeclaration<'ast>) {
         let mut record = Export {
             kind: ExportKind::Modern,
             span: Some(export.span),
@@ -252,7 +254,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
     // import type { T }
     // import * as ns
     // import type * as ns
-    fn visit_import_declaration(&mut self, import: &ImportDeclaration<'module>) {
+    fn visit_import_declaration(&mut self, import: &ImportDeclaration<'ast>) {
         let mut record = Import {
             kind: ImportKind::AsyncStatic,
             module_id: 0,
@@ -307,7 +309,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
     }
 
     // import()
-    fn visit_import_expression(&mut self, import: &ImportExpression<'module>) {
+    fn visit_import_expression(&mut self, import: &ImportExpression<'ast>) {
         if let Expression::StringLiteral(source) = &import.source {
             if !self.extracted_dynamic_imports.contains(&import.span) {
                 self.extracted_dynamic_imports.insert(import.span);
@@ -327,7 +329,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
 
     // exports.name
     // module.exports
-    fn visit_static_member_expression(&mut self, expr: &StaticMemberExpression<'module>) {
+    fn visit_static_member_expression(&mut self, expr: &StaticMemberExpression<'ast>) {
         let mut record = Export {
             kind: ExportKind::Legacy,
             span: Some(expr.span),
@@ -357,7 +359,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
     }
 
     // import foo =
-    fn visit_ts_import_equals_declaration(&mut self, decl: &TSImportEqualsDeclaration<'module>) {
+    fn visit_ts_import_equals_declaration(&mut self, decl: &TSImportEqualsDeclaration<'ast>) {
         if let TSModuleReference::ExternalModuleReference(ext_module) = &*decl.module_reference {
             self.module.imports.push(Import {
                 kind: ImportKind::SyncStatic,
@@ -377,7 +379,7 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
 
     // { .. } = await import()
     // { .. } = require()
-    fn visit_variable_declarator(&mut self, decl: &VariableDeclarator<'module>) {
+    fn visit_variable_declarator(&mut self, decl: &VariableDeclarator<'ast>) {
         let Some(init) = &decl.init else {
             return;
         };
@@ -430,9 +432,9 @@ impl<'module> Visit<'module> for ExtractImportsExports<'module> {
     }
 }
 
-fn extract_require_from_expression<'expr, 'module>(
-    expr: &'expr Expression<'module>,
-) -> Option<&'expr CallExpression<'module>> {
+fn extract_require_from_expression<'expr, 'ast>(
+    expr: &'expr Expression<'ast>,
+) -> Option<&'expr CallExpression<'ast>> {
     if let Expression::CallExpression(outer) = expr {
         if outer.callee.is_specific_id("require") && outer.arguments.len() == 1 {
             return Some(outer);
@@ -442,9 +444,9 @@ fn extract_require_from_expression<'expr, 'module>(
     None
 }
 
-fn extract_dynamic_import_from_expression<'expr, 'module>(
-    expr: &'expr Expression<'module>,
-) -> Option<&'expr ImportExpression<'module>> {
+fn extract_dynamic_import_from_expression<'expr, 'ast>(
+    expr: &'expr Expression<'ast>,
+) -> Option<&'expr ImportExpression<'ast>> {
     if let Expression::AwaitExpression(outer) = expr {
         if let Expression::ImportExpression(inner) = &outer.argument {
             return Some(inner);
