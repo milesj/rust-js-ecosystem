@@ -1,16 +1,16 @@
 [package]
 name = "nodejs_package_graph"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "A workspace-based package graph for Node.js packages."
 repository = "https://github.com/rolldown-rs/js-ts-crates"
 
 [dependencies]
-nodejs_package_json = { version = "0.0.1", path = "../package-json", features = [
+nodejs_package_json = { version = "0.1.0", path = "../package-json", features = [
 	"protocols",
 ] }
-nodejs_package_managers = { version = "0.0.1", path = "../package-managers" }
+nodejs_package_managers = { version = "0.1.0", path = "../package-managers" }
 clean-path = { workspace = true }
 miette = { workspace = true, optional = true }
 petgraph = { workspace = true }
