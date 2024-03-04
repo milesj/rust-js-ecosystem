@@ -1,4 +1,4 @@
-use node_module_graph::ModuleGraph;
+use nodejs_module_graph::ModuleGraph;
 use std::path::Path;
 
 pub fn generate_graph_for_file(root: impl AsRef<Path>, file: impl AsRef<str>) -> String {

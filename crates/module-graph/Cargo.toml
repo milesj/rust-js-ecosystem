@@ -1,5 +1,5 @@
 [package]
-name = "node_module_graph"
+name = "nodejs_module_graph"
 version = "0.0.1"
 edition = "2021"
 license = "MIT"
@@ -11,7 +11,7 @@ indexmap = { workspace = true }
 lightningcss = "1.0.0-alpha.54"
 once_cell = "1.19.0"
 oxc = "0.7.0"
-oxc_resolver = "1.5.1"
+oxc_resolver = "1.5.4"
 petgraph = { workspace = true, features = ["graphmap"] }
 starbase_utils = { workspace = true, features = ["json", "yaml"] }
 rustc-hash = { workspace = true }
