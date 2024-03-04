@@ -14,6 +14,13 @@ mod text {
     }
 
     #[test]
+    fn graphql_alt_extension() {
+        let sandbox = create_sandbox("text");
+
+        assert_snapshot!(generate_graph_for_file(sandbox.path(), "graphql.graphql"));
+    }
+
+    #[test]
     fn html() {
         let sandbox = create_sandbox("text");
 

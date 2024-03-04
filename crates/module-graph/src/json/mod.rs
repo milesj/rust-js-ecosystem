@@ -27,7 +27,8 @@ impl ModuleSource for JsonModule {
         _package_json: Option<Arc<ResolvedPackageJson>>,
     ) -> Result<Self, ModuleGraphError> {
         let source = fs::read_file(&module.path)?;
-        let data: JsonValue = json::from_str(&source).unwrap(); // TODO
+        let source_without_comments = json::clean(&source).unwrap(); // TODO
+        let data: JsonValue = json::from_str(&source_without_comments).unwrap(); // TODO
 
         Ok(Self {
             data: Arc::new(data),

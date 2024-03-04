@@ -99,20 +99,6 @@ pub struct Export {
 pub type ModuleId = u32;
 
 #[derive(Debug, Default)]
-pub enum Source {
-    #[default]
-    Unknown,
-    Audio(Box<MediaModule>),
-    Css(Box<CssModule>),
-    Image(Box<MediaModule>),
-    JavaScript(Box<JavaScriptModule>),
-    Json(Box<JsonModule>),
-    Text(Box<TextModule>),
-    Video(Box<MediaModule>),
-    Yaml(Box<YamlModule>),
-}
-
-#[derive(Debug, Default)]
 pub enum SourceKind {
     #[default]
     Unknown,
@@ -166,7 +152,7 @@ pub struct Module {
     /// Query string appended to the file path.
     pub query: Option<String>,
 
-    /// Type of module, with associated mime and source information.
+    /// File type specific source information.
     pub source: Box<dyn ModuleSource>,
 }
 
