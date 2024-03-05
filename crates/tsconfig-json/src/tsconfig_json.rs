@@ -10,11 +10,22 @@ use std::{fs, io};
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[serde(rename_all = "camelCase")]
 pub struct TsConfigJson {
-    pub compiler_options: Option<CompilerOptions>,
-    pub exclude: Option<Vec<PathOrGlob>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub extends: Option<ExtendsField>,
-    pub files: Option<Vec<PathBuf>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub compiler_options: Option<CompilerOptions>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub include: Option<Vec<PathOrGlob>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub exclude: Option<Vec<PathOrGlob>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub files: Option<Vec<PathBuf>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub references: Option<Vec<ProjectReference>>,
 
     // For all other fields we don't want to explicitly support,

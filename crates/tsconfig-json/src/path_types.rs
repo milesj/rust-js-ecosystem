@@ -28,9 +28,9 @@ impl From<String> for PathOrGlob {
     }
 }
 
-impl Into<String> for PathOrGlob {
-    fn into(self) -> String {
-        self.to_string()
+impl From<PathOrGlob> for String {
+    fn from(value: PathOrGlob) -> String {
+        value.to_string()
     }
 }
 
