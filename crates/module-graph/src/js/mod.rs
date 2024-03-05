@@ -13,18 +13,19 @@ use oxc::span::SourceType;
 use oxc_resolver::PackageJson as ResolvedPackageJson;
 use rustc_hash::FxHashSet;
 use starbase_utils::fs;
-use std::mem;
+use std::fmt;
 use std::sync::Arc;
 
 pub use self::stats::JavaScriptStats;
 
-#[derive(Debug)]
 pub struct JavaScriptModule {
     pub package_type: JavaScriptPackageType,
-    pub program: OnceCell<Program<'static>>,
     pub source: Arc<String>,
     pub source_type: SourceType,
     pub stats: JavaScriptStats,
+
+    pub program: OnceCell<Program<'static>>,
+    // allocator: Pin<Box<Allocator>>,
 }
 
 impl JavaScriptModule {
@@ -32,20 +33,22 @@ impl JavaScriptModule {
         self.stats.other_statements == 0 && self.stats.export_statements >= threshold
     }
 
-    pub fn get_program(&self) -> Result<&Program<'static>, ModuleGraphError> {
-        let source = Arc::clone(&self.source);
-        let source_type = self.source_type;
+    // TODO: Get this working!!!
+    // pub fn get_program(&self) -> Result<&Program<'static>, ModuleGraphError> {
+    //     let source_type = self.source_type;
+    //     let source = unsafe { mem::transmute::<_, &'static str>(&*self.source) };
+    //     let allocator = unsafe { mem::transmute::<_, &'static Allocator>(&self.allocator) };
 
-        self.program.get_or_try_init(move || {
-            let allocator = Allocator::default();
-            let parser = Parser::new(&allocator, &source, source_type);
-            let result = parser.parse();
+    //     self.program.get_or_try_init(move || {
+    //         let parser = Parser::new(allocator, source, source_type);
+    //         let result = parser.parse();
 
-            // TODO handle errors
+    //         // TODO handle errors
 
-            Ok(unsafe { mem::transmute::<Program<'_>, Program<'static>>(result.program) })
-        })
-    }
+    //         // Ok(unsafe { mem::transmute::<Program<'_>, Program<'static>>(result.program) })
+    //         Ok(result.program)
+    //     })
+    // }
 }
 
 impl ModuleSource for JavaScriptModule {
@@ -70,11 +73,15 @@ impl ModuleSource for JavaScriptModule {
             source: Arc::new(source),
             source_type,
             stats: JavaScriptStats::default(),
+            // allocator: Box::pin(Allocator::default()),
         })
     }
 
     fn parse(&mut self, module: &mut Module) -> Result<(), ModuleGraphError> {
-        let program = { self.get_program()? };
+        // let program = { self.get_program()? };
+        let allocator = Allocator::default();
+        let result = Parser::new(&allocator, &self.source, self.source_type).parse();
+        let program = result.program;
 
         // Extract imports and exports
         {
@@ -87,7 +94,7 @@ impl ModuleSource for JavaScriptModule {
                 ast: std::marker::PhantomData,
             };
 
-            visitor.visit_program(program);
+            visitor.visit_program(&program);
             self.stats = stats;
         }
 
@@ -116,5 +123,16 @@ impl JavaScriptPackageType {
 
     pub fn is_cjs(&self) -> bool {
         matches!(self, Self::Cjs | Self::CjsPackageJson)
+    }
+}
+
+impl fmt::Debug for JavaScriptModule {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("JavaScriptModule")
+            .field("package_type", &self.package_type)
+            .field("source", &self.source)
+            .field("source_type", &self.source_type)
+            .field("stats", &self.stats)
+            .finish()
     }
 }

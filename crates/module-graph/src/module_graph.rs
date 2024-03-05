@@ -100,6 +100,7 @@ impl ModuleGraph {
         module.id = module_id;
         module.fragment = fragment;
         module.query = query;
+
         module.load_and_parse_source(package_json)?;
 
         // Load each imported and exported module, then connect edges

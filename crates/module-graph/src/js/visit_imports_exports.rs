@@ -122,6 +122,8 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
         let ident = match &export.declaration {
             ExportDefaultDeclarationKind::ClassDeclaration(decl) => decl.id.as_ref(),
             ExportDefaultDeclarationKind::FunctionDeclaration(decl) => decl.id.as_ref(),
+            // TODO reference ID?
+            ExportDefaultDeclarationKind::Expression(Expression::Identifier(_)) => None,
             ExportDefaultDeclarationKind::TSEnumDeclaration(decl) => Some(&decl.id),
             ExportDefaultDeclarationKind::TSInterfaceDeclaration(decl) => Some(&decl.id),
             _ => {
