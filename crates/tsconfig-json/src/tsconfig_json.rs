@@ -82,6 +82,8 @@ impl TsConfigJson {
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct ProjectReference {
     pub path: PathBuf,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub prepend: Option<bool>,
 }
 

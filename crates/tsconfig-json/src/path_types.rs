@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
-#[serde(untagged, from = "String")]
+#[serde(untagged, from = "String", into = "String")]
 pub enum PathOrGlob {
     Path(PathBuf),
     Glob(String),
@@ -25,6 +25,12 @@ impl From<&str> for PathOrGlob {
 impl From<String> for PathOrGlob {
     fn from(value: String) -> Self {
         Self::from(value.as_str())
+    }
+}
+
+impl Into<String> for PathOrGlob {
+    fn into(self) -> String {
+        self.to_string()
     }
 }
 

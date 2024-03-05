@@ -1,5 +1,6 @@
 use crate::FxIndexMap;
 use serde::Deserialize;
+use std::fmt;
 
 pub type ImportExportMap = FxIndexMap<ImportExportKey, ImportExportField>;
 
@@ -38,5 +39,19 @@ impl From<&str> for ImportExportKey {
 impl From<String> for ImportExportKey {
     fn from(value: String) -> Self {
         Self::from(value.as_str())
+    }
+}
+
+impl fmt::Display for ImportExportKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Main => ".",
+                Self::Pattern(pat) => &pat,
+                Self::CustomCondition(con) => &con,
+            }
+        )
     }
 }
