@@ -13,6 +13,7 @@ pub type CompilerOptionsPathsMap = IndexMap<String, Vec<String>, BuildHasherDefa
 
 // https://www.typescriptlang.org/tsconfig#compilerOptions
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[serde(rename_all = "camelCase")]
 pub struct CompilerOptions {
     pub allow_js: Option<bool>,
@@ -64,6 +65,7 @@ pub struct CompilerOptions {
 
 // https://www.typescriptlang.org/tsconfig#jsx
 #[derive(Clone, Debug, Deserialize, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub enum JsxField {
     #[serde(alias = "react")]
     React,
@@ -79,6 +81,7 @@ pub enum JsxField {
 
 // https://www.typescriptlang.org/tsconfig#module
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub enum ModuleField {
     #[serde(alias = "amd")]
     Amd,
@@ -112,6 +115,7 @@ pub enum ModuleField {
 
 // https://www.typescriptlang.org/tsconfig#moduleDetection
 #[derive(Clone, Debug, Deserialize, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub enum ModuleDetectionField {
     #[serde(alias = "auto")]
     Auto,
@@ -123,6 +127,7 @@ pub enum ModuleDetectionField {
 
 // https://www.typescriptlang.org/tsconfig#moduleResolution
 #[derive(Clone, Debug, Deserialize, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub enum ModuleResolutionField {
     #[serde(alias = "bundler")]
     Bundler,
@@ -143,6 +148,7 @@ pub enum ModuleResolutionField {
 
 // https://www.typescriptlang.org/tsconfig#target
 #[derive(Clone, Debug, Deserialize, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub enum TargetField {
     #[serde(alias = "es3")]
     Es3,

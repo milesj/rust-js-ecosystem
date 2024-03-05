@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use std::{fs, io};
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[serde(rename_all = "camelCase")]
 pub struct TsConfigJson {
     pub compiler_options: Option<CompilerOptions>,
@@ -24,6 +25,7 @@ pub struct TsConfigJson {
 
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-0.html#supporting-multiple-configuration-files-in-extends
 #[derive(Clone, Debug, Deserialize, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[serde(untagged)]
 pub enum ExtendsField {
     Single(String),
@@ -77,6 +79,7 @@ impl TsConfigJson {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 pub struct ProjectReference {
     pub path: PathBuf,
     pub prepend: Option<bool>,
