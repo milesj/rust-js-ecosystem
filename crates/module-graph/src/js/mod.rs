@@ -14,40 +14,29 @@ use oxc_resolver::PackageJson as ResolvedPackageJson;
 use rustc_hash::FxHashSet;
 use starbase_utils::fs;
 use std::fmt;
+use std::mem;
 use std::sync::Arc;
 
 pub use self::stats::JavaScriptStats;
 
+pub struct JavaScriptAST {}
+
 pub struct JavaScriptModule {
     pub package_type: JavaScriptPackageType,
-    pub source: Arc<String>,
     pub source_type: SourceType,
     pub stats: JavaScriptStats,
-    // pub program: OnceCell<Program<'static>>,
-    // allocator: Pin<Box<Allocator>>,
+
+    // Order is important here, as they need to be dropped in sequence!
+    pub program: Program<'static>,
+    #[allow(dead_code)]
+    allocator: Box<Allocator>,
+    pub source: Arc<String>,
 }
 
 impl JavaScriptModule {
     pub fn is_barrel_file(&self, threshold: usize) -> bool {
         self.stats.other_statements == 0 && self.stats.export_statements >= threshold
     }
-
-    // TODO: Get this working!!!
-    // pub fn get_program(&self) -> Result<&Program<'static>, ModuleGraphError> {
-    //     let source_type = self.source_type;
-    //     let source = unsafe { mem::transmute::<_, &'static str>(&*self.source) };
-    //     let allocator = unsafe { mem::transmute::<_, &'static Allocator>(&self.allocator) };
-
-    //     self.program.get_or_try_init(move || {
-    //         let parser = Parser::new(allocator, source, source_type);
-    //         let result = parser.parse();
-
-    //         // TODO handle errors
-
-    //         // Ok(unsafe { mem::transmute::<Program<'_>, Program<'static>>(result.program) })
-    //         Ok(result.program)
-    //     })
-    // }
 }
 
 impl ModuleSource for JavaScriptModule {
@@ -65,22 +54,27 @@ impl ModuleSource for JavaScriptModule {
     ) -> Result<Self, ModuleGraphError> {
         let source = fs::read_file(&module.path)?;
         let source_type = SourceType::from_path(&module.path).unwrap();
+        let allocator = Allocator::default();
+
+        // TODO errors
+        let program = unsafe {
+            let src = mem::transmute::<_, &'static str>(&*source);
+            let alloc = mem::transmute::<_, &'static Allocator>(&allocator);
+            Parser::new(alloc, src, source_type).parse().program
+        };
 
         Ok(Self {
             package_type: JavaScriptPackageType::Unknown, // TODO
-            // program: OnceCell::new(),
             source: Arc::new(source),
             source_type,
             stats: JavaScriptStats::default(),
-            // allocator: Box::pin(Allocator::default()),
+            allocator: Box::new(allocator),
+            program,
         })
     }
 
     fn parse(&mut self, module: &mut Module) -> Result<(), ModuleGraphError> {
-        // let program = { self.get_program()? };
-        let allocator = Allocator::default();
-        let result = Parser::new(&allocator, &self.source, self.source_type).parse();
-        let program = result.program;
+        let program = &self.program;
 
         // Extract imports and exports
         {
@@ -93,7 +87,7 @@ impl ModuleSource for JavaScriptModule {
                 ast: std::marker::PhantomData,
             };
 
-            visitor.visit_program(&program);
+            visitor.visit_program(program);
             self.stats = stats;
         }
 
