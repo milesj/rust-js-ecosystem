@@ -4,7 +4,7 @@ mod visit_imports_exports;
 use self::visit_imports_exports::*;
 use crate::module::*;
 use crate::module_graph_error::ModuleGraphError;
-use once_cell::sync::OnceCell;
+// use once_cell::sync::OnceCell;
 use oxc::allocator::Allocator;
 use oxc::ast::ast::Program;
 use oxc::ast::Visit;
@@ -23,8 +23,7 @@ pub struct JavaScriptModule {
     pub source: Arc<String>,
     pub source_type: SourceType,
     pub stats: JavaScriptStats,
-
-    pub program: OnceCell<Program<'static>>,
+    // pub program: OnceCell<Program<'static>>,
     // allocator: Pin<Box<Allocator>>,
 }
 
@@ -69,7 +68,7 @@ impl ModuleSource for JavaScriptModule {
 
         Ok(Self {
             package_type: JavaScriptPackageType::Unknown, // TODO
-            program: OnceCell::new(),
+            // program: OnceCell::new(),
             source: Arc::new(source),
             source_type,
             stats: JavaScriptStats::default(),

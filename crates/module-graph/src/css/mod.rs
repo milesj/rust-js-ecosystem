@@ -2,10 +2,8 @@ use crate::module::*;
 use crate::module_graph_error::ModuleGraphError;
 use crate::types::FxIndexMap;
 use lightningcss::css_modules::{Config, CssModuleReference};
-use lightningcss::error::ParserError;
 use lightningcss::printer::PrinterOptions;
 use lightningcss::stylesheet::{ParserOptions, StyleSheet};
-use once_cell::sync::OnceCell;
 use oxc::span::{Atom, Span};
 use oxc_resolver::PackageJson as ResolvedPackageJson;
 use starbase_utils::fs;
@@ -16,40 +14,14 @@ use std::sync::Arc;
 
 pub struct CssModule {
     pub exports: FxIndexMap<String, String>,
-    pub file_name: String,
-    pub sheet: OnceCell<StyleSheet<'static, 'static>>,
+    pub module: bool,
+    pub sheet: StyleSheet<'static, 'static>,
     pub source: Arc<String>,
 }
 
 impl CssModule {
-    pub fn is_module(&self) -> bool {
-        self.file_name.ends_with(".module.css")
-    }
-
-    pub fn get_style_sheet(
-        &self,
-    ) -> Result<&StyleSheet<'static, 'static>, lightningcss::error::Error<ParserError>> {
-        let source = Arc::clone(&self.source);
-        let filename = self.file_name.clone();
-        let is_module = self.is_module();
-
-        self.sheet.get_or_try_init(move || {
-            let sheet = StyleSheet::parse(
-                &source,
-                ParserOptions {
-                    filename,
-                    css_modules: is_module.then(Config::default),
-                    ..ParserOptions::default()
-                },
-            )
-            .unwrap(); // TODO
-
-            Ok(
-                unsafe {
-                    mem::transmute::<StyleSheet<'_, '_>, StyleSheet<'static, 'static>>(sheet)
-                },
-            )
-        })
+    pub fn is_css_module(&self) -> bool {
+        self.module
     }
 }
 
@@ -66,25 +38,37 @@ impl ModuleSource for CssModule {
         module: &mut Module,
         _package_json: Option<Arc<ResolvedPackageJson>>,
     ) -> Result<Self, ModuleGraphError> {
+        let file_name = fs::file_name(&module.path);
+        let modules = file_name.ends_with(".module.css");
+        let source = fs::read_file(&module.path)?;
+
+        let sheet = StyleSheet::parse(
+            &source,
+            ParserOptions {
+                filename: file_name,
+                css_modules: modules.then(Config::default),
+                ..ParserOptions::default()
+            },
+        )
+        .unwrap(); // TODO
+
         Ok(CssModule {
             exports: FxIndexMap::default(),
-            file_name: fs::file_name(&module.path),
-            sheet: OnceCell::new(),
-            source: Arc::new(fs::read_file(&module.path)?),
+            module: modules,
+            sheet: unsafe {
+                mem::transmute::<StyleSheet<'_, '_>, StyleSheet<'static, 'static>>(sheet)
+            },
+            source: Arc::new(source),
         })
     }
 
     fn parse(&mut self, module: &mut Module) -> Result<(), ModuleGraphError> {
-        if !self.is_module() {
+        if !self.is_css_module() {
             return Ok(());
         }
 
         let mut exports_hashes = BTreeMap::default();
-        let css = self
-            .get_style_sheet()
-            .unwrap()
-            .to_css(PrinterOptions::default())
-            .unwrap();
+        let css = self.sheet.to_css(PrinterOptions::default()).unwrap(); // TODO
 
         let mut map_module_import = |imports: Vec<CssModuleReference>| {
             for import in imports {
@@ -140,13 +124,16 @@ impl ModuleSource for CssModule {
             }
         }
 
-        // TODO: this is for snapshots
-        module
-            .imports
-            .sort_by(|a, d| a.source_request.cmp(&d.source_request));
-        module
-            .exports
-            .sort_by(|a, d| a.symbols[0].name.cmp(&d.symbols[0].name));
+        // Snapshots...
+        #[cfg(debug_assertions)]
+        {
+            module
+                .imports
+                .sort_by(|a, d| a.source_request.cmp(&d.source_request));
+            module
+                .exports
+                .sort_by(|a, d| a.symbols[0].name.cmp(&d.symbols[0].name));
+        }
 
         self.exports = FxIndexMap::from_iter(exports_hashes);
 
@@ -158,7 +145,6 @@ impl fmt::Debug for CssModule {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("CssModule")
             .field("exports", &self.exports)
-            .field("file_name", &self.file_name)
             .field("source", &self.source)
             .finish()
     }

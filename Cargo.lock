@@ -749,7 +749,6 @@ dependencies = [
  "indexmap",
  "lightningcss",
  "nodejs_package_json",
- "once_cell",
  "oxc",
  "oxc_resolver",
  "petgraph",
