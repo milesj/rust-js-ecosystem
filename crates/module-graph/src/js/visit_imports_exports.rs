@@ -83,6 +83,7 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
         let mut record = Export {
             kind: ExportKind::Modern,
             span: Some(export.span),
+            source: Some(export.source.value.clone()),
             type_only: export.export_kind.is_type(),
             ..Export::default()
         };
@@ -103,7 +104,7 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
             record.symbols.push(ExportedSymbol {
                 kind,
                 symbol_id: None,
-                name: Atom::from(""),
+                name: Atom::from("*"),
             });
         }
 

@@ -1,0 +1,215 @@
+---
+source: crates/module-graph/tests/ts_test.rs
+expression: "generate_graph_for_file(sandbox.path(), \"ts/export-star.ts\")"
+---
+{
+    2: Module {
+        exports: [
+            Export {
+                kind: Modern,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 0,
+                        end: 26,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "number",
+                    },
+                ],
+                type_only: false,
+            },
+            Export {
+                kind: Modern,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 27,
+                        end: 55,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "string",
+                    },
+                ],
+                type_only: false,
+            },
+            Export {
+                kind: Modern,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 56,
+                        end: 83,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: ValueType,
+                        symbol_id: None,
+                        name: "Type",
+                    },
+                ],
+                type_only: true,
+            },
+        ],
+        fragment: None,
+        id: 2,
+        imports: [],
+        package_name: None,
+        path: "/private/root/ts/shared.ts",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Unknown,
+            source: "export const number = 123;\nexport const string = \"abc\";\nexport type Type = boolean;\n",
+            source_type: SourceType {
+                language: TypeScript {
+                    is_definition_file: false,
+                },
+                module_kind: Module,
+                variant: Standard,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 3,
+                exports_default: false,
+                import_statements: 0,
+                other_statements: 0,
+                require_count: 0,
+            },
+        },
+    },
+    1: Module {
+        exports: [
+            Export {
+                kind: Modern,
+                module_id: Some(
+                    2,
+                ),
+                source: Some(
+                    "./shared",
+                ),
+                span: Some(
+                    Span {
+                        start: 0,
+                        end: 25,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Namespace,
+                        symbol_id: None,
+                        name: "*",
+                    },
+                ],
+                type_only: false,
+            },
+            Export {
+                kind: Modern,
+                module_id: Some(
+                    2,
+                ),
+                source: Some(
+                    "./shared",
+                ),
+                span: Some(
+                    Span {
+                        start: 26,
+                        end: 64,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Namespace,
+                        symbol_id: None,
+                        name: "namespace",
+                    },
+                ],
+                type_only: false,
+            },
+            Export {
+                kind: Modern,
+                module_id: Some(
+                    2,
+                ),
+                source: Some(
+                    "./shared",
+                ),
+                span: Some(
+                    Span {
+                        start: 65,
+                        end: 95,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: NamespaceType,
+                        symbol_id: None,
+                        name: "*",
+                    },
+                ],
+                type_only: true,
+            },
+            Export {
+                kind: Modern,
+                module_id: Some(
+                    2,
+                ),
+                source: Some(
+                    "./shared",
+                ),
+                span: Some(
+                    Span {
+                        start: 96,
+                        end: 135,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: NamespaceType,
+                        symbol_id: None,
+                        name: "types",
+                    },
+                ],
+                type_only: true,
+            },
+        ],
+        fragment: None,
+        id: 1,
+        imports: [],
+        package_name: None,
+        path: "/root/ts/export-star.ts",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Unknown,
+            source: "export * from \"./shared\";\nexport * as namespace from \"./shared\";\nexport type * from \"./shared\";\nexport type * as types from \"./shared\";\n",
+            source_type: SourceType {
+                language: TypeScript {
+                    is_definition_file: false,
+                },
+                module_kind: Module,
+                variant: Standard,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 4,
+                exports_default: false,
+                import_statements: 0,
+                other_statements: 0,
+                require_count: 0,
+            },
+        },
+    },
+}

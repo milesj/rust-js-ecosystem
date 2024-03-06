@@ -170,6 +170,17 @@ impl Module {
         }
     }
 
+    /// Return all symbols that have been exported from all export statements.
+    pub fn get_exported_symbols(&self) -> Vec<&ExportedSymbol> {
+        let mut symbols = vec![];
+
+        for export in &self.exports {
+            symbols.extend(&export.symbols);
+        }
+
+        symbols
+    }
+
     /// Is the module an external file (in node modules)?
     pub fn is_external(&self) -> bool {
         self.path

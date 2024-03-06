@@ -1,0 +1,146 @@
+---
+source: crates/module-graph/tests/js_test.rs
+expression: "generate_graph_for_file(sandbox.path(), \"mjs/export-star.mjs\")"
+---
+{
+    2: Module {
+        exports: [
+            Export {
+                kind: Modern,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 0,
+                        end: 26,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "number",
+                    },
+                ],
+                type_only: false,
+            },
+            Export {
+                kind: Modern,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 27,
+                        end: 55,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "string",
+                    },
+                ],
+                type_only: false,
+            },
+        ],
+        fragment: None,
+        id: 2,
+        imports: [],
+        package_name: None,
+        path: "/private/root/mjs/shared.mjs",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Unknown,
+            source: "export const number = 123;\nexport const string = \"abc\";\n",
+            source_type: SourceType {
+                language: JavaScript,
+                module_kind: Module,
+                variant: Jsx,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 2,
+                exports_default: false,
+                import_statements: 0,
+                other_statements: 0,
+                require_count: 0,
+            },
+        },
+    },
+    1: Module {
+        exports: [
+            Export {
+                kind: Modern,
+                module_id: Some(
+                    2,
+                ),
+                source: Some(
+                    "./shared.mjs",
+                ),
+                span: Some(
+                    Span {
+                        start: 0,
+                        end: 29,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Namespace,
+                        symbol_id: None,
+                        name: "*",
+                    },
+                ],
+                type_only: false,
+            },
+            Export {
+                kind: Modern,
+                module_id: Some(
+                    2,
+                ),
+                source: Some(
+                    "./shared.mjs",
+                ),
+                span: Some(
+                    Span {
+                        start: 30,
+                        end: 72,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Namespace,
+                        symbol_id: None,
+                        name: "namespace",
+                    },
+                ],
+                type_only: false,
+            },
+        ],
+        fragment: None,
+        id: 1,
+        imports: [],
+        package_name: None,
+        path: "/root/mjs/export-star.mjs",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Unknown,
+            source: "export * from \"./shared.mjs\";\nexport * as namespace from \"./shared.mjs\";\n",
+            source_type: SourceType {
+                language: JavaScript,
+                module_kind: Module,
+                variant: Jsx,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 2,
+                exports_default: false,
+                import_statements: 0,
+                other_statements: 0,
+                require_count: 0,
+            },
+        },
+    },
+}

@@ -7,6 +7,13 @@ mod ts {
     use super::*;
 
     #[test]
+    fn export_star() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(sandbox.path(), "ts/export-star.ts"));
+    }
+
+    #[test]
     fn export_named() {
         let sandbox = create_sandbox("js");
 

@@ -7,6 +7,16 @@ mod mjs {
     use super::*;
 
     #[test]
+    fn export_star() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "mjs/export-star.mjs"
+        ));
+    }
+
+    #[test]
     fn export_named() {
         let sandbox = create_sandbox("js");
 
