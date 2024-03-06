@@ -122,8 +122,15 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
         let ident = match &export.declaration {
             ExportDefaultDeclarationKind::ClassDeclaration(decl) => decl.id.as_ref(),
             ExportDefaultDeclarationKind::FunctionDeclaration(decl) => decl.id.as_ref(),
-            // TODO reference ID?
-            ExportDefaultDeclarationKind::Expression(Expression::Identifier(_)) => None,
+            ExportDefaultDeclarationKind::Expression(Expression::Identifier(ident)) => {
+                record.symbols.push(ExportedSymbol {
+                    kind: ExportedKind::Default,
+                    symbol_id: None,
+                    name: ident.name.clone(),
+                });
+
+                None
+            }
             ExportDefaultDeclarationKind::TSEnumDeclaration(decl) => Some(&decl.id),
             ExportDefaultDeclarationKind::TSInterfaceDeclaration(decl) => Some(&decl.id),
             _ => {
@@ -131,22 +138,24 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
             }
         };
 
-        if let Some(ident) = ident {
-            record.symbols.push(ExportedSymbol {
-                kind: if export.declaration.is_typescript_syntax() {
-                    ExportedKind::DefaultType
-                } else {
-                    ExportedKind::Default
-                },
-                symbol_id: ident.symbol_id.clone().into_inner(),
-                name: ident.name.clone(),
-            });
-        } else {
-            record.symbols.push(ExportedSymbol {
-                kind: ExportedKind::Default,
-                symbol_id: None,
-                name: Atom::from("default"),
-            });
+        if record.symbols.is_empty() {
+            if let Some(ident) = ident {
+                record.symbols.push(ExportedSymbol {
+                    kind: if export.declaration.is_typescript_syntax() {
+                        ExportedKind::DefaultType
+                    } else {
+                        ExportedKind::Default
+                    },
+                    symbol_id: ident.symbol_id.clone().into_inner(),
+                    name: ident.name.clone(),
+                });
+            } else {
+                record.symbols.push(ExportedSymbol {
+                    kind: ExportedKind::Default,
+                    symbol_id: None,
+                    name: Atom::from("default"),
+                });
+            }
         }
 
         self.module.exports.push(record);
