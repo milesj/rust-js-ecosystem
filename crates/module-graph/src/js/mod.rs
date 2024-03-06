@@ -19,8 +19,6 @@ use std::sync::Arc;
 
 pub use self::stats::JavaScriptStats;
 
-pub struct JavaScriptAST {}
-
 pub struct JavaScriptModule {
     pub package_type: JavaScriptPackageType,
     pub source_type: SourceType,

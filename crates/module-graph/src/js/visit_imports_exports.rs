@@ -131,6 +131,7 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
 
                 None
             }
+            // This doesn't work...
             ExportDefaultDeclarationKind::TSEnumDeclaration(decl) => Some(&decl.id),
             ExportDefaultDeclarationKind::TSInterfaceDeclaration(decl) => Some(&decl.id),
             _ => {
@@ -164,6 +165,7 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
 
     // export { name }
     // export { type name }
+    // export type { name }
     // export const name
     // export let name
     // export type name
