@@ -11,5 +11,3 @@ class Foo {}
 class Bar {}
 
 export { Foo, Bar };
-
-export default class Baz {}

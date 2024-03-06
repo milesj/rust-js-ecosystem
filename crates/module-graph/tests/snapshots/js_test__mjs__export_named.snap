@@ -1,6 +1,6 @@
 ---
 source: crates/module-graph/tests/js_test.rs
-expression: "generate_graph_for_file(sandbox.path(), \"mjs/exports.mjs\")"
+expression: "generate_graph_for_file(sandbox.path(), \"mjs/export-named.mjs\")"
 ---
 {
     1: Module {
@@ -105,35 +105,16 @@ expression: "generate_graph_for_file(sandbox.path(), \"mjs/exports.mjs\")"
                 ],
                 type_only: false,
             },
-            Export {
-                kind: Modern,
-                module_id: None,
-                source: None,
-                span: Some(
-                    Span {
-                        start: 161,
-                        end: 188,
-                    },
-                ),
-                symbols: [
-                    ExportedSymbol {
-                        kind: Default,
-                        symbol_id: None,
-                        name: "Baz",
-                    },
-                ],
-                type_only: false,
-            },
         ],
         fragment: None,
         id: 1,
         imports: [],
         package_name: None,
-        path: "/root/mjs/exports.mjs",
+        path: "/root/mjs/export-named.mjs",
         query: None,
         source: JavaScriptModule {
             package_type: Unknown,
-            source: "export const primitive = 123;\n\nexport const object = {};\n\nexport const array = [];\n\nexport function func() {}\n\nclass Foo {}\n\nclass Bar {}\n\nexport { Foo, Bar };\n\nexport default class Baz {}\n",
+            source: "export const primitive = 123;\n\nexport const object = {};\n\nexport const array = [];\n\nexport function func() {}\n\nclass Foo {}\n\nclass Bar {}\n\nexport { Foo, Bar };\n",
             source_type: SourceType {
                 language: JavaScript,
                 module_kind: Module,
@@ -142,8 +123,8 @@ expression: "generate_graph_for_file(sandbox.path(), \"mjs/exports.mjs\")"
             },
             stats: JavaScriptStats {
                 dynamic_import_count: 0,
-                export_statements: 6,
-                exports_default: true,
+                export_statements: 5,
+                exports_default: false,
                 import_statements: 0,
                 other_statements: 2,
                 require_count: 0,

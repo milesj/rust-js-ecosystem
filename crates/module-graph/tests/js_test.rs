@@ -7,10 +7,13 @@ mod mjs {
     use super::*;
 
     #[test]
-    fn normal_exports() {
+    fn export_named() {
         let sandbox = create_sandbox("js");
 
-        assert_snapshot!(generate_graph_for_file(sandbox.path(), "mjs/exports.mjs"));
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "mjs/export-named.mjs"
+        ));
     }
 
     #[test]
