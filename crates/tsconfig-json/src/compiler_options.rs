@@ -2,7 +2,7 @@
 
 use indexmap::IndexMap;
 use rustc_hash::{FxHashMap, FxHasher};
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use std::hash::BuildHasherDefault;
 use std::path::PathBuf;
 
@@ -143,117 +143,184 @@ pub struct CompilerOptions {
 }
 
 // https://www.typescriptlang.org/tsconfig#jsx
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "serialize", serde(rename_all = "kebab-case"))]
 pub enum JsxField {
-    #[serde(alias = "react")]
     React,
-    #[serde(alias = "react-jsx")]
     ReactJsx,
-    #[serde(alias = "react-jsxdev")]
     ReactJsxdev,
-    #[serde(alias = "react-native")]
     ReactNative,
-    #[serde(alias = "preserve")]
     Preserve,
 }
 
+impl<'de> Deserialize<'de> for JsxField {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+
+        Ok(match value.to_lowercase().as_str() {
+            "react" => Self::React,
+            "reactjsx" | "react-jsx" => Self::ReactJsx,
+            "reactjsxdev" | "react-jsxdev" => Self::ReactJsxdev,
+            "reactnative" | "react-native" => Self::ReactNative,
+            _ => Self::Preserve,
+        })
+    }
+}
+
 // https://www.typescriptlang.org/tsconfig#module
-#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "serialize", serde(rename_all = "lowercase"))]
 pub enum ModuleField {
-    #[serde(alias = "amd")]
     Amd,
-    #[serde(alias = "commonjs")]
     CommonJs,
-    #[serde(alias = "es6")]
     Es6,
-    #[serde(alias = "es2015")]
     Es2015,
-    #[serde(alias = "es2020")]
     Es2020,
-    #[serde(alias = "es2022")]
     Es2022,
-    #[serde(alias = "esnext")]
     EsNext,
     #[deprecated]
-    #[serde(alias = "node12")]
     Node12,
-    #[serde(alias = "node16")]
     Node16,
-    #[serde(alias = "nodenext")]
     NodeNext,
     #[default]
-    #[serde(alias = "none")]
     None,
-    #[serde(alias = "system")]
+    Preserve, // TS 5.4
     System,
-    #[serde(alias = "umd")]
     Umd,
 }
 
+impl<'de> Deserialize<'de> for ModuleField {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+
+        Ok(match value.to_lowercase().as_str() {
+            "amd" => Self::Amd,
+            "cjs" | "commonjs" => Self::CommonJs,
+            "esm" | "es6" => Self::Es6,
+            "es2015" => Self::Es2015,
+            "es2020" => Self::Es2020,
+            "es2022" => Self::Es2022,
+            "esnext" => Self::EsNext,
+            "node12" => Self::Node12,
+            "node16" => Self::Node16,
+            "nodenext" => Self::NodeNext,
+            "preserve" => Self::Preserve,
+            "system" => Self::System,
+            "umd" => Self::Umd,
+            _ => Self::None,
+        })
+    }
+}
+
 // https://www.typescriptlang.org/tsconfig#moduleDetection
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "serialize", serde(rename_all = "lowercase"))]
 pub enum ModuleDetectionField {
-    #[serde(alias = "auto")]
     Auto,
-    #[serde(alias = "legacy")]
     Legacy,
-    #[serde(alias = "force")]
     Force,
 }
 
+impl<'de> Deserialize<'de> for ModuleDetectionField {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+
+        Ok(match value.to_lowercase().as_str() {
+            "legacy" => Self::Legacy,
+            "force" => Self::Force,
+            _ => Self::Auto,
+        })
+    }
+}
+
 // https://www.typescriptlang.org/tsconfig#moduleResolution
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "serialize", serde(rename_all = "lowercase"))]
 pub enum ModuleResolutionField {
-    #[serde(alias = "bundler")]
     Bundler,
-    #[serde(alias = "classic")]
     Classic,
-    #[serde(alias = "node")]
     Node,
-    #[serde(alias = "node10")]
     Node10,
     #[deprecated]
-    #[serde(alias = "node12")]
     Node12,
-    #[serde(alias = "node16")]
     Node16,
-    #[serde(alias = "nodenext")]
     NodeNext,
 }
 
+impl<'de> Deserialize<'de> for ModuleResolutionField {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+
+        Ok(match value.to_lowercase().as_str() {
+            "bundler" => Self::Bundler,
+            "classic" => Self::Classic,
+            "node10" => Self::Node10,
+            "node12" => Self::Node12,
+            "node16" => Self::Node16,
+            "nodenext" => Self::NodeNext,
+            _ => Self::Node,
+        })
+    }
+}
+
 // https://www.typescriptlang.org/tsconfig#target
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "serialize", serde(rename_all = "lowercase"))]
 pub enum TargetField {
-    #[serde(alias = "es3")]
     Es3,
-    #[serde(alias = "es5")]
     Es5,
-    #[serde(alias = "es6")]
     Es6,
     #[deprecated]
-    #[serde(alias = "es7")]
     Es7,
-    #[serde(alias = "es2015")]
     Es2015,
-    #[serde(alias = "es2016")]
     Es2016,
-    #[serde(alias = "es2017")]
     Es2017,
-    #[serde(alias = "es2018")]
     Es2018,
-    #[serde(alias = "es2019")]
     Es2019,
-    #[serde(alias = "es2020")]
     Es2020,
-    #[serde(alias = "es2021")]
     Es2021,
-    #[serde(alias = "es2022")]
     Es2022,
-    #[serde(alias = "esnext")]
     EsNext,
+}
+
+impl<'de> Deserialize<'de> for TargetField {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+
+        Ok(match value.to_lowercase().as_str() {
+            "es3" => Self::Es3,
+            "es5" => Self::Es5,
+            "es6" => Self::Es6,
+            "es7" => Self::Es7,
+            "es2015" => Self::Es2015,
+            "es2016" => Self::Es2016,
+            "es2017" => Self::Es2017,
+            "es2018" => Self::Es2018,
+            "es2019" => Self::Es2019,
+            "es2020" => Self::Es2020,
+            "es2021" => Self::Es2021,
+            "es2022" => Self::Es2022,
+            _ => Self::EsNext,
+        })
+    }
 }
