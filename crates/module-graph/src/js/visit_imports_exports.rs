@@ -274,9 +274,9 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
         }
     }
 
-    // import
     // import default
     // import type default
+    // import { name }
     // import { name, type T }
     // import type { T }
     // import * as ns
@@ -304,7 +304,13 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
                             &spec.local,
                         );
 
-                        value.source_name = Some(spec.imported.name().to_owned());
+                        let source_name = spec.imported.name();
+
+                        if source_name.as_str() == "default" {
+                            value.kind = ImportedKind::Default;
+                        } else if source_name != &value.name {
+                            value.source_name = Some(source_name.to_owned());
+                        }
 
                         record.symbols.push(value);
                     }
@@ -332,9 +338,9 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
             }
         }
 
-        if !record.symbols.is_empty() {
-            self.module.imports.push(record);
-        }
+        // Don't check if symbols is empty, so that we can support
+        // side-effect imports like `import './all'`
+        self.module.imports.push(record);
     }
 
     // import()

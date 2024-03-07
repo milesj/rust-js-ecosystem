@@ -65,6 +65,36 @@ mod mjs {
     }
 
     #[test]
+    fn import_star() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "mjs/import-star.mjs"
+        ));
+    }
+
+    #[test]
+    fn import_named() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "mjs/import-named.mjs"
+        ));
+    }
+
+    #[test]
+    fn import_default() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "mjs/import-def.mjs"
+        ));
+    }
+
+    #[test]
     fn dynamic_import_top_level_await() {
         let sandbox = create_sandbox("js");
 

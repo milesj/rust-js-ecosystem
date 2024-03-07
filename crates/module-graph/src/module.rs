@@ -25,6 +25,23 @@ pub enum ImportedKind {
     ValueType,     // import { type T }, import type { T }
 }
 
+impl ImportedKind {
+    pub fn is_default(&self) -> bool {
+        matches!(self, Self::Default | Self::DefaultType)
+    }
+
+    pub fn is_namespace(&self) -> bool {
+        matches!(self, Self::Namespace | Self::NamespaceType)
+    }
+
+    pub fn is_type(&self) -> bool {
+        matches!(
+            self,
+            Self::DefaultType | Self::NamespaceType | Self::ValueType
+        )
+    }
+}
+
 #[derive(Debug)]
 pub struct ImportedSymbol {
     pub kind: ImportedKind,
@@ -61,6 +78,12 @@ pub struct Import {
     pub type_only: bool,
 }
 
+impl Import {
+    pub fn is_side_effect(&self) -> bool {
+        !self.source_request.is_empty() && self.symbols.is_empty()
+    }
+}
+
 #[derive(Debug)]
 pub enum ExportedKind {
     Default,       // export default name
@@ -69,6 +92,23 @@ pub enum ExportedKind {
     NamespaceType, // export type *, export type * as name
     Value,         // export name, export { name }
     ValueType,     // export type T, export { type name }
+}
+
+impl ExportedKind {
+    pub fn is_default(&self) -> bool {
+        matches!(self, Self::Default | Self::DefaultType)
+    }
+
+    pub fn is_namespace(&self) -> bool {
+        matches!(self, Self::Namespace | Self::NamespaceType)
+    }
+
+    pub fn is_type(&self) -> bool {
+        matches!(
+            self,
+            Self::DefaultType | Self::NamespaceType | Self::ValueType
+        )
+    }
 }
 
 #[derive(Debug)]
@@ -168,6 +208,19 @@ impl Module {
             query: None,
             source: Box::new(DummyModule),
         }
+    }
+
+    /// Return the symbol that has been exported as the default.
+    pub fn get_default_exported_symbol(&self) -> Option<&ExportedSymbol> {
+        for export in &self.exports {
+            for symbol in &export.symbols {
+                if symbol.kind.is_default() {
+                    return Some(symbol);
+                }
+            }
+        }
+
+        None
     }
 
     /// Return all symbols that have been exported from all export statements.

@@ -4,9 +4,8 @@ mod visit_imports_exports;
 use self::visit_imports_exports::*;
 use crate::module::*;
 use crate::module_graph_error::ModuleGraphError;
-// use once_cell::sync::OnceCell;
 use oxc::allocator::Allocator;
-use oxc::ast::ast::Program;
+// use oxc::ast::ast::Program;
 use oxc::ast::Visit;
 use oxc::parser::Parser;
 use oxc::span::SourceType;
@@ -14,7 +13,7 @@ use oxc_resolver::PackageJson as ResolvedPackageJson;
 use rustc_hash::FxHashSet;
 use starbase_utils::fs;
 use std::fmt;
-use std::mem;
+// use std::mem;
 use std::sync::Arc;
 
 pub use self::stats::JavaScriptStats;
@@ -72,6 +71,7 @@ impl ModuleSource for JavaScriptModule {
     }
 
     fn parse(&mut self, module: &mut Module) -> Result<(), ModuleGraphError> {
+        // TODO temporary, move to load
         let source = Arc::clone(&self.source);
         let allocator = Allocator::default();
         let program = Parser::new(&allocator, &source, self.source_type)
