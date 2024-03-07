@@ -82,4 +82,34 @@ mod ts {
             "ts/export-def-enum.ts"
         ));
     }
+
+    #[test]
+    fn dynamic_import_top_level_await() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "ts/dyn-import-tla.ts"
+        ));
+    }
+
+    #[test]
+    fn dynamic_import_scope_depths() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "ts/dyn-import-scopes.ts"
+        ));
+    }
+
+    #[test]
+    fn dynamic_import_destructure_patterns() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "ts/dyn-import-patterns.ts"
+        ));
+    }
 }

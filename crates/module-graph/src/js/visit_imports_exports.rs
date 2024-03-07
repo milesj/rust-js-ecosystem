@@ -32,9 +32,20 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
                         } else {
                             self.stats.export_statements += 1;
                         }
-                    } else {
-                        self.stats.other_statements += 1;
+
+                        continue;
                     }
+
+                    if let Statement::ExpressionStatement(expr) = &stmt {
+                        if let Expression::AwaitExpression(aw) = &expr.expression {
+                            if let Expression::ImportExpression(_) = &aw.argument {
+                                // Handle in other methods
+                                continue;
+                            }
+                        }
+                    }
+
+                    self.stats.other_statements += 1;
                 }
             }
             // export =
@@ -258,7 +269,9 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
             record.source = Some(source.value.to_owned());
         }
 
-        self.module.exports.push(record);
+        if !record.symbols.is_empty() {
+            self.module.exports.push(record);
+        }
     }
 
     // import
@@ -319,7 +332,9 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
             }
         }
 
-        self.module.imports.push(record);
+        if !record.symbols.is_empty() {
+            self.module.imports.push(record);
+        }
     }
 
     // import()
@@ -413,7 +428,7 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
                         symbols: vec![],
                     };
 
-                    import_binding_pattern(&decl.id, &mut record.symbols, 0);
+                    import_binding_pattern(&decl.id, &mut record.symbols);
 
                     self.module.imports.push(record);
                     self.stats.dynamic_import_count += 1;
@@ -422,27 +437,27 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
         }
 
         // require()
-        if let Some(require) = extract_require_from_expression(init) {
-            if let Argument::Expression(Expression::StringLiteral(source)) = &require.arguments[0] {
-                if !self.extracted_requires.contains(&require.span) {
-                    self.extracted_requires.insert(require.span);
+        // if let Some(require) = extract_require_from_expression(init) {
+        //     if let Argument::Expression(Expression::StringLiteral(source)) = &require.arguments[0] {
+        //         if !self.extracted_requires.contains(&require.span) {
+        //             self.extracted_requires.insert(require.span);
 
-                    let mut record = Import {
-                        kind: ImportKind::SyncStatic,
-                        module_id: 0,
-                        source_request: source.value.clone(),
-                        span: require.span,
-                        type_only: false,
-                        symbols: vec![],
-                    };
+        //             let mut record = Import {
+        //                 kind: ImportKind::SyncStatic,
+        //                 module_id: 0,
+        //                 source_request: source.value.clone(),
+        //                 span: require.span,
+        //                 type_only: false,
+        //                 symbols: vec![],
+        //             };
 
-                    import_binding_pattern(&decl.id, &mut record.symbols, 0);
+        //             import_binding_pattern(&decl.id, &mut record.symbols, 0);
 
-                    self.module.imports.push(record);
-                    self.stats.require_count += 1;
-                }
-            };
-        }
+        //             self.module.imports.push(record);
+        //             self.stats.require_count += 1;
+        //         }
+        //     };
+        // }
     }
 }
 
@@ -470,16 +485,12 @@ fn extract_dynamic_import_from_expression<'expr, 'ast>(
     None
 }
 
-fn import_binding_pattern(binding: &BindingPattern, list: &mut Vec<ImportedSymbol>, depth: usize) {
+fn import_binding_pattern(binding: &BindingPattern, list: &mut Vec<ImportedSymbol>) {
     match &binding.kind {
         // foo = import()
         BindingPatternKind::BindingIdentifier(ident) => {
             list.push(ImportedSymbol {
-                kind: if depth == 0 {
-                    ImportedKind::Namespace
-                } else {
-                    ImportedKind::Value
-                },
+                kind: ImportedKind::Namespace,
                 source_name: None,
                 symbol_id: ident.symbol_id.clone().into_inner(),
                 name: ident.name.clone(),
@@ -489,47 +500,56 @@ fn import_binding_pattern(binding: &BindingPattern, list: &mut Vec<ImportedSymbo
         // { a, b, ...rest } = import()
         BindingPatternKind::ObjectPattern(object) => {
             for prop in &object.properties {
-                if let BindingPatternKind::BindingIdentifier(ident) = &prop.value.kind {
-                    let source_name = if prop.key.is_specific_id(&ident.name) {
-                        None
-                    } else {
-                        prop.key.name()
-                    };
-
-                    list.push(ImportedSymbol {
-                        kind: if depth == 0 && prop.key.is_specific_id("default") {
-                            ImportedKind::Default
-                        } else {
-                            ImportedKind::Value
-                        },
-                        source_name,
-                        symbol_id: ident.symbol_id.clone().into_inner(),
-                        name: ident.name.clone(),
-                    });
+                let kind = if prop.key.is_specific_id("default") {
+                    ImportedKind::Default
                 } else {
-                    import_binding_pattern(&prop.value, list, depth + 1);
-                }
+                    ImportedKind::Value
+                };
+
+                match &prop.value.kind {
+                    BindingPatternKind::BindingIdentifier(ident) => {
+                        list.push(ImportedSymbol {
+                            kind,
+                            source_name: if prop.key.is_specific_id(&ident.name) {
+                                None
+                            } else {
+                                prop.key.name()
+                            },
+                            symbol_id: ident.symbol_id.clone().into_inner(),
+                            name: ident.name.clone(),
+                        });
+                    }
+                    _ => {
+                        list.push(ImportedSymbol {
+                            kind,
+                            source_name: None,
+                            symbol_id: None,
+                            name: prop.key.name().clone().unwrap(),
+                        });
+                    }
+                };
             }
 
             if let Some(rest) = &object.rest {
-                import_binding_pattern(&rest.argument, list, depth);
+                if let BindingPatternKind::BindingIdentifier(ident) = &rest.argument.kind {
+                    list.push(ImportedSymbol {
+                        kind: ImportedKind::Namespace,
+                        source_name: None,
+                        symbol_id: None,
+                        name: ident.name.clone(),
+                    });
+                }
             }
         }
 
         // [a, b] = import()
-        BindingPatternKind::ArrayPattern(array) => {
-            for item in array.elements.iter().flatten() {
-                import_binding_pattern(item, list, depth + 1);
-            }
-
-            if let Some(rest) = &array.rest {
-                import_binding_pattern(&rest.argument, list, depth);
-            }
+        BindingPatternKind::ArrayPattern(_) => {
+            // Not possible
         }
 
         // { a = 1 } = import()
         BindingPatternKind::AssignmentPattern(assign) => {
-            import_binding_pattern(&assign.left, list, depth);
+            import_binding_pattern(&assign.left, list);
         }
     };
 }

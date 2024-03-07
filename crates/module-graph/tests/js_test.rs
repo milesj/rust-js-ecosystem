@@ -63,4 +63,34 @@ mod mjs {
             "mjs/export-def-ref.mjs"
         ));
     }
+
+    #[test]
+    fn dynamic_import_top_level_await() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "mjs/dyn-import-tla.mjs"
+        ));
+    }
+
+    #[test]
+    fn dynamic_import_scope_depths() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "mjs/dyn-import-scopes.mjs"
+        ));
+    }
+
+    #[test]
+    fn dynamic_import_destructure_patterns() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "mjs/dyn-import-patterns.mjs"
+        ));
+    }
 }

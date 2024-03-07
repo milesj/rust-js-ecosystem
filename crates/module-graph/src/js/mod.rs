@@ -25,9 +25,9 @@ pub struct JavaScriptModule {
     pub stats: JavaScriptStats,
 
     // Order is important here, as they need to be dropped in sequence!
-    pub program: Program<'static>,
-    #[allow(dead_code)]
-    allocator: Box<Allocator>,
+    // pub program: Program<'static>,
+    // #[allow(dead_code)]
+    // allocator: Box<Allocator>,
     pub source: Arc<String>,
 }
 
@@ -52,27 +52,31 @@ impl ModuleSource for JavaScriptModule {
     ) -> Result<Self, ModuleGraphError> {
         let source = fs::read_file(&module.path)?;
         let source_type = SourceType::from_path(&module.path).unwrap();
-        let allocator = Allocator::default();
+        // let allocator = Allocator::default();
 
-        // TODO errors
-        let program = unsafe {
-            let src = mem::transmute::<_, &'static str>(&*source);
-            let alloc = mem::transmute::<_, &'static Allocator>(&allocator);
-            Parser::new(alloc, src, source_type).parse().program
-        };
+        // // TODO errors
+        // let program = unsafe {
+        //     let src = mem::transmute::<_, &'static str>(&*source);
+        //     let alloc = mem::transmute::<_, &'static Allocator>(&allocator);
+        //     Parser::new(alloc, src, source_type).parse().program
+        // };
 
         Ok(Self {
             package_type: JavaScriptPackageType::Unknown, // TODO
             source: Arc::new(source),
             source_type,
             stats: JavaScriptStats::default(),
-            allocator: Box::new(allocator),
-            program,
+            // allocator: Box::new(allocator),
+            // program,
         })
     }
 
     fn parse(&mut self, module: &mut Module) -> Result<(), ModuleGraphError> {
-        let program = &self.program;
+        let source = Arc::clone(&self.source);
+        let allocator = Allocator::default();
+        let program = Parser::new(&allocator, &source, self.source_type)
+            .parse()
+            .program;
 
         // Extract imports and exports
         {
@@ -85,7 +89,7 @@ impl ModuleSource for JavaScriptModule {
                 ast: std::marker::PhantomData,
             };
 
-            visitor.visit_program(program);
+            visitor.visit_program(&program);
             self.stats = stats;
         }
 
