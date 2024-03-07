@@ -1,6 +1,6 @@
 use crate::module::*;
 use crate::module_graph_error::ModuleGraphError;
-use oxc_resolver::PackageJson as ResolvedPackageJson;
+use nodejs_package_json::PackageJson;
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -17,7 +17,7 @@ impl ModuleSource for DummyModule {
 
     fn load(
         _module: &mut Module,
-        _package_json: Option<Arc<ResolvedPackageJson>>,
+        _package_json: Option<Arc<PackageJson>>,
     ) -> Result<Self, ModuleGraphError> {
         Ok(DummyModule)
     }

@@ -1,7 +1,7 @@
 use crate::module::*;
 use crate::module_graph_error::ModuleGraphError;
+use nodejs_package_json::PackageJson;
 use oxc::span::Atom;
-use oxc_resolver::PackageJson as ResolvedPackageJson;
 use starbase_utils::{fs, json};
 use std::sync::Arc;
 
@@ -24,7 +24,7 @@ impl ModuleSource for JsonModule {
 
     fn load(
         module: &mut Module,
-        _package_json: Option<Arc<ResolvedPackageJson>>,
+        _package_json: Option<Arc<PackageJson>>,
     ) -> Result<Self, ModuleGraphError> {
         let source = fs::read_file(&module.path)?;
         let source_without_comments = json::clean(&source).unwrap(); // TODO

@@ -6,11 +6,10 @@ use crate::media::MediaModule;
 use crate::module_graph_error::ModuleGraphError;
 use crate::text::TextModule;
 use crate::yaml::YamlModule;
+use nodejs_package_json::PackageJson;
 use oxc::ast::ast::BindingIdentifier;
 use oxc::span::{Atom, Span};
 use oxc::syntax::symbol::SymbolId;
-use oxc_resolver::PackageJson as ResolvedPackageJson;
-use starbase_utils::json::JsonValue;
 use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -159,7 +158,7 @@ pub trait ModuleSource: fmt::Debug {
 
     fn load(
         module: &mut Module,
-        package_json: Option<Arc<ResolvedPackageJson>>,
+        package_json: Option<Arc<PackageJson>>,
     ) -> Result<Self, ModuleGraphError>
     where
         Self: Sized;
@@ -243,14 +242,10 @@ impl Module {
 
     pub(crate) fn load_and_parse_source(
         &mut self,
-        package_json: Option<Arc<ResolvedPackageJson>>,
+        package_json: Option<Arc<PackageJson>>,
     ) -> Result<(), ModuleGraphError> {
         if let Some(package) = &package_json {
-            if let Some(fields) = package.raw_json().as_object() {
-                if let Some(JsonValue::String(name)) = fields.get("name") {
-                    self.package_name = Some(name.to_owned());
-                }
-            }
+            self.package_name = package.name.clone();
         }
 
         // Load the file

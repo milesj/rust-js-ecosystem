@@ -1,6 +1,6 @@
 use crate::module::*;
 use crate::module_graph_error::ModuleGraphError;
-use oxc_resolver::PackageJson as ResolvedPackageJson;
+use nodejs_package_json::PackageJson;
 use starbase_utils::fs;
 use std::sync::Arc;
 
@@ -32,7 +32,7 @@ impl ModuleSource for MediaModule {
 
     fn load(
         module: &mut Module,
-        _package_json: Option<Arc<ResolvedPackageJson>>,
+        _package_json: Option<Arc<PackageJson>>,
     ) -> Result<Self, ModuleGraphError> {
         // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
         let kind = match module.path.extension().and_then(|ext| ext.to_str()) {

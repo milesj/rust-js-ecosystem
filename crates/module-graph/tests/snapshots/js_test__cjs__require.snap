@@ -51,7 +51,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"cjs/require.cjs\")"
         path: "/private/root/cjs/shared.cjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Cjs,
             source: "exports.number = 123;\nexports.string = \"abc\";\n",
             source_type: SourceType {
                 language: JavaScript,
@@ -170,7 +170,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"cjs/require.cjs\")"
         path: "/root/cjs/require.cjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Cjs,
             source: "// Side-effect\nrequire(\"./shared.cjs\");\n\n// Default\nconst def = require(\"./shared.cjs\");\n\n// Named\nconst { number, string } = require(\"./shared.cjs\");\n\n// Renamed\nlet { number: renumber } = require(\"./shared.cjs\");\n\n// Default named\nlet {\n  default: { number, string },\n} = require(\"./shared.cjs\");\n",
             source_type: SourceType {
                 language: JavaScript,

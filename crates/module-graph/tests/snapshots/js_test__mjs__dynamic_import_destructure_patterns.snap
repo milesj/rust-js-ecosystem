@@ -12,7 +12,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"mjs/dyn-import-patterns.m
         path: "/private/root/mjs/shared-def-object.mjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Mjs,
             source: "export default {\n  number: 123,\n  string: \"abc\",\n  object: {\n    one: {\n      two: {\n        value: true,\n      },\n    },\n    value: true,\n  },\n};\n",
             source_type: SourceType {
                 language: JavaScript,
@@ -78,7 +78,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"mjs/dyn-import-patterns.m
         path: "/private/root/mjs/shared.mjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Mjs,
             source: "export const number = 123;\nexport const string = \"abc\";\n",
             source_type: SourceType {
                 language: JavaScript,
@@ -204,7 +204,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"mjs/dyn-import-patterns.m
         path: "/root/mjs/dyn-import-patterns.mjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Mjs,
             source: "// Default\nconst { default: def } = await import(\"./shared-def-object.mjs\");\n\n// Destructure\nconst { number } = await import(\"./shared.mjs\");\n\n// Destructure with rest\nconst { string, ...rest } = await import(\"./shared.mjs\");\n\n// Destructure nested object\nconst {\n  default: {\n    object: {\n      one: {\n        two: { value },\n      },\n    },\n  },\n} = await import(\"./shared-def-object.mjs\");\n\n// Assignment, unknown export\nconst { unknown = \"abc\" } = await import(\"./shared.mjs\");\n",
             source_type: SourceType {
                 language: JavaScript,

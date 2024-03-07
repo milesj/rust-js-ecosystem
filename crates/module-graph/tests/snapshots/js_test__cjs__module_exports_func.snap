@@ -32,7 +32,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"cjs/module-exports-func.c
         path: "/root/cjs/module-exports-func.cjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Cjs,
             source: "module.exports = function foo() {};\n",
             source_type: SourceType {
                 language: JavaScript,

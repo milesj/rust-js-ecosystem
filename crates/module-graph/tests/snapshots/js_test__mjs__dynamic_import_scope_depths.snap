@@ -51,7 +51,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"mjs/dyn-import-scopes.mjs
         path: "/private/root/mjs/shared.mjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Mjs,
             source: "export const number = 123;\nexport const string = \"abc\";\n",
             source_type: SourceType {
                 language: JavaScript,
@@ -144,7 +144,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"mjs/dyn-import-scopes.mjs
         path: "/root/mjs/dyn-import-scopes.mjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Mjs,
             source: "await import(\"./shared.mjs\");\n\nasync function foo() {\n  const ns = await import(\"./shared.mjs\");\n}\n\nasync function bar() {\n  return async () => {\n    const { number } = await import(\"./shared.mjs\");\n  };\n}\n\nclass Baz {\n  async method() {\n    const { string } = await import(\"./shared.mjs\");\n  }\n}\n",
             source_type: SourceType {
                 language: JavaScript,

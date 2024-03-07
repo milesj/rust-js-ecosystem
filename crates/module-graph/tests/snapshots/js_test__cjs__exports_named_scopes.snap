@@ -70,7 +70,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"cjs/exports-named-scopes.
         path: "/root/cjs/exports-named-scopes.cjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Cjs,
             source: "exports.root = true;\n\nfunction bar() {\n  // This is bad but valid?\n  exports.one = 1;\n}\n\nbar();\n\n(function () {\n  {\n    exports.two = 2;\n  }\n})();\n",
             source_type: SourceType {
                 language: JavaScript,

@@ -32,7 +32,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"cjs/module-exports-ref.cj
         path: "/root/cjs/module-exports-ref.cjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Cjs,
             source: "const value = 123;\n\nmodule.exports = value;\n",
             source_type: SourceType {
                 language: JavaScript,

@@ -4,8 +4,8 @@ use crate::types::FxIndexMap;
 use lightningcss::css_modules::{Config, CssModuleReference};
 use lightningcss::printer::PrinterOptions;
 use lightningcss::stylesheet::{ParserOptions, StyleSheet};
+use nodejs_package_json::PackageJson;
 use oxc::span::{Atom, Span};
-use oxc_resolver::PackageJson as ResolvedPackageJson;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
 use std::fmt;
@@ -36,7 +36,7 @@ impl ModuleSource for CssModule {
 
     fn load(
         module: &mut Module,
-        _package_json: Option<Arc<ResolvedPackageJson>>,
+        _package_json: Option<Arc<PackageJson>>,
     ) -> Result<Self, ModuleGraphError> {
         let file_name = fs::file_name(&module.path);
         let modules = file_name.ends_with(".module.css");

@@ -10,7 +10,7 @@ clean-path = { workspace = true }
 indexmap = { workspace = true }
 lightningcss = "1.0.0-alpha.54"
 oxc = "0.7.0"
-oxc_resolver = "1.5.4"
+oxc_resolver = "1.6.0"
 petgraph = { workspace = true, features = ["graphmap"] }
 starbase_utils = { workspace = true, features = ["json", "yaml"] }
 rustc-hash = { workspace = true }

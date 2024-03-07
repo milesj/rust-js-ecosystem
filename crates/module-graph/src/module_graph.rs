@@ -1,10 +1,12 @@
 use crate::module_graph_error::ModuleGraphError;
 use crate::{module::*, types::FxIndexMap};
 use clean_path::Clean;
+use nodejs_package_json::PackageJson;
 use oxc_resolver::{PackageJson as ResolvedPackageJson, ResolveOptions, Resolver};
 use petgraph::graphmap::GraphMap;
 use petgraph::Directed;
 use rustc_hash::FxHashMap;
+use starbase_utils::json;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -20,6 +22,7 @@ pub type ModuleGraphType = GraphMap<ModuleId, ModuleGraphEdge, Directed>;
 pub struct ModuleGraph {
     pub graph: ModuleGraphType,
     pub modules: FxIndexMap<ModuleId, Arc<Module>>,
+    pub packages: FxHashMap<PathBuf, Arc<PackageJson>>,
     pub resolver: Resolver,
 
     next_id: u32,
@@ -31,6 +34,7 @@ impl ModuleGraph {
         Self {
             graph: GraphMap::default(),
             modules: FxIndexMap::default(),
+            packages: FxHashMap::default(),
             resolver: Resolver::new(ResolveOptions {
                 condition_names: vec![
                     "import".into(),
@@ -88,6 +92,13 @@ impl ModuleGraph {
             return Ok(*module_id);
         }
 
+        // Load the package.json before the module
+        let package_json = if let Some(json) = package_json {
+            Some(self.load_package_json(&json.realpath)?)
+        } else {
+            None
+        };
+
         // Generate the ID and add to the graph
         let module_id = self.graph.add_node(self.next_id);
 
@@ -130,5 +141,23 @@ impl ModuleGraph {
         self.modules.insert(module_id, Arc::new(module));
 
         Ok(module_id)
+    }
+
+    pub fn load_package_json<P: AsRef<Path>>(
+        &mut self,
+        path: P,
+    ) -> Result<Arc<PackageJson>, ModuleGraphError> {
+        let path = path.as_ref();
+
+        if let Some(json) = self.packages.get(path) {
+            return Ok(Arc::clone(json));
+        }
+
+        let json: PackageJson = json::read_file(path)?;
+        let data = Arc::new(json);
+
+        self.packages.insert(path.to_path_buf(), Arc::clone(&data));
+
+        Ok(data)
     }
 }

@@ -51,7 +51,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"cjs/require-scopes.cjs\")
         path: "/private/root/cjs/shared.cjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Cjs,
             source: "exports.number = 123;\nexports.string = \"abc\";\n",
             source_type: SourceType {
                 language: JavaScript,
@@ -144,7 +144,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"cjs/require-scopes.cjs\")
         path: "/root/cjs/require-scopes.cjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Cjs,
             source: "require(\"./shared.cjs\");\n\nfunction foo() {\n  const ns = require(\"./shared.cjs\");\n}\n\nfunction bar() {\n  return () => {\n    const { number } = require(\"./shared.cjs\");\n  };\n}\n\nclass Baz {\n  method() {\n    const { string } = require(\"./shared.cjs\");\n  }\n}\n",
             source_type: SourceType {
                 language: JavaScript,

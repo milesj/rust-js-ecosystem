@@ -748,7 +748,7 @@ dependencies = [
  "clean-path",
  "indexmap",
  "lightningcss",
- "nodejs_package_json",
+ "nodejs_package_json 0.1.2",
  "oxc",
  "oxc_resolver",
  "petgraph",
@@ -764,7 +764,7 @@ version = "0.1.0"
 dependencies = [
  "clean-path",
  "miette 7.1.0",
- "nodejs_package_json",
+ "nodejs_package_json 0.1.2",
  "nodejs_package_managers",
  "petgraph",
  "starbase_sandbox",
@@ -778,9 +778,23 @@ version = "0.2.0"
 dependencies = [
  "indexmap",
  "miette 7.1.0",
- "nodejs_package_json",
+ "nodejs_package_json 0.1.2",
  "once_cell",
  "regex",
+ "rustc-hash",
+ "semver",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "nodejs_package_json"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "770813a997f38d144fa7c0e0b15012b8d1ff863f16d875c9ac8ab1b3ebd5cff8"
+dependencies = [
+ "indexmap",
  "rustc-hash",
  "semver",
  "serde",
@@ -958,20 +972,21 @@ dependencies = [
 
 [[package]]
 name = "oxc_resolver"
-version = "1.5.4"
+version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2033cc3b0e72446d3321866db0954804b9ca559ad692480205053f6aea4bfc15"
+checksum = "2255c105f844bd9793db2fa57ee443ac82668d7d86e5601d0245de5efd7686df"
 dependencies = [
  "dashmap",
  "dunce",
- "indexmap",
  "json-strip-comments",
+ "nodejs_package_json 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "once_cell",
  "rustc-hash",
  "serde",
  "serde_json",
  "thiserror",
  "tracing",
+ "typescript_tsconfig_json 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1792,7 +1807,20 @@ dependencies = [
  "serde",
  "serde_json",
  "starbase_sandbox",
- "typescript_tsconfig_json",
+ "typescript_tsconfig_json 0.1.3",
+]
+
+[[package]]
+name = "typescript_tsconfig_json"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7891656ce99f05b8866301d3a97abc9b260fb80ac962aad3d31616947b068646"
+dependencies = [
+ "clean-path",
+ "indexmap",
+ "rustc-hash",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

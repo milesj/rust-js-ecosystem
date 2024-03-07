@@ -32,7 +32,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"cjs/dyn-import-patterns.c
         path: "/private/root/cjs/shared-def-object.cjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Cjs,
             source: "module.exports = {\n  number: 123,\n  string: \"abc\",\n  object: {\n    one: {\n      two: {\n        value: true,\n      },\n    },\n    value: true,\n  },\n};\n",
             source_type: SourceType {
                 language: JavaScript,
@@ -98,7 +98,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"cjs/dyn-import-patterns.c
         path: "/private/root/cjs/shared.cjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Cjs,
             source: "exports.number = 123;\nexports.string = \"abc\";\n",
             source_type: SourceType {
                 language: JavaScript,
@@ -206,7 +206,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"cjs/dyn-import-patterns.c
         path: "/root/cjs/dyn-import-patterns.cjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Cjs,
             source: "async function test() {\n  // Default\n  const { default: def } = await import(\"./shared-def-object.cjs\");\n\n  // Destructure\n  const { number } = await import(\"./shared.cjs\");\n\n  // Destructure with rest\n  const { string, ...rest } = await import(\"./shared.cjs\");\n\n  // Destructure nested object\n  const {\n    default: {\n      object: {\n        one: {\n          two: { value },\n        },\n      },\n    },\n  } = await import(\"./shared-def-object.cjs\");\n}\n",
             source_type: SourceType {
                 language: JavaScript,

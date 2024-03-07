@@ -4,15 +4,17 @@ mod visit_imports_exports;
 use self::visit_imports_exports::*;
 use crate::module::*;
 use crate::module_graph_error::ModuleGraphError;
+use nodejs_package_json::PackageJson;
 use oxc::allocator::Allocator;
 // use oxc::ast::ast::Program;
 use oxc::ast::Visit;
 use oxc::parser::Parser;
 use oxc::span::SourceType;
-use oxc_resolver::PackageJson as ResolvedPackageJson;
 use rustc_hash::FxHashSet;
 use starbase_utils::fs;
+use starbase_utils::json::JsonValue;
 use std::fmt;
+use std::path::Path;
 // use std::mem;
 use std::sync::Arc;
 
@@ -47,7 +49,7 @@ impl ModuleSource for JavaScriptModule {
 
     fn load(
         module: &mut Module,
-        _package_json: Option<Arc<ResolvedPackageJson>>,
+        package_json: Option<Arc<PackageJson>>,
     ) -> Result<Self, ModuleGraphError> {
         let source = fs::read_file(&module.path)?;
         let source_type = SourceType::from_path(&module.path).unwrap();
@@ -61,7 +63,7 @@ impl ModuleSource for JavaScriptModule {
         // };
 
         Ok(Self {
-            package_type: JavaScriptPackageType::Unknown, // TODO
+            package_type: JavaScriptPackageType::determine(&module.path, package_json),
             source: Arc::new(source),
             source_type,
             stats: JavaScriptStats::default(),
@@ -112,6 +114,30 @@ pub enum JavaScriptPackageType {
 }
 
 impl JavaScriptPackageType {
+    pub fn determine(path: &Path, package_json: Option<Arc<PackageJson>>) -> Self {
+        if let Some(ext) = path.extension().and_then(|ext| ext.to_str()) {
+            if ext == "cjs" {
+                return Self::Cjs;
+            }
+            if ext == "mjs" {
+                return Self::Mjs;
+            }
+        }
+
+        if let Some(package) = package_json {
+            if let Some(JsonValue::String(type_of)) = package.other_fields.get("type") {
+                if type_of == "cjs" || type_of == "commonjs" {
+                    return Self::CjsPackageJson;
+                }
+                if type_of == "module" {
+                    return Self::EsmPackageJson;
+                }
+            }
+        }
+
+        Self::Unknown
+    }
+
     pub fn is_esm(&self) -> bool {
         matches!(self, Self::Mjs | Self::EsmPackageJson)
     }

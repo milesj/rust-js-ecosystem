@@ -89,7 +89,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"cjs/exports-named.cjs\")"
         path: "/root/cjs/exports-named.cjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Cjs,
             source: "exports.foo = \"primitive\";\n\nexports.bar = function bar() {};\n\nexports.Baz = class Baz {};\n\nexports.Qux = class {};\n",
             source_type: SourceType {
                 language: JavaScript,
