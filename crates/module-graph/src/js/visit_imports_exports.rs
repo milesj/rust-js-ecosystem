@@ -1,11 +1,12 @@
 use super::stats::JavaScriptStats;
 use crate::module::*;
 use oxc::ast::ast::{
-    Argument, BindingPattern, BindingPatternKind, CallExpression, Declaration,
-    ExportAllDeclaration, ExportDefaultDeclaration, ExportDefaultDeclarationKind,
-    ExportNamedDeclaration, Expression, ImportDeclaration, ImportDeclarationSpecifier,
-    ImportExpression, ModuleDeclaration, Statement, StaticMemberExpression,
-    TSImportEqualsDeclaration, TSModuleReference, VariableDeclarator,
+    Argument, AssignmentExpression, AssignmentTarget, BindingPattern, BindingPatternKind,
+    CallExpression, Declaration, ExportAllDeclaration, ExportDefaultDeclaration,
+    ExportDefaultDeclarationKind, ExportNamedDeclaration, Expression, ImportDeclaration,
+    ImportDeclarationSpecifier, ImportExpression, MemberExpression, ModuleDeclaration,
+    SimpleAssignmentTarget, Statement, StaticMemberExpression, TSImportEqualsDeclaration,
+    TSModuleReference, VariableDeclarator,
 };
 use oxc::ast::{AstKind, Visit};
 use oxc::span::{Atom, Span};
@@ -362,35 +363,66 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
         };
     }
 
-    // exports.name
     // module.exports
+    fn visit_assignment_expression(&mut self, expr: &AssignmentExpression<'ast>) {
+        if let AssignmentTarget::SimpleAssignmentTarget(
+            SimpleAssignmentTarget::MemberAssignmentTarget(member),
+        ) = &expr.left
+        {
+            if let MemberExpression::StaticMemberExpression(inner) = &**member {
+                if inner.object.is_specific_id("module") && inner.property.name == "exports" {
+                    let name = match &expr.right {
+                        Expression::Identifier(ident) => Some(ident.name.clone()),
+                        Expression::ClassExpression(class) => {
+                            class.id.as_ref().map(|id| id.name.clone())
+                        }
+                        Expression::FunctionExpression(func) => {
+                            func.id.as_ref().map(|id| id.name.clone())
+                        }
+                        _ => None,
+                    };
+
+                    self.module.exports.push(Export {
+                        kind: ExportKind::Legacy,
+                        span: Some(expr.span),
+                        symbols: vec![ExportedSymbol {
+                            kind: ExportedKind::Default,
+                            symbol_id: None,
+                            name: name.unwrap_or(Atom::from("default")),
+                        }],
+                        ..Export::default()
+                    });
+                    self.stats.exports_default = true;
+                }
+            }
+        }
+
+        // Copied from trait
+        let kind = AstKind::AssignmentExpression(self.alloc(expr));
+        self.enter_node(kind);
+        self.visit_assignment_target(&expr.left);
+        self.visit_expression(&expr.right);
+        self.leave_node(kind);
+    }
+
+    // exports.name
     fn visit_static_member_expression(&mut self, expr: &StaticMemberExpression<'ast>) {
-        let mut record = Export {
-            kind: ExportKind::Legacy,
-            span: Some(expr.span),
-            ..Export::default()
-        };
-
-        // named
         if expr.object.is_specific_id("exports") && !expr.property.name.is_empty() {
-            record.symbols.push(ExportedSymbol {
-                kind: ExportedKind::Value,
-                symbol_id: None,
-                name: expr.property.name.clone(),
-            });
-        }
-        // default
-        else if expr.object.is_specific_id("module") && expr.property.name == "exports" {
-            record.symbols.push(ExportedSymbol {
-                kind: ExportedKind::Default,
-                symbol_id: None,
-                name: Atom::from("default"),
+            self.module.exports.push(Export {
+                kind: ExportKind::Legacy,
+                span: Some(expr.span),
+                symbols: vec![ExportedSymbol {
+                    kind: ExportedKind::Value,
+                    symbol_id: None,
+                    name: expr.property.name.clone(),
+                }],
+                ..Export::default()
             });
         }
 
-        if !record.symbols.is_empty() {
-            self.module.exports.push(record);
-        }
+        // Copied from trait
+        self.visit_expression(&expr.object);
+        self.visit_identifier_name(&expr.property);
     }
 
     // import foo =

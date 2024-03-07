@@ -84,6 +84,30 @@ mod ts {
     }
 
     #[test]
+    fn import_star() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(sandbox.path(), "ts/import-star.ts"));
+    }
+
+    #[test]
+    fn import_named() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "ts/import-named.ts"
+        ));
+    }
+
+    #[test]
+    fn import_default() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(sandbox.path(), "ts/import-def.ts"));
+    }
+
+    #[test]
     fn dynamic_import_top_level_await() {
         let sandbox = create_sandbox("js");
 

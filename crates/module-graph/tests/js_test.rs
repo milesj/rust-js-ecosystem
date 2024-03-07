@@ -3,6 +3,50 @@ mod utils;
 use starbase_sandbox::{assert_snapshot, create_sandbox};
 use utils::*;
 
+mod cjs {
+    use super::*;
+
+    #[test]
+    fn module_exports() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "cjs/module-exports.cjs"
+        ));
+    }
+
+    #[test]
+    fn module_exports_class() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "cjs/module-exports-class.cjs"
+        ));
+    }
+
+    #[test]
+    fn module_exports_func() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "cjs/module-exports-func.cjs"
+        ));
+    }
+
+    #[test]
+    fn module_exports_ref() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "cjs/module-exports-ref.cjs"
+        ));
+    }
+}
+
 mod mjs {
     use super::*;
 
