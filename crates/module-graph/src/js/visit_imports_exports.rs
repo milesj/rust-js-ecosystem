@@ -1,12 +1,11 @@
 use super::stats::JavaScriptStats;
 use crate::module::*;
 use oxc::ast::ast::{
-    Argument, AssignmentExpression, AssignmentTarget, BindingPattern, BindingPatternKind,
-    CallExpression, Declaration, ExportAllDeclaration, ExportDefaultDeclaration,
-    ExportDefaultDeclarationKind, ExportNamedDeclaration, Expression, ImportDeclaration,
-    ImportDeclarationSpecifier, ImportExpression, MemberExpression, ModuleDeclaration,
-    SimpleAssignmentTarget, Statement, StaticMemberExpression, TSImportEqualsDeclaration,
-    TSModuleReference, VariableDeclarator,
+    Argument, AssignmentTarget, BindingPattern, BindingPatternKind, CallExpression, Declaration,
+    ExportAllDeclaration, ExportDefaultDeclaration, ExportDefaultDeclarationKind,
+    ExportNamedDeclaration, Expression, ImportDeclaration, ImportDeclarationSpecifier,
+    ImportExpression, MemberExpression, ModuleDeclaration, SimpleAssignmentTarget, Statement,
+    TSModuleReference,
 };
 use oxc::ast::{AstKind, Visit};
 use oxc::span::{Atom, Span};
@@ -49,7 +48,66 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
                     self.stats.other_statements += 1;
                 }
             }
-            // export =
+
+            // module.exports = value
+            AstKind::AssignmentExpression(expr) => {
+                if let AssignmentTarget::SimpleAssignmentTarget(
+                    SimpleAssignmentTarget::MemberAssignmentTarget(member),
+                ) = &expr.left
+                {
+                    if member.is_specific_member_access("module", "exports") {
+                        let name = match &expr.right {
+                            Expression::Identifier(ident) => Some(ident.name.clone()),
+                            Expression::ClassExpression(class) => {
+                                class.id.as_ref().map(|id| id.name.clone())
+                            }
+                            Expression::FunctionExpression(func) => {
+                                func.id.as_ref().map(|id| id.name.clone())
+                            }
+                            _ => None,
+                        };
+
+                        self.module.exports.push(Export {
+                            kind: ExportKind::Legacy,
+                            span: Some(expr.span),
+                            symbols: vec![ExportedSymbol {
+                                kind: ExportedKind::Default,
+                                symbol_id: None,
+                                name: name.unwrap_or(Atom::from("default")),
+                            }],
+                            ..Export::default()
+                        });
+
+                        // Should we do this???
+                        self.stats.exports_default = true;
+                    }
+                }
+            }
+
+            // require()
+            AstKind::CallExpression(require) => {
+                if require.callee.is_specific_id("require") && require.arguments.len() == 1 {
+                    if let Argument::Expression(Expression::StringLiteral(source)) =
+                        &require.arguments[0]
+                    {
+                        if !self.extracted_requires.contains(&require.span) {
+                            self.extracted_requires.insert(require.span);
+
+                            self.module.imports.push(Import {
+                                kind: ImportKind::SyncStatic,
+                                module_id: 0,
+                                source_request: source.value.clone(),
+                                span: require.span,
+                                type_only: false,
+                                symbols: vec![],
+                            });
+                            self.stats.require_count += 1;
+                        }
+                    };
+                }
+            }
+
+            // export = value
             AstKind::ModuleDeclaration(ModuleDeclaration::TSExportAssignment(export)) => {
                 self.module.exports.push(Export {
                     kind: ExportKind::Modern,
@@ -62,29 +120,102 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
                     ..Export::default()
                 });
             }
-            _ => {}
-        };
-    }
 
-    // require()
-    fn visit_call_expression(&mut self, require: &CallExpression<'ast>) {
-        if require.callee.is_specific_id("require") && require.arguments.len() == 1 {
-            if let Argument::Expression(Expression::StringLiteral(source)) = &require.arguments[0] {
-                if !self.extracted_requires.contains(&require.span) {
-                    self.extracted_requires.insert(require.span);
+            // exports.name = value
+            AstKind::MemberExpression(MemberExpression::StaticMemberExpression(expr)) => {
+                if expr.object.is_specific_id("exports") && !expr.property.name.is_empty() {
+                    self.module.exports.push(Export {
+                        kind: ExportKind::Legacy,
+                        span: Some(expr.span),
+                        symbols: vec![ExportedSymbol {
+                            kind: ExportedKind::Value,
+                            symbol_id: None,
+                            name: expr.property.name.clone(),
+                        }],
+                        ..Export::default()
+                    });
+                }
+            }
 
+            // import value = require()
+            AstKind::TSImportEqualsDeclaration(decl) => {
+                if let TSModuleReference::ExternalModuleReference(ext_module) =
+                    &*decl.module_reference
+                {
                     self.module.imports.push(Import {
                         kind: ImportKind::SyncStatic,
                         module_id: 0,
-                        source_request: source.value.clone(),
-                        span: require.span,
-                        type_only: false,
-                        symbols: vec![],
+                        source_request: ext_module.expression.value.clone(),
+                        span: decl.span,
+                        symbols: vec![ImportedSymbol {
+                            kind: ImportedKind::Default,
+                            source_name: None,
+                            symbol_id: decl.id.symbol_id.clone().into_inner(),
+                            name: decl.id.name.clone(),
+                        }],
+                        type_only: decl.import_kind.is_type(),
                     });
-                    self.stats.require_count += 1;
                 }
-            };
-        }
+            }
+
+            // { .. } = await import()
+            // { .. } = require()
+            AstKind::VariableDeclarator(decl) => {
+                let Some(init) = &decl.init else {
+                    return;
+                };
+
+                // import()
+                if let Some(import) = extract_dynamic_import_from_expression(init) {
+                    if let Expression::StringLiteral(source) = &import.source {
+                        if !self.extracted_dynamic_imports.contains(&import.span) {
+                            self.extracted_dynamic_imports.insert(import.span);
+
+                            let mut record = Import {
+                                kind: ImportKind::AsyncDynamic,
+                                module_id: 0,
+                                source_request: source.value.clone(),
+                                span: import.span,
+                                type_only: false,
+                                symbols: vec![],
+                            };
+
+                            import_binding_pattern(&decl.id, &mut record.symbols);
+
+                            self.module.imports.push(record);
+                            self.stats.dynamic_import_count += 1;
+                        }
+                    };
+                }
+
+                // require()
+                if let Some(require) = extract_require_from_expression(init) {
+                    if let Argument::Expression(Expression::StringLiteral(source)) =
+                        &require.arguments[0]
+                    {
+                        if !self.extracted_requires.contains(&require.span) {
+                            self.extracted_requires.insert(require.span);
+
+                            let mut record = Import {
+                                kind: ImportKind::SyncStatic,
+                                module_id: 0,
+                                source_request: source.value.clone(),
+                                span: require.span,
+                                type_only: false,
+                                symbols: vec![],
+                            };
+
+                            import_binding_pattern(&decl.id, &mut record.symbols);
+
+                            self.module.imports.push(record);
+                            self.stats.require_count += 1;
+                        }
+                    };
+                }
+            }
+
+            _ => {}
+        };
     }
 
     // export *
@@ -361,141 +492,6 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
                 self.stats.dynamic_import_count += 1;
             }
         };
-    }
-
-    // module.exports
-    fn visit_assignment_expression(&mut self, expr: &AssignmentExpression<'ast>) {
-        if let AssignmentTarget::SimpleAssignmentTarget(
-            SimpleAssignmentTarget::MemberAssignmentTarget(member),
-        ) = &expr.left
-        {
-            if let MemberExpression::StaticMemberExpression(inner) = &**member {
-                if inner.object.is_specific_id("module") && inner.property.name == "exports" {
-                    let name = match &expr.right {
-                        Expression::Identifier(ident) => Some(ident.name.clone()),
-                        Expression::ClassExpression(class) => {
-                            class.id.as_ref().map(|id| id.name.clone())
-                        }
-                        Expression::FunctionExpression(func) => {
-                            func.id.as_ref().map(|id| id.name.clone())
-                        }
-                        _ => None,
-                    };
-
-                    self.module.exports.push(Export {
-                        kind: ExportKind::Legacy,
-                        span: Some(expr.span),
-                        symbols: vec![ExportedSymbol {
-                            kind: ExportedKind::Default,
-                            symbol_id: None,
-                            name: name.unwrap_or(Atom::from("default")),
-                        }],
-                        ..Export::default()
-                    });
-                    self.stats.exports_default = true;
-                }
-            }
-        }
-
-        // Copied from trait
-        let kind = AstKind::AssignmentExpression(self.alloc(expr));
-        self.enter_node(kind);
-        self.visit_assignment_target(&expr.left);
-        self.visit_expression(&expr.right);
-        self.leave_node(kind);
-    }
-
-    // exports.name
-    fn visit_static_member_expression(&mut self, expr: &StaticMemberExpression<'ast>) {
-        if expr.object.is_specific_id("exports") && !expr.property.name.is_empty() {
-            self.module.exports.push(Export {
-                kind: ExportKind::Legacy,
-                span: Some(expr.span),
-                symbols: vec![ExportedSymbol {
-                    kind: ExportedKind::Value,
-                    symbol_id: None,
-                    name: expr.property.name.clone(),
-                }],
-                ..Export::default()
-            });
-        }
-
-        // Copied from trait
-        self.visit_expression(&expr.object);
-        self.visit_identifier_name(&expr.property);
-    }
-
-    // import foo =
-    fn visit_ts_import_equals_declaration(&mut self, decl: &TSImportEqualsDeclaration<'ast>) {
-        if let TSModuleReference::ExternalModuleReference(ext_module) = &*decl.module_reference {
-            self.module.imports.push(Import {
-                kind: ImportKind::SyncStatic,
-                module_id: 0,
-                source_request: ext_module.expression.value.clone(),
-                span: decl.span,
-                symbols: vec![ImportedSymbol {
-                    kind: ImportedKind::Default,
-                    source_name: None,
-                    symbol_id: decl.id.symbol_id.clone().into_inner(),
-                    name: decl.id.name.clone(),
-                }],
-                type_only: decl.import_kind.is_type(),
-            });
-        }
-    }
-
-    // { .. } = await import()
-    // { .. } = require()
-    fn visit_variable_declarator(&mut self, decl: &VariableDeclarator<'ast>) {
-        let Some(init) = &decl.init else {
-            return;
-        };
-
-        // import()
-        if let Some(import) = extract_dynamic_import_from_expression(init) {
-            if let Expression::StringLiteral(source) = &import.source {
-                if !self.extracted_dynamic_imports.contains(&import.span) {
-                    self.extracted_dynamic_imports.insert(import.span);
-
-                    let mut record = Import {
-                        kind: ImportKind::AsyncDynamic,
-                        module_id: 0,
-                        source_request: source.value.clone(),
-                        span: import.span,
-                        type_only: false,
-                        symbols: vec![],
-                    };
-
-                    import_binding_pattern(&decl.id, &mut record.symbols);
-
-                    self.module.imports.push(record);
-                    self.stats.dynamic_import_count += 1;
-                }
-            };
-        }
-
-        // require()
-        // if let Some(require) = extract_require_from_expression(init) {
-        //     if let Argument::Expression(Expression::StringLiteral(source)) = &require.arguments[0] {
-        //         if !self.extracted_requires.contains(&require.span) {
-        //             self.extracted_requires.insert(require.span);
-
-        //             let mut record = Import {
-        //                 kind: ImportKind::SyncStatic,
-        //                 module_id: 0,
-        //                 source_request: source.value.clone(),
-        //                 span: require.span,
-        //                 type_only: false,
-        //                 symbols: vec![],
-        //             };
-
-        //             import_binding_pattern(&decl.id, &mut record.symbols, 0);
-
-        //             self.module.imports.push(record);
-        //             self.stats.require_count += 1;
-        //         }
-        //     };
-        // }
     }
 }
 

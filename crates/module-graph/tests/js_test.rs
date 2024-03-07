@@ -7,6 +7,23 @@ mod cjs {
     use super::*;
 
     #[test]
+    fn require() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(sandbox.path(), "cjs/require.cjs"));
+    }
+
+    #[test]
+    fn require_scopes() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "cjs/require-scopes.cjs"
+        ));
+    }
+
+    #[test]
     fn module_exports() {
         let sandbox = create_sandbox("js");
 
@@ -43,6 +60,36 @@ mod cjs {
         assert_snapshot!(generate_graph_for_file(
             sandbox.path(),
             "cjs/module-exports-ref.cjs"
+        ));
+    }
+
+    #[test]
+    fn exports_named() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "cjs/exports-named.cjs"
+        ));
+    }
+
+    #[test]
+    fn exports_named_scopes() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "cjs/exports-named-scopes.cjs"
+        ));
+    }
+
+    #[test]
+    fn dynamic_import() {
+        let sandbox = create_sandbox("js");
+
+        assert_snapshot!(generate_graph_for_file(
+            sandbox.path(),
+            "cjs/dyn-import-patterns.cjs"
         ));
     }
 }

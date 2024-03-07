@@ -1,0 +1,110 @@
+---
+source: crates/module-graph/tests/js_test.rs
+expression: "generate_graph_for_file(sandbox.path(), \"cjs/exports-named.cjs\")"
+---
+{
+    1: Module {
+        exports: [
+            Export {
+                kind: Legacy,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 0,
+                        end: 11,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "foo",
+                    },
+                ],
+                type_only: false,
+            },
+            Export {
+                kind: Legacy,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 28,
+                        end: 39,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "bar",
+                    },
+                ],
+                type_only: false,
+            },
+            Export {
+                kind: Legacy,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 62,
+                        end: 73,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "Baz",
+                    },
+                ],
+                type_only: false,
+            },
+            Export {
+                kind: Legacy,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 91,
+                        end: 102,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "Qux",
+                    },
+                ],
+                type_only: false,
+            },
+        ],
+        fragment: None,
+        id: 1,
+        imports: [],
+        package_name: None,
+        path: "/root/cjs/exports-named.cjs",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Unknown,
+            source: "exports.foo = \"primitive\";\n\nexports.bar = function bar() {};\n\nexports.Baz = class Baz {};\n\nexports.Qux = class {};\n",
+            source_type: SourceType {
+                language: JavaScript,
+                module_kind: Module,
+                variant: Jsx,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 0,
+                exports_default: false,
+                import_statements: 0,
+                other_statements: 4,
+                require_count: 0,
+            },
+        },
+    },
+}
