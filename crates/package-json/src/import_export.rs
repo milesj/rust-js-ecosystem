@@ -56,9 +56,14 @@ impl fmt::Display for ImportExportKey {
             f,
             "{}",
             match self {
-                Self::Main => ".",
-                Self::Pattern(pat) => &pat,
-                Self::CustomCondition(con) => &con,
+                Self::Main => ".".to_owned(),
+                Self::Pattern(pat) =>
+                    if pat.starts_with('#') {
+                        pat.to_owned()
+                    } else {
+                        format!(".{pat}")
+                    },
+                Self::CustomCondition(con) => con.to_owned(),
             }
         )
     }
