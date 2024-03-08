@@ -168,7 +168,6 @@ pub trait ModuleSource: fmt::Debug {
     }
 }
 
-#[derive(Debug)]
 pub struct Module {
     /// List of symbols being exported, and optionally the module they came from.
     pub exports: Vec<Export>,
@@ -269,5 +268,23 @@ impl Module {
         self.source = source;
 
         Ok(())
+    }
+}
+
+impl fmt::Debug for Module {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Primarily for snapshots + Windows
+        let path = self.path.to_string_lossy().replace("\\", "/");
+
+        f.debug_struct("Module")
+            .field("exports", &self.exports)
+            .field("fragment", &self.fragment)
+            .field("id", &self.id)
+            .field("imports", &self.imports)
+            .field("package_name", &self.package_name)
+            .field("path", &path)
+            .field("query", &self.query)
+            .field("source", &self.source)
+            .finish()
     }
 }
