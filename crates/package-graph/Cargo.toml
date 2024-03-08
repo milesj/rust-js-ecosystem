@@ -10,7 +10,7 @@ repository = "https://github.com/rolldown-rs/js-ts-crates"
 nodejs_package_json = { version = "0.1.3", path = "../package-json", features = [
 	"protocols",
 ] }
-nodejs_package_managers = { version = "0.1.0", path = "../package-managers" }
+nodejs_package_managers = { version = "0.1.1", path = "../package-managers" }
 clean-path = { workspace = true }
 miette = { workspace = true, optional = true }
 petgraph = { workspace = true }

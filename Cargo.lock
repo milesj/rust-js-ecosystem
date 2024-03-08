@@ -448,7 +448,7 @@ dependencies = [
 
 [[package]]
 name = "nodejs_package_managers"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "package-lock-json-parser",
  "rustc-hash",
