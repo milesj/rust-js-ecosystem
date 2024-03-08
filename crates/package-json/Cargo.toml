@@ -2,6 +2,7 @@
 name = "nodejs_package_json"
 version = "0.1.3"
 edition = "2021"
+rust-version = { workspace = true }
 license = "MIT"
 description = "Shapes for Node.js package.json."
 repository = "https://github.com/rolldown-rs/js-ts-crates"
@@ -16,7 +17,6 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 
 # protocols
-once_cell = { workspace = true, optional = true }
 regex = { workspace = true, optional = true }
 
 [dev-dependencies]
@@ -25,4 +25,4 @@ nodejs_package_json = { path = ".", features = ["protocols"] }
 [features]
 default = []
 miette = ["dep:miette"]
-protocols = ["dep:once_cell", "dep:regex"]
+protocols = ["dep:regex"]

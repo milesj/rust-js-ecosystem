@@ -2,6 +2,7 @@
 name = "nodejs_package_managers"
 version = "0.1.0"
 edition = "2021"
+rust-version = { workspace = true }
 license = "MIT"
 description = "Helpers for npm, pnpm, yarn, and bun package managers."
 repository = "https://github.com/rolldown-rs/js-ts-crates"

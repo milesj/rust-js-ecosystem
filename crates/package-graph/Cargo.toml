@@ -2,6 +2,7 @@
 name = "nodejs_package_graph"
 version = "0.1.0"
 edition = "2021"
+rust-version = { workspace = true }
 license = "MIT"
 description = "A workspace-based package graph for Node.js packages."
 repository = "https://github.com/rolldown-rs/js-ts-crates"

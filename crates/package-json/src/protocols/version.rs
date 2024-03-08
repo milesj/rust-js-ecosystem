@@ -1,21 +1,16 @@
 use super::workspace::*;
-use once_cell::sync::Lazy;
 use regex::Regex;
 use semver::{Version, VersionReq};
 use serde::Deserialize;
 use std::fmt::{self, Display};
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::sync::OnceLock;
 use thiserror::Error;
 
-static PROTOCOL: Lazy<Regex> = Lazy::new(|| Regex::new("^(?<protocol>[a-z+]+):").unwrap());
+static PROTOCOL: OnceLock<Regex> = OnceLock::new();
 
-static GITHUB: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(
-        "(?<owner>[A-Za-z0-9_.-]+)/(?<repo>[A-Za-z0-9_.-]+)(?:#(?<commit>[A-Za-z0-9_.-/]+))?",
-    )
-    .unwrap()
-});
+static GITHUB: OnceLock<Regex> = OnceLock::new();
 
 #[derive(Debug, Error)]
 #[cfg_attr(feature = "miette", derive(miette::Diagnostic))]
@@ -74,7 +69,10 @@ impl FromStr for VersionProtocol {
             return Ok(VersionProtocol::Requirement(VersionReq::parse("*")?));
         }
 
-        if let Some(caps) = PROTOCOL.captures(value) {
+        if let Some(caps) = PROTOCOL
+            .get_or_init(|| Regex::new("^(?<protocol>[a-z+]+):").unwrap())
+            .captures(value)
+        {
             let protocol = caps.name("protocol").unwrap().as_str();
             let index = protocol.len();
 
@@ -108,7 +106,11 @@ impl FromStr for VersionProtocol {
             }
         }
 
-        if let Some(caps) = GITHUB.captures(value) {
+        if let Some(caps) = GITHUB.get_or_init(|| {
+            Regex::new(
+                "(?<owner>[A-Za-z0-9_.-]+)/(?<repo>[A-Za-z0-9_.-]+)(?:#(?<commit>[A-Za-z0-9_.-/]+))?",
+            )
+            .unwrap()}).captures(value) {
             return Ok(VersionProtocol::GitHub {
                 owner: caps.name("owner").unwrap().as_str().to_owned(),
                 repo: caps.name("repo").unwrap().as_str().to_owned(),
