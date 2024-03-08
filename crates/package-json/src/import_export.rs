@@ -5,6 +5,7 @@ use std::fmt;
 pub type ImportExportMap = FxIndexMap<ImportExportKey, ImportExportField>;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[serde(untagged)]
 pub enum ImportExportField {
     #[default]
@@ -15,7 +16,8 @@ pub enum ImportExportField {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq)]
-#[serde(untagged, from = "String")]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[serde(untagged, from = "String", into = "String")]
 pub enum ImportExportKey {
     Main,
     Pattern(String),

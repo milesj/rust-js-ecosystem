@@ -26,3 +26,4 @@ nodejs_package_json = { path = ".", features = ["protocols"] }
 default = []
 miette = ["dep:miette"]
 protocols = ["dep:once_cell", "dep:regex"]
+serialize = []
