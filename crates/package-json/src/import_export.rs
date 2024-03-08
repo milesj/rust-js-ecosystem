@@ -44,6 +44,12 @@ impl From<String> for ImportExportKey {
     }
 }
 
+impl From<ImportExportKey> for String {
+    fn from(value: ImportExportKey) -> String {
+        value.to_string()
+    }
+}
+
 impl fmt::Display for ImportExportKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(

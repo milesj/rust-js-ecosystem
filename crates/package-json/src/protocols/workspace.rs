@@ -1,6 +1,6 @@
 use semver::Version;
 use serde::Deserialize;
-use std::fmt::{self, Display};
+use std::fmt;
 use std::path::PathBuf;
 use std::str::FromStr;
 use thiserror::Error;
@@ -24,7 +24,8 @@ pub enum WorkspaceProtocolError {
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
-#[serde(untagged, try_from = "String")]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[serde(untagged, try_from = "String", into = "String")]
 pub enum WorkspaceProtocol {
     // *
     Any {
@@ -98,6 +99,12 @@ impl TryFrom<String> for WorkspaceProtocol {
     }
 }
 
+impl From<WorkspaceProtocol> for String {
+    fn from(value: WorkspaceProtocol) -> String {
+        value.to_string()
+    }
+}
+
 fn format_variant(prefix: char, alias: Option<&String>, version: Option<&Version>) -> String {
     let mut result = format!("{prefix}");
 
@@ -112,7 +119,7 @@ fn format_variant(prefix: char, alias: Option<&String>, version: Option<&Version
     result
 }
 
-impl Display for WorkspaceProtocol {
+impl fmt::Display for WorkspaceProtocol {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
