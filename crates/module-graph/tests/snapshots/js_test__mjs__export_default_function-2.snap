@@ -32,7 +32,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"mjs/export-def-anon-func.
         path: "/root/mjs/export-def-anon-func.mjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Mjs,
             source: "export default function () {}\n",
             source_type: SourceType {
                 language: JavaScript,

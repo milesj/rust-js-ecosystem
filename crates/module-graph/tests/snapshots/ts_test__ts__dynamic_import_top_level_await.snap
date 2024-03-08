@@ -67,7 +67,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"ts/dyn-import-tla.ts\")"
         id: 2,
         imports: [],
         package_name: None,
-        path: "/private/root/ts/shared.ts",
+        path: "/root/ts/shared.ts",
         query: None,
         source: JavaScriptModule {
             package_type: Unknown,

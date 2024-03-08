@@ -67,7 +67,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"ts/import-def.ts\")"
         id: 2,
         imports: [],
         package_name: None,
-        path: "/private/root/ts/shared.ts",
+        path: "/root/ts/shared.ts",
         query: None,
         source: JavaScriptModule {
             package_type: Unknown,
@@ -116,7 +116,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"ts/import-def.ts\")"
         id: 3,
         imports: [],
         package_name: None,
-        path: "/private/root/ts/export-def-interface.ts",
+        path: "/root/ts/export-def-interface.ts",
         query: None,
         source: JavaScriptModule {
             package_type: Unknown,
@@ -145,7 +145,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"ts/import-def.ts\")"
         id: 4,
         imports: [],
         package_name: None,
-        path: "/private/root/ts/export-def-enum.ts",
+        path: "/root/ts/export-def-enum.ts",
         query: None,
         source: JavaScriptModule {
             package_type: Unknown,

@@ -48,10 +48,10 @@ expression: "generate_graph_for_file(sandbox.path(), \"mjs/import-def.mjs\")"
         id: 2,
         imports: [],
         package_name: None,
-        path: "/private/root/mjs/shared.mjs",
+        path: "/root/mjs/shared.mjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Mjs,
             source: "export const number = 123;\nexport const string = \"abc\";\n",
             source_type: SourceType {
                 language: JavaScript,
@@ -115,7 +115,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"mjs/import-def.mjs\")"
         path: "/root/mjs/import-def.mjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Mjs,
             source: "import foo from \"./shared.mjs\";\nimport { default as bar } from \"./shared.mjs\";\n",
             source_type: SourceType {
                 language: JavaScript,

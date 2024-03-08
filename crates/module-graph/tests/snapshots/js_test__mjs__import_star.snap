@@ -48,10 +48,10 @@ expression: "generate_graph_for_file(sandbox.path(), \"mjs/import-star.mjs\")"
         id: 2,
         imports: [],
         package_name: None,
-        path: "/private/root/mjs/shared.mjs",
+        path: "/root/mjs/shared.mjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Mjs,
             source: "export const number = 123;\nexport const string = \"abc\";\n",
             source_type: SourceType {
                 language: JavaScript,
@@ -108,7 +108,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"mjs/import-star.mjs\")"
         path: "/root/mjs/import-star.mjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Mjs,
             source: "// Side-effects\nimport \"./shared.mjs\";\n\n// Namespace\nimport * as namespace from \"./shared.mjs\";\n",
             source_type: SourceType {
                 language: JavaScript,
