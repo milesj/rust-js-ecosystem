@@ -10,8 +10,8 @@ pub enum PackageManager {
     Bun,
     Npm,
     Pnpm,
-    Yarn,
-    YarnLegacy,
+    Yarn,       // v2+
+    YarnLegacy, // v1
 }
 
 pub struct LockfileDependency {

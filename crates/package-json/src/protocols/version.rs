@@ -3,7 +3,7 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use semver::{Version, VersionReq};
 use serde::Deserialize;
-use std::fmt::{self, Display};
+use std::fmt;
 use std::path::PathBuf;
 use std::str::FromStr;
 use thiserror::Error;
@@ -45,7 +45,8 @@ pub enum VersionProtocolError {
 
 // https://docs.npmjs.com/cli/v10/configuring-npm/package-json#dependencies
 #[derive(Clone, Debug, Deserialize, PartialEq)]
-#[serde(untagged, try_from = "String")]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[serde(untagged, try_from = "String", into = "String")]
 pub enum VersionProtocol {
     File(PathBuf),
     Git {
@@ -163,7 +164,13 @@ impl TryFrom<String> for VersionProtocol {
     }
 }
 
-impl Display for VersionProtocol {
+impl From<VersionProtocol> for String {
+    fn from(value: VersionProtocol) -> String {
+        value.to_string()
+    }
+}
+
+impl fmt::Display for VersionProtocol {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,

@@ -5,6 +5,7 @@ use std::fmt;
 pub type ImportExportMap = FxIndexMap<ImportExportKey, ImportExportField>;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[serde(untagged)]
 pub enum ImportExportField {
     #[default]
@@ -15,7 +16,8 @@ pub enum ImportExportField {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq)]
-#[serde(untagged, from = "String")]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[serde(untagged, from = "String", into = "String")]
 pub enum ImportExportKey {
     Main,
     Pattern(String),
@@ -42,15 +44,26 @@ impl From<String> for ImportExportKey {
     }
 }
 
+impl From<ImportExportKey> for String {
+    fn from(value: ImportExportKey) -> String {
+        value.to_string()
+    }
+}
+
 impl fmt::Display for ImportExportKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                Self::Main => ".",
-                Self::Pattern(pat) => &pat,
-                Self::CustomCondition(con) => &con,
+                Self::Main => ".".to_owned(),
+                Self::Pattern(pat) =>
+                    if pat.starts_with('#') {
+                        pat.to_owned()
+                    } else {
+                        format!(".{pat}")
+                    },
+                Self::CustomCondition(con) => con.to_owned(),
             }
         )
     }
