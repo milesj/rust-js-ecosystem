@@ -7,7 +7,7 @@ description = "A workspace-based package graph for Node.js packages."
 repository = "https://github.com/rolldown-rs/js-ts-crates"
 
 [dependencies]
-nodejs_package_json = { version = "0.1.3", path = "../package-json", features = [
+nodejs_package_json = { version = "0.2.0", path = "../package-json", features = [
 	"protocols",
 ] }
 nodejs_package_managers = { version = "0.1.1", path = "../package-managers" }
