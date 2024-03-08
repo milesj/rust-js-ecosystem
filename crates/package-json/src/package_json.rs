@@ -21,7 +21,10 @@ pub type ScriptsMap = FxIndexMap<String, String>;
 #[serde(default, rename_all = "camelCase")]
 pub struct PackageJson {
     pub name: Option<String>,
+    #[cfg(feature = "protocols")]
     pub version: Option<Version>,
+    #[cfg(not(feature = "protocols"))]
+    pub version: Option<String>,
     pub scripts: Option<ScriptsMap>,
 
     // Entry points
