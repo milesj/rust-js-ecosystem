@@ -5,7 +5,7 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-nodejs_package_json = { version = "0.1.1", path = "../package-json" }
+nodejs_package_json = { version = "0.2.0", path = "../package-json" }
 clean-path = { workspace = true }
 indexmap = { workspace = true }
 lightningcss = "1.0.0-alpha.54"

@@ -48,7 +48,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"mjs/dyn-import-scopes.mjs
         id: 2,
         imports: [],
         package_name: None,
-        path: "/private/root/mjs/shared.mjs",
+        path: "/root/mjs/shared.mjs",
         query: None,
         source: JavaScriptModule {
             package_type: Mjs,

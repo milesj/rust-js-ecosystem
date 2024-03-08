@@ -748,7 +748,7 @@ dependencies = [
  "clean-path",
  "indexmap",
  "lightningcss",
- "nodejs_package_json 0.1.2",
+ "nodejs_package_json 0.2.0",
  "oxc",
  "oxc_resolver",
  "petgraph",
@@ -764,27 +764,11 @@ version = "0.1.0"
 dependencies = [
  "clean-path",
  "miette 7.1.0",
- "nodejs_package_json 0.1.2",
+ "nodejs_package_json 0.2.0",
  "nodejs_package_managers",
  "petgraph",
  "starbase_sandbox",
  "starbase_utils",
- "thiserror",
-]
-
-[[package]]
-name = "nodejs_package_json"
-version = "0.2.0"
-dependencies = [
- "indexmap",
- "miette 7.1.0",
- "nodejs_package_json 0.1.2",
- "once_cell",
- "regex",
- "rustc-hash",
- "semver",
- "serde",
- "serde_json",
  "thiserror",
 ]
 
@@ -795,6 +779,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "770813a997f38d144fa7c0e0b15012b8d1ff863f16d875c9ac8ab1b3ebd5cff8"
 dependencies = [
  "indexmap",
+ "rustc-hash",
+ "semver",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "nodejs_package_json"
+version = "0.2.0"
+dependencies = [
+ "indexmap",
+ "miette 7.1.0",
+ "nodejs_package_json 0.2.0",
+ "once_cell",
+ "regex",
  "rustc-hash",
  "semver",
  "serde",
@@ -979,14 +979,14 @@ dependencies = [
  "dashmap",
  "dunce",
  "json-strip-comments",
- "nodejs_package_json 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "nodejs_package_json 0.1.2",
  "once_cell",
  "rustc-hash",
  "serde",
  "serde_json",
  "thiserror",
  "tracing",
- "typescript_tsconfig_json 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "typescript_tsconfig_json 0.1.3",
 ]
 
 [[package]]
@@ -1799,19 +1799,6 @@ dependencies = [
 
 [[package]]
 name = "typescript_tsconfig_json"
-version = "0.1.4"
-dependencies = [
- "clean-path",
- "indexmap",
- "rustc-hash",
- "serde",
- "serde_json",
- "starbase_sandbox",
- "typescript_tsconfig_json 0.1.3",
-]
-
-[[package]]
-name = "typescript_tsconfig_json"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7891656ce99f05b8866301d3a97abc9b260fb80ac962aad3d31616947b068646"
@@ -1821,6 +1808,19 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "typescript_tsconfig_json"
+version = "0.1.4"
+dependencies = [
+ "clean-path",
+ "indexmap",
+ "rustc-hash",
+ "serde",
+ "serde_json",
+ "starbase_sandbox",
+ "typescript_tsconfig_json 0.1.4",
 ]
 
 [[package]]

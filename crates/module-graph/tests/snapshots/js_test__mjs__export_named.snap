@@ -113,7 +113,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"mjs/export-named.mjs\")"
         path: "/root/mjs/export-named.mjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Mjs,
             source: "export const primitive = 123;\n\nexport const object = {};\n\nexport const array = [];\n\nexport function func() {}\n\nclass Foo {}\n\nclass Bar {}\n\nexport { Foo, Bar };\n",
             source_type: SourceType {
                 language: JavaScript,

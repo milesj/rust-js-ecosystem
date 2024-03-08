@@ -29,7 +29,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"cjs/dyn-import-patterns.c
         id: 2,
         imports: [],
         package_name: None,
-        path: "/private/root/cjs/shared-def-object.cjs",
+        path: "/root/cjs/shared-def-object.cjs",
         query: None,
         source: JavaScriptModule {
             package_type: Cjs,
@@ -95,7 +95,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"cjs/dyn-import-patterns.c
         id: 3,
         imports: [],
         package_name: None,
-        path: "/private/root/cjs/shared.cjs",
+        path: "/root/cjs/shared.cjs",
         query: None,
         source: JavaScriptModule {
             package_type: Cjs,

@@ -9,7 +9,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"mjs/dyn-import-patterns.m
         id: 2,
         imports: [],
         package_name: None,
-        path: "/private/root/mjs/shared-def-object.mjs",
+        path: "/root/mjs/shared-def-object.mjs",
         query: None,
         source: JavaScriptModule {
             package_type: Mjs,
@@ -75,7 +75,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"mjs/dyn-import-patterns.m
         id: 3,
         imports: [],
         package_name: None,
-        path: "/private/root/mjs/shared.mjs",
+        path: "/root/mjs/shared.mjs",
         query: None,
         source: JavaScriptModule {
             package_type: Mjs,

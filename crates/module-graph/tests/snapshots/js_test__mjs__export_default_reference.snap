@@ -32,7 +32,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"mjs/export-def-ref.mjs\")
         path: "/root/mjs/export-def-ref.mjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Mjs,
             source: "class Foo {}\n\nexport default Foo;\n",
             source_type: SourceType {
                 language: JavaScript,

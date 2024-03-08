@@ -38,7 +38,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"styles.module.css\")"
         id: 2,
         imports: [],
         package_name: None,
-        path: "/private/root/utils.module.css",
+        path: "/root/utils.module.css",
         query: None,
         source: CssModule {
             exports: {

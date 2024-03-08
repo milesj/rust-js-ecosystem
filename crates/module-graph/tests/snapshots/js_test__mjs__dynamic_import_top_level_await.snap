@@ -48,10 +48,10 @@ expression: "generate_graph_for_file(sandbox.path(), \"mjs/dyn-import-tla.mjs\")
         id: 2,
         imports: [],
         package_name: None,
-        path: "/private/root/mjs/shared.mjs",
+        path: "/root/mjs/shared.mjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Mjs,
             source: "export const number = 123;\nexport const string = \"abc\";\n",
             source_type: SourceType {
                 language: JavaScript,
@@ -152,7 +152,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"mjs/dyn-import-tla.mjs\")
         path: "/root/mjs/dyn-import-tla.mjs",
         query: None,
         source: JavaScriptModule {
-            package_type: Unknown,
+            package_type: Mjs,
             source: "// Side-effects\nawait import(\"./shared.mjs\");\n\n// Default\nconst ns = await import(\"./shared.mjs\");\n\n// Named\nconst { number, string } = await import(\"./shared.mjs\");\n\n// Renamed\nlet { number: renumber } = await import(\"./shared.mjs\");\n",
             source_type: SourceType {
                 language: JavaScript,
