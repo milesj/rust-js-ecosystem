@@ -1,0 +1,7 @@
+a: 123
+b: abc
+c: true
+d:
+  e: 456
+  f: def
+  g: false

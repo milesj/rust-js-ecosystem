@@ -1,0 +1,250 @@
+---
+source: crates/module-graph/tests/ts_test.rs
+expression: "generate_graph_for_file(sandbox.path(), \"ts/dyn-import-patterns.ts\")"
+---
+{
+    2: Module {
+        exports: [],
+        fragment: None,
+        id: 2,
+        imports: [],
+        package_name: None,
+        path: "/root/ts/shared-def-object.ts",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Unknown,
+            source: "export default {\n  number: 123,\n  string: \"abc\",\n  object: {\n    one: {\n      two: {\n        value: true,\n      },\n    },\n    value: true,\n  },\n};\n",
+            source_type: SourceType {
+                language: TypeScript {
+                    is_definition_file: false,
+                },
+                module_kind: Module,
+                variant: Standard,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 1,
+                exports_default: false,
+                import_statements: 0,
+                other_statements: 0,
+                require_count: 0,
+            },
+        },
+    },
+    3: Module {
+        exports: [
+            Export {
+                kind: Modern,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 0,
+                        end: 26,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "number",
+                    },
+                ],
+                type_only: false,
+            },
+            Export {
+                kind: Modern,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 27,
+                        end: 55,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "string",
+                    },
+                ],
+                type_only: false,
+            },
+            Export {
+                kind: Modern,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 56,
+                        end: 83,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: ValueType,
+                        symbol_id: None,
+                        name: "Type",
+                    },
+                ],
+                type_only: true,
+            },
+        ],
+        fragment: None,
+        id: 3,
+        imports: [],
+        package_name: None,
+        path: "/root/ts/shared.ts",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Unknown,
+            source: "export const number = 123;\nexport const string = \"abc\";\nexport type Type = boolean;\n",
+            source_type: SourceType {
+                language: TypeScript {
+                    is_definition_file: false,
+                },
+                module_kind: Module,
+                variant: Standard,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 3,
+                exports_default: false,
+                import_statements: 0,
+                other_statements: 0,
+                require_count: 0,
+            },
+        },
+    },
+    1: Module {
+        exports: [],
+        fragment: None,
+        id: 1,
+        imports: [
+            Import {
+                kind: AsyncDynamic,
+                module_id: 2,
+                source_request: "./shared-def-object",
+                span: Span {
+                    start: 54,
+                    end: 83,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Default,
+                        source_name: Some(
+                            "default",
+                        ),
+                        symbol_id: None,
+                        name: "def",
+                    },
+                ],
+                type_only: false,
+            },
+            Import {
+                kind: AsyncDynamic,
+                module_id: 3,
+                source_request: "./shared",
+                span: Span {
+                    start: 126,
+                    end: 144,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Value,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "number",
+                    },
+                ],
+                type_only: false,
+            },
+            Import {
+                kind: AsyncDynamic,
+                module_id: 3,
+                source_request: "./shared",
+                span: Span {
+                    start: 206,
+                    end: 224,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Value,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "string",
+                    },
+                    ImportedSymbol {
+                        kind: Namespace,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "rest",
+                    },
+                ],
+                type_only: false,
+            },
+            Import {
+                kind: AsyncDynamic,
+                module_id: 2,
+                source_request: "./shared-def-object",
+                span: Span {
+                    start: 359,
+                    end: 388,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Default,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "default",
+                    },
+                ],
+                type_only: false,
+            },
+            Import {
+                kind: AsyncDynamic,
+                module_id: 3,
+                source_request: "./shared",
+                span: Span {
+                    start: 455,
+                    end: 473,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Value,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "unknown",
+                    },
+                ],
+                type_only: false,
+            },
+        ],
+        package_name: None,
+        path: "/root/ts/dyn-import-patterns.ts",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Unknown,
+            source: "export {};\n\n// Default\nconst { default: def } = await import(\"./shared-def-object\");\n\n// Destructure\nconst { number } = await import(\"./shared\");\n\n// Destructure with rest\nconst { string, ...rest } = await import(\"./shared\");\n\n// Destructure nested object\nconst {\n  default: {\n    object: {\n      one: {\n        two: { value },\n      },\n    },\n  },\n} = await import(\"./shared-def-object\");\n\n// Assignment, unknown export\nconst { unknown = \"abc\" } = await import(\"./shared\");\n",
+            source_type: SourceType {
+                language: TypeScript {
+                    is_definition_file: false,
+                },
+                module_kind: Module,
+                variant: Standard,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 5,
+                export_statements: 1,
+                exports_default: false,
+                import_statements: 0,
+                other_statements: 5,
+                require_count: 0,
+            },
+        },
+    },
+}

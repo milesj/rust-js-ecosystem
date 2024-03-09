@@ -1,0 +1,191 @@
+---
+source: crates/module-graph/tests/js_test.rs
+expression: "generate_graph_for_file(sandbox.path(), \"cjs/require.cjs\")"
+---
+{
+    2: Module {
+        exports: [
+            Export {
+                kind: Legacy,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 0,
+                        end: 14,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "number",
+                    },
+                ],
+                type_only: false,
+            },
+            Export {
+                kind: Legacy,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 22,
+                        end: 36,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "string",
+                    },
+                ],
+                type_only: false,
+            },
+        ],
+        fragment: None,
+        id: 2,
+        imports: [],
+        package_name: None,
+        path: "/root/cjs/shared.cjs",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Cjs,
+            source: "exports.number = 123;\nexports.string = \"abc\";\n",
+            source_type: SourceType {
+                language: JavaScript,
+                module_kind: Module,
+                variant: Jsx,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 0,
+                exports_default: false,
+                import_statements: 0,
+                other_statements: 2,
+                require_count: 0,
+            },
+        },
+    },
+    1: Module {
+        exports: [],
+        fragment: None,
+        id: 1,
+        imports: [
+            Import {
+                kind: SyncStatic,
+                module_id: 2,
+                source_request: "./shared.cjs",
+                span: Span {
+                    start: 15,
+                    end: 38,
+                },
+                symbols: [],
+                type_only: false,
+            },
+            Import {
+                kind: SyncStatic,
+                module_id: 2,
+                source_request: "./shared.cjs",
+                span: Span {
+                    start: 64,
+                    end: 87,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Namespace,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "def",
+                    },
+                ],
+                type_only: false,
+            },
+            Import {
+                kind: SyncStatic,
+                module_id: 2,
+                source_request: "./shared.cjs",
+                span: Span {
+                    start: 126,
+                    end: 149,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Value,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "number",
+                    },
+                    ImportedSymbol {
+                        kind: Value,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "string",
+                    },
+                ],
+                type_only: false,
+            },
+            Import {
+                kind: SyncStatic,
+                module_id: 2,
+                source_request: "./shared.cjs",
+                span: Span {
+                    start: 190,
+                    end: 213,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Value,
+                        source_name: Some(
+                            "number",
+                        ),
+                        symbol_id: None,
+                        name: "renumber",
+                    },
+                ],
+                type_only: false,
+            },
+            Import {
+                kind: SyncStatic,
+                module_id: 2,
+                source_request: "./shared.cjs",
+                span: Span {
+                    start: 274,
+                    end: 297,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Default,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "default",
+                    },
+                ],
+                type_only: false,
+            },
+        ],
+        package_name: None,
+        path: "/root/cjs/require.cjs",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Cjs,
+            source: "// Side-effect\nrequire(\"./shared.cjs\");\n\n// Default\nconst def = require(\"./shared.cjs\");\n\n// Named\nconst { number, string } = require(\"./shared.cjs\");\n\n// Renamed\nlet { number: renumber } = require(\"./shared.cjs\");\n\n// Default named\nlet {\n  default: { number, string },\n} = require(\"./shared.cjs\");\n",
+            source_type: SourceType {
+                language: JavaScript,
+                module_kind: Module,
+                variant: Jsx,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 0,
+                exports_default: false,
+                import_statements: 0,
+                other_statements: 5,
+                require_count: 5,
+            },
+        },
+    },
+}

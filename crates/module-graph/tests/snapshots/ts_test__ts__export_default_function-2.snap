@@ -1,0 +1,55 @@
+---
+source: crates/module-graph/tests/ts_test.rs
+expression: "generate_graph_for_file(sandbox.path(), \"ts/export-def-anon-func.ts\")"
+---
+{
+    1: Module {
+        exports: [
+            Export {
+                kind: Modern,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 0,
+                        end: 29,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Default,
+                        symbol_id: None,
+                        name: "default",
+                    },
+                ],
+                type_only: false,
+            },
+        ],
+        fragment: None,
+        id: 1,
+        imports: [],
+        package_name: None,
+        path: "/root/ts/export-def-anon-func.ts",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Unknown,
+            source: "export default function () {}\n",
+            source_type: SourceType {
+                language: TypeScript {
+                    is_definition_file: false,
+                },
+                module_kind: Module,
+                variant: Standard,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 1,
+                exports_default: true,
+                import_statements: 0,
+                other_statements: 0,
+                require_count: 0,
+            },
+        },
+    },
+}

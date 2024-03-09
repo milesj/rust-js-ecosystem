@@ -1,0 +1,144 @@
+---
+source: crates/module-graph/tests/js_test.rs
+expression: "generate_graph_for_file(sandbox.path(), \"mjs/import-named.mjs\")"
+---
+{
+    2: Module {
+        exports: [
+            Export {
+                kind: Modern,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 0,
+                        end: 26,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "number",
+                    },
+                ],
+                type_only: false,
+            },
+            Export {
+                kind: Modern,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 27,
+                        end: 55,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "string",
+                    },
+                ],
+                type_only: false,
+            },
+        ],
+        fragment: None,
+        id: 2,
+        imports: [],
+        package_name: None,
+        path: "/root/mjs/shared.mjs",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Mjs,
+            source: "export const number = 123;\nexport const string = \"abc\";\n",
+            source_type: SourceType {
+                language: JavaScript,
+                module_kind: Module,
+                variant: Jsx,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 2,
+                exports_default: false,
+                import_statements: 0,
+                other_statements: 0,
+                require_count: 0,
+            },
+        },
+    },
+    1: Module {
+        exports: [],
+        fragment: None,
+        id: 1,
+        imports: [
+            Import {
+                kind: AsyncStatic,
+                module_id: 2,
+                source_request: "./shared.mjs",
+                span: Span {
+                    start: 9,
+                    end: 55,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Value,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "number",
+                    },
+                    ImportedSymbol {
+                        kind: Value,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "string",
+                    },
+                ],
+                type_only: false,
+            },
+            Import {
+                kind: AsyncStatic,
+                module_id: 2,
+                source_request: "./shared.mjs",
+                span: Span {
+                    start: 68,
+                    end: 118,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Value,
+                        source_name: Some(
+                            "number",
+                        ),
+                        symbol_id: None,
+                        name: "renumber",
+                    },
+                ],
+                type_only: false,
+            },
+        ],
+        package_name: None,
+        path: "/root/mjs/import-named.mjs",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Mjs,
+            source: "// Named\nimport { number, string } from \"./shared.mjs\";\n\n// Renamed\nimport { number as renumber } from \"./shared.mjs\";\n",
+            source_type: SourceType {
+                language: JavaScript,
+                module_kind: Module,
+                variant: Jsx,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 0,
+                exports_default: false,
+                import_statements: 2,
+                other_statements: 0,
+                require_count: 0,
+            },
+        },
+    },
+}

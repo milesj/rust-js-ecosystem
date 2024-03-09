@@ -1,0 +1,38 @@
+---
+source: crates/module-graph/tests/yaml_test.rs
+expression: "generate_graph_for_file(sandbox.path(), \"array.yaml\")"
+---
+{
+    1: Module {
+        exports: [
+            Export {
+                kind: Native,
+                module_id: None,
+                source: None,
+                span: None,
+                symbols: [
+                    ExportedSymbol {
+                        kind: Default,
+                        symbol_id: None,
+                        name: "default",
+                    },
+                ],
+                type_only: false,
+            },
+        ],
+        fragment: None,
+        id: 1,
+        imports: [],
+        package_name: None,
+        path: "/root/array.yaml",
+        query: None,
+        source: YamlModule {
+            data: Sequence [
+                Number(1),
+                Number(2),
+                Number(3),
+            ],
+            source: "- 1\n- 2\n- 3\n",
+        },
+    },
+}

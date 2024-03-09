@@ -1,0 +1,165 @@
+---
+source: crates/module-graph/tests/js_test.rs
+expression: "generate_graph_for_file(sandbox.path(), \"cjs/require-scopes.cjs\")"
+---
+{
+    2: Module {
+        exports: [
+            Export {
+                kind: Legacy,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 0,
+                        end: 14,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "number",
+                    },
+                ],
+                type_only: false,
+            },
+            Export {
+                kind: Legacy,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 22,
+                        end: 36,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "string",
+                    },
+                ],
+                type_only: false,
+            },
+        ],
+        fragment: None,
+        id: 2,
+        imports: [],
+        package_name: None,
+        path: "/root/cjs/shared.cjs",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Cjs,
+            source: "exports.number = 123;\nexports.string = \"abc\";\n",
+            source_type: SourceType {
+                language: JavaScript,
+                module_kind: Module,
+                variant: Jsx,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 0,
+                exports_default: false,
+                import_statements: 0,
+                other_statements: 2,
+                require_count: 0,
+            },
+        },
+    },
+    1: Module {
+        exports: [],
+        fragment: None,
+        id: 1,
+        imports: [
+            Import {
+                kind: SyncStatic,
+                module_id: 2,
+                source_request: "./shared.cjs",
+                span: Span {
+                    start: 0,
+                    end: 23,
+                },
+                symbols: [],
+                type_only: false,
+            },
+            Import {
+                kind: SyncStatic,
+                module_id: 2,
+                source_request: "./shared.cjs",
+                span: Span {
+                    start: 56,
+                    end: 79,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Namespace,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "ns",
+                    },
+                ],
+                type_only: false,
+            },
+            Import {
+                kind: SyncStatic,
+                module_id: 2,
+                source_request: "./shared.cjs",
+                span: Span {
+                    start: 141,
+                    end: 164,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Value,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "number",
+                    },
+                ],
+                type_only: false,
+            },
+            Import {
+                kind: SyncStatic,
+                module_id: 2,
+                source_request: "./shared.cjs",
+                span: Span {
+                    start: 222,
+                    end: 245,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Value,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "string",
+                    },
+                ],
+                type_only: false,
+            },
+        ],
+        package_name: None,
+        path: "/root/cjs/require-scopes.cjs",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Cjs,
+            source: "require(\"./shared.cjs\");\n\nfunction foo() {\n  const ns = require(\"./shared.cjs\");\n}\n\nfunction bar() {\n  return () => {\n    const { number } = require(\"./shared.cjs\");\n  };\n}\n\nclass Baz {\n  method() {\n    const { string } = require(\"./shared.cjs\");\n  }\n}\n",
+            source_type: SourceType {
+                language: JavaScript,
+                module_kind: Module,
+                variant: Jsx,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 0,
+                exports_default: false,
+                import_statements: 0,
+                other_statements: 4,
+                require_count: 4,
+            },
+        },
+    },
+}

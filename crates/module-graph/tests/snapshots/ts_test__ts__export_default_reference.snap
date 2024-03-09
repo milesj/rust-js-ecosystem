@@ -1,0 +1,55 @@
+---
+source: crates/module-graph/tests/ts_test.rs
+expression: "generate_graph_for_file(sandbox.path(), \"ts/export-def-ref.ts\")"
+---
+{
+    1: Module {
+        exports: [
+            Export {
+                kind: Modern,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 14,
+                        end: 33,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Default,
+                        symbol_id: None,
+                        name: "Foo",
+                    },
+                ],
+                type_only: false,
+            },
+        ],
+        fragment: None,
+        id: 1,
+        imports: [],
+        package_name: None,
+        path: "/root/ts/export-def-ref.ts",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Unknown,
+            source: "class Foo {}\n\nexport default Foo;\n",
+            source_type: SourceType {
+                language: TypeScript {
+                    is_definition_file: false,
+                },
+                module_kind: Module,
+                variant: Standard,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 1,
+                exports_default: true,
+                import_statements: 0,
+                other_statements: 1,
+                require_count: 0,
+            },
+        },
+    },
+}

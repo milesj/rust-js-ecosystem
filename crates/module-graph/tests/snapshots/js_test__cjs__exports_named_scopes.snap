@@ -1,0 +1,91 @@
+---
+source: crates/module-graph/tests/js_test.rs
+expression: "generate_graph_for_file(sandbox.path(), \"cjs/exports-named-scopes.cjs\")"
+---
+{
+    1: Module {
+        exports: [
+            Export {
+                kind: Legacy,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 0,
+                        end: 12,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "root",
+                    },
+                ],
+                type_only: false,
+            },
+            Export {
+                kind: Legacy,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 69,
+                        end: 80,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "one",
+                    },
+                ],
+                type_only: false,
+            },
+            Export {
+                kind: Legacy,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 120,
+                        end: 131,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "two",
+                    },
+                ],
+                type_only: false,
+            },
+        ],
+        fragment: None,
+        id: 1,
+        imports: [],
+        package_name: None,
+        path: "/root/cjs/exports-named-scopes.cjs",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Cjs,
+            source: "exports.root = true;\n\nfunction bar() {\n  // This is bad but valid?\n  exports.one = 1;\n}\n\nbar();\n\n(function () {\n  {\n    exports.two = 2;\n  }\n})();\n",
+            source_type: SourceType {
+                language: JavaScript,
+                module_kind: Module,
+                variant: Jsx,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 0,
+                exports_default: false,
+                import_statements: 0,
+                other_statements: 4,
+                require_count: 0,
+            },
+        },
+    },
+}

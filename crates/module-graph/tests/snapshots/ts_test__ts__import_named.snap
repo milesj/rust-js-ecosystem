@@ -1,0 +1,201 @@
+---
+source: crates/module-graph/tests/ts_test.rs
+expression: "generate_graph_for_file(sandbox.path(), \"ts/import-named.ts\")"
+---
+{
+    2: Module {
+        exports: [
+            Export {
+                kind: Modern,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 0,
+                        end: 26,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "number",
+                    },
+                ],
+                type_only: false,
+            },
+            Export {
+                kind: Modern,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 27,
+                        end: 55,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "string",
+                    },
+                ],
+                type_only: false,
+            },
+            Export {
+                kind: Modern,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 56,
+                        end: 83,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: ValueType,
+                        symbol_id: None,
+                        name: "Type",
+                    },
+                ],
+                type_only: true,
+            },
+        ],
+        fragment: None,
+        id: 2,
+        imports: [],
+        package_name: None,
+        path: "/root/ts/shared.ts",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Unknown,
+            source: "export const number = 123;\nexport const string = \"abc\";\nexport type Type = boolean;\n",
+            source_type: SourceType {
+                language: TypeScript {
+                    is_definition_file: false,
+                },
+                module_kind: Module,
+                variant: Standard,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 3,
+                exports_default: false,
+                import_statements: 0,
+                other_statements: 0,
+                require_count: 0,
+            },
+        },
+    },
+    1: Module {
+        exports: [],
+        fragment: None,
+        id: 1,
+        imports: [
+            Import {
+                kind: AsyncStatic,
+                module_id: 2,
+                source_request: "./shared",
+                span: Span {
+                    start: 9,
+                    end: 62,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Value,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "number",
+                    },
+                    ImportedSymbol {
+                        kind: Value,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "string",
+                    },
+                    ImportedSymbol {
+                        kind: ValueType,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "Type",
+                    },
+                ],
+                type_only: false,
+            },
+            Import {
+                kind: AsyncStatic,
+                module_id: 2,
+                source_request: "./shared",
+                span: Span {
+                    start: 63,
+                    end: 113,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: ValueType,
+                        source_name: Some(
+                            "Type",
+                        ),
+                        symbol_id: None,
+                        name: "OtherType",
+                    },
+                ],
+                type_only: true,
+            },
+            Import {
+                kind: AsyncStatic,
+                module_id: 2,
+                source_request: "./shared",
+                span: Span {
+                    start: 126,
+                    end: 193,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Value,
+                        source_name: Some(
+                            "number",
+                        ),
+                        symbol_id: None,
+                        name: "renumber",
+                    },
+                    ImportedSymbol {
+                        kind: ValueType,
+                        source_name: Some(
+                            "Type",
+                        ),
+                        symbol_id: None,
+                        name: "Retype",
+                    },
+                ],
+                type_only: false,
+            },
+        ],
+        package_name: None,
+        path: "/root/ts/import-named.ts",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Unknown,
+            source: "// Named\nimport { number, string, type Type } from \"./shared\";\nimport type { Type as OtherType } from \"./shared\";\n\n// Renamed\nimport { number as renumber, type Type as Retype } from \"./shared\";\n",
+            source_type: SourceType {
+                language: TypeScript {
+                    is_definition_file: false,
+                },
+                module_kind: Module,
+                variant: Standard,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 0,
+                exports_default: false,
+                import_statements: 3,
+                other_statements: 0,
+                require_count: 0,
+            },
+        },
+    },
+}

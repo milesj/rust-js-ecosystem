@@ -1,0 +1,227 @@
+---
+source: crates/module-graph/tests/js_test.rs
+expression: "generate_graph_for_file(sandbox.path(), \"cjs/dyn-import-patterns.cjs\")"
+---
+{
+    2: Module {
+        exports: [
+            Export {
+                kind: Legacy,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 0,
+                        end: 147,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Default,
+                        symbol_id: None,
+                        name: "default",
+                    },
+                ],
+                type_only: false,
+            },
+        ],
+        fragment: None,
+        id: 2,
+        imports: [],
+        package_name: None,
+        path: "/root/cjs/shared-def-object.cjs",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Cjs,
+            source: "module.exports = {\n  number: 123,\n  string: \"abc\",\n  object: {\n    one: {\n      two: {\n        value: true,\n      },\n    },\n    value: true,\n  },\n};\n",
+            source_type: SourceType {
+                language: JavaScript,
+                module_kind: Module,
+                variant: Jsx,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 0,
+                exports_default: true,
+                import_statements: 0,
+                other_statements: 1,
+                require_count: 0,
+            },
+        },
+    },
+    3: Module {
+        exports: [
+            Export {
+                kind: Legacy,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 0,
+                        end: 14,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "number",
+                    },
+                ],
+                type_only: false,
+            },
+            Export {
+                kind: Legacy,
+                module_id: None,
+                source: None,
+                span: Some(
+                    Span {
+                        start: 22,
+                        end: 36,
+                    },
+                ),
+                symbols: [
+                    ExportedSymbol {
+                        kind: Value,
+                        symbol_id: None,
+                        name: "string",
+                    },
+                ],
+                type_only: false,
+            },
+        ],
+        fragment: None,
+        id: 3,
+        imports: [],
+        package_name: None,
+        path: "/root/cjs/shared.cjs",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Cjs,
+            source: "exports.number = 123;\nexports.string = \"abc\";\n",
+            source_type: SourceType {
+                language: JavaScript,
+                module_kind: Module,
+                variant: Jsx,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 0,
+                export_statements: 0,
+                exports_default: false,
+                import_statements: 0,
+                other_statements: 2,
+                require_count: 0,
+            },
+        },
+    },
+    1: Module {
+        exports: [],
+        fragment: None,
+        id: 1,
+        imports: [
+            Import {
+                kind: AsyncDynamic,
+                module_id: 2,
+                source_request: "./shared-def-object.cjs",
+                span: Span {
+                    start: 70,
+                    end: 103,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Default,
+                        source_name: Some(
+                            "default",
+                        ),
+                        symbol_id: None,
+                        name: "def",
+                    },
+                ],
+                type_only: false,
+            },
+            Import {
+                kind: AsyncDynamic,
+                module_id: 3,
+                source_request: "./shared.cjs",
+                span: Span {
+                    start: 150,
+                    end: 172,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Value,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "number",
+                    },
+                ],
+                type_only: false,
+            },
+            Import {
+                kind: AsyncDynamic,
+                module_id: 3,
+                source_request: "./shared.cjs",
+                span: Span {
+                    start: 238,
+                    end: 260,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Value,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "string",
+                    },
+                    ImportedSymbol {
+                        kind: Namespace,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "rest",
+                    },
+                ],
+                type_only: false,
+            },
+            Import {
+                kind: AsyncDynamic,
+                module_id: 2,
+                source_request: "./shared-def-object.cjs",
+                span: Span {
+                    start: 415,
+                    end: 448,
+                },
+                symbols: [
+                    ImportedSymbol {
+                        kind: Default,
+                        source_name: None,
+                        symbol_id: None,
+                        name: "default",
+                    },
+                ],
+                type_only: false,
+            },
+        ],
+        package_name: None,
+        path: "/root/cjs/dyn-import-patterns.cjs",
+        query: None,
+        source: JavaScriptModule {
+            package_type: Cjs,
+            source: "async function test() {\n  // Default\n  const { default: def } = await import(\"./shared-def-object.cjs\");\n\n  // Destructure\n  const { number } = await import(\"./shared.cjs\");\n\n  // Destructure with rest\n  const { string, ...rest } = await import(\"./shared.cjs\");\n\n  // Destructure nested object\n  const {\n    default: {\n      object: {\n        one: {\n          two: { value },\n        },\n      },\n    },\n  } = await import(\"./shared-def-object.cjs\");\n}\n",
+            source_type: SourceType {
+                language: JavaScript,
+                module_kind: Module,
+                variant: Jsx,
+                always_strict: false,
+            },
+            stats: JavaScriptStats {
+                dynamic_import_count: 4,
+                export_statements: 0,
+                exports_default: false,
+                import_statements: 0,
+                other_statements: 1,
+                require_count: 0,
+            },
+        },
+    },
+}

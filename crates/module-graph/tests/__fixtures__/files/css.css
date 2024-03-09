@@ -1,0 +1,11 @@
+.container {
+	display: flex;
+}
+
+.button {
+	background-color: black;
+}
+
+.button:hover {
+	background-color: white;
+}
