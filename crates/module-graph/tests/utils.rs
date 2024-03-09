@@ -26,7 +26,9 @@ pub fn generate_graph_for_file(root: impl AsRef<Path>, file: impl AsRef<str>) ->
         .unwrap();
 
     // Remove file paths so snapshots are deterministic
+    let root = root.to_string_lossy().replace("\\", "/");
+
     format!("{:#?}", graph.modules)
-        .replace(root.to_string_lossy().to_string().as_str(), "/root")
+        .replace(root.as_str(), "/root")
         .replace("/private", "")
 }
