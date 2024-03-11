@@ -3,7 +3,7 @@
 use oxc::span::{Atom, CompactString};
 use std::{fmt, ops::Deref};
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Default)]
+#[derive(Clone, Hash, PartialEq, Eq, Default)]
 pub struct AtomStr(CompactString);
 
 impl AtomStr {
@@ -29,6 +29,12 @@ impl Deref for AtomStr {
 }
 
 impl fmt::Display for AtomStr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.as_str().fmt(f)
+    }
+}
+
+impl fmt::Debug for AtomStr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.as_str().fmt(f)
     }
