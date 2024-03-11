@@ -27,7 +27,7 @@ impl ModuleSource for YamlModule {
         _package_json: Option<Arc<PackageJson>>,
     ) -> Result<Self, ModuleGraphError> {
         let source = fs::read_file(&module.path)?;
-        let data: YamlValue = yaml::from_str(&source).unwrap(); // TODO
+        let data: YamlValue = yaml::parse(&source)?;
 
         Ok(Self {
             data: Arc::new(data),
