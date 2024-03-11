@@ -12,7 +12,7 @@ thiserror = "^1"
 
 clean-path = "0.2.1"
 indexmap = "2.2.5"
-miette = "7.0.0"
+miette = "7.2.0"
 petgraph = { version = "0.6.4", default-features = false, features = [
     "serde-1",
 ] }

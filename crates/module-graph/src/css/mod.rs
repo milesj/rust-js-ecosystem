@@ -58,7 +58,7 @@ impl ModuleSource for CssModule {
         .map_err(|error| {
             Box::new(CssModuleError::ParseFailed {
                 path: module.path.to_owned(),
-                error: error.into_owned(),
+                error: Box::new(error.into_owned()),
             })
         })?;
 
@@ -84,7 +84,7 @@ impl ModuleSource for CssModule {
             .map_err(|error| {
                 Box::new(CssModuleError::ParseModuleFailed {
                     path: module.path.to_owned(),
-                    error,
+                    error: Box::new(error),
                 })
             })?;
 
