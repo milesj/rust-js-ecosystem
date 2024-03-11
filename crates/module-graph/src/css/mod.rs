@@ -1,3 +1,4 @@
+use crate::atom::AtomStr;
 use crate::module::*;
 use crate::module_graph_error::ModuleGraphError;
 use crate::types::FxIndexMap;
@@ -5,7 +6,7 @@ use lightningcss::css_modules::{Config, CssModuleReference};
 use lightningcss::printer::PrinterOptions;
 use lightningcss::stylesheet::{ParserOptions, StyleSheet};
 use nodejs_package_json::PackageJson;
-use oxc::span::{Atom, Span};
+use oxc::span::Span;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
 use std::fmt;
@@ -77,13 +78,13 @@ impl ModuleSource for CssModule {
                         kind: ImportedKind::Value,
                         source_name: None,
                         symbol_id: None,
-                        name: Atom::from(name.as_str()),
+                        name: AtomStr::from(name.as_str()),
                     };
 
                     if let Some(existing_import) = module
                         .imports
                         .iter_mut()
-                        .find(|i| i.source_request == specifier)
+                        .find(|i| i.source_request.as_str() == specifier)
                     {
                         existing_import.symbols.push(symbol);
                         continue;
@@ -92,7 +93,7 @@ impl ModuleSource for CssModule {
                     module.imports.push(Import {
                         kind: ImportKind::SyncStatic,
                         module_id: 0,
-                        source_request: Atom::from(specifier.as_str()),
+                        source_request: AtomStr::from(specifier.as_str()),
                         span: Span::default(),
                         symbols: vec![symbol],
                         type_only: false,
@@ -114,7 +115,7 @@ impl ModuleSource for CssModule {
                     symbols: vec![ExportedSymbol {
                         kind: ExportedKind::Value,
                         symbol_id: None,
-                        name: Atom::from(source_name.as_str()),
+                        name: AtomStr::from(source_name.as_str()),
                     }],
                     ..Export::default()
                 });

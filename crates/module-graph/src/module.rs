@@ -1,3 +1,4 @@
+use crate::atom::*;
 use crate::css::CssModule;
 use crate::dummy::DummyModule;
 use crate::js::JavaScriptModule;
@@ -8,7 +9,7 @@ use crate::text::TextModule;
 use crate::yaml::YamlModule;
 use nodejs_package_json::PackageJson;
 use oxc::ast::ast::BindingIdentifier;
-use oxc::span::{Atom, Span};
+use oxc::span::Span;
 use oxc::syntax::symbol::SymbolId;
 use std::fmt;
 use std::path::{Path, PathBuf};
@@ -44,9 +45,9 @@ impl ImportedKind {
 #[derive(Debug)]
 pub struct ImportedSymbol {
     pub kind: ImportedKind,
-    pub source_name: Option<Atom>,
+    pub source_name: Option<AtomStr>,
     pub symbol_id: Option<SymbolId>,
-    pub name: Atom,
+    pub name: AtomStr,
 }
 
 impl ImportedSymbol {
@@ -55,7 +56,7 @@ impl ImportedSymbol {
             kind,
             source_name: None,
             symbol_id: binding.symbol_id.clone().into_inner(),
-            name: binding.name.clone(),
+            name: binding.name.to_atom_str(),
         }
     }
 }
@@ -71,7 +72,7 @@ pub enum ImportKind {
 pub struct Import {
     pub kind: ImportKind,
     pub module_id: ModuleId,
-    pub source_request: Atom,
+    pub source_request: AtomStr,
     pub span: Span,
     pub symbols: Vec<ImportedSymbol>,
     pub type_only: bool,
@@ -114,7 +115,7 @@ impl ExportedKind {
 pub struct ExportedSymbol {
     pub kind: ExportedKind,
     pub symbol_id: Option<SymbolId>,
-    pub name: Atom,
+    pub name: AtomStr,
 }
 
 #[derive(Debug, Default)]
@@ -129,7 +130,7 @@ pub enum ExportKind {
 pub struct Export {
     pub kind: ExportKind,
     pub module_id: Option<ModuleId>,
-    pub source: Option<Atom>,
+    pub source: Option<AtomStr>,
     pub span: Option<Span>,
     pub symbols: Vec<ExportedSymbol>,
     pub type_only: bool,
@@ -274,7 +275,7 @@ impl Module {
 impl fmt::Debug for Module {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // Primarily for snapshots + Windows
-        let path = self.path.to_string_lossy().replace("\\", "/");
+        let path = self.path.to_string_lossy().replace('\\', "/");
 
         f.debug_struct("Module")
             .field("exports", &self.exports)

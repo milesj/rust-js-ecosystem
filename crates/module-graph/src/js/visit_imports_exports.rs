@@ -1,4 +1,5 @@
 use super::stats::JavaScriptStats;
+use crate::atom::*;
 use crate::module::*;
 use oxc::ast::ast::{
     Argument, AssignmentTarget, BindingPattern, BindingPatternKind, CallExpression, Declaration,
@@ -8,7 +9,7 @@ use oxc::ast::ast::{
     TSModuleReference,
 };
 use oxc::ast::{AstKind, Visit};
-use oxc::span::{Atom, Span};
+use oxc::span::Span;
 use rustc_hash::FxHashSet;
 use std::marker::PhantomData;
 
@@ -73,7 +74,9 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
                             symbols: vec![ExportedSymbol {
                                 kind: ExportedKind::Default,
                                 symbol_id: None,
-                                name: name.unwrap_or(Atom::from("default")),
+                                name: name
+                                    .map(|n| n.to_atom_str())
+                                    .unwrap_or(AtomStr::from("default")),
                             }],
                             ..Export::default()
                         });
@@ -96,7 +99,7 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
                             self.module.imports.push(Import {
                                 kind: ImportKind::SyncStatic,
                                 module_id: 0,
-                                source_request: source.value.clone(),
+                                source_request: source.value.to_atom_str(),
                                 span: require.span,
                                 type_only: false,
                                 symbols: vec![],
@@ -115,7 +118,7 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
                     symbols: vec![ExportedSymbol {
                         kind: ExportedKind::Default,
                         symbol_id: None,
-                        name: Atom::from("default"),
+                        name: AtomStr::from("default"),
                     }],
                     ..Export::default()
                 });
@@ -130,7 +133,7 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
                         symbols: vec![ExportedSymbol {
                             kind: ExportedKind::Value,
                             symbol_id: None,
-                            name: expr.property.name.clone(),
+                            name: expr.property.name.to_atom_str(),
                         }],
                         ..Export::default()
                     });
@@ -145,13 +148,13 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
                     self.module.imports.push(Import {
                         kind: ImportKind::SyncStatic,
                         module_id: 0,
-                        source_request: ext_module.expression.value.clone(),
+                        source_request: ext_module.expression.value.to_atom_str(),
                         span: decl.span,
                         symbols: vec![ImportedSymbol {
                             kind: ImportedKind::Default,
                             source_name: None,
                             symbol_id: decl.id.symbol_id.clone().into_inner(),
-                            name: decl.id.name.clone(),
+                            name: decl.id.name.to_atom_str(),
                         }],
                         type_only: decl.import_kind.is_type(),
                     });
@@ -174,7 +177,7 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
                             let mut record = Import {
                                 kind: ImportKind::AsyncDynamic,
                                 module_id: 0,
-                                source_request: source.value.clone(),
+                                source_request: source.value.to_atom_str(),
                                 span: import.span,
                                 type_only: false,
                                 symbols: vec![],
@@ -199,7 +202,7 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
                             let mut record = Import {
                                 kind: ImportKind::SyncStatic,
                                 module_id: 0,
-                                source_request: source.value.clone(),
+                                source_request: source.value.to_atom_str(),
                                 span: require.span,
                                 type_only: false,
                                 symbols: vec![],
@@ -226,7 +229,7 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
         let mut record = Export {
             kind: ExportKind::Modern,
             span: Some(export.span),
-            source: Some(export.source.value.clone()),
+            source: Some(export.source.value.to_atom_str()),
             type_only: export.export_kind.is_type(),
             ..Export::default()
         };
@@ -241,13 +244,13 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
             record.symbols.push(ExportedSymbol {
                 kind,
                 symbol_id: None,
-                name: namespace.name().to_owned(),
+                name: namespace.name().to_atom_str(),
             });
         } else {
             record.symbols.push(ExportedSymbol {
                 kind,
                 symbol_id: None,
-                name: Atom::from("*"),
+                name: AtomStr::from("*"),
             });
         }
 
@@ -270,7 +273,7 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
                 record.symbols.push(ExportedSymbol {
                     kind: ExportedKind::Default,
                     symbol_id: None,
-                    name: ident.name.clone(),
+                    name: ident.name.to_atom_str(),
                 });
 
                 None
@@ -292,13 +295,13 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
                         ExportedKind::Default
                     },
                     symbol_id: ident.symbol_id.clone().into_inner(),
-                    name: ident.name.clone(),
+                    name: ident.name.to_atom_str(),
                 });
             } else {
                 record.symbols.push(ExportedSymbol {
                     kind: ExportedKind::Default,
                     symbol_id: None,
-                    name: Atom::from("default"),
+                    name: AtomStr::from("default"),
                 });
             }
         }
@@ -334,7 +337,7 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
                     record.symbols.push(ExportedSymbol {
                         kind: ExportedKind::Value,
                         symbol_id: id.symbol_id.clone().into_inner(),
-                        name: id.name.clone(),
+                        name: id.name.to_atom_str(),
                     });
                 }
                 Declaration::ClassDeclaration(d) => {
@@ -343,42 +346,42 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
                     record.symbols.push(ExportedSymbol {
                         kind: ExportedKind::Value,
                         symbol_id: id.symbol_id.clone().into_inner(),
-                        name: id.name.clone(),
+                        name: id.name.to_atom_str(),
                     });
                 }
                 Declaration::TSTypeAliasDeclaration(d) => {
                     record.symbols.push(ExportedSymbol {
                         kind: ExportedKind::ValueType,
                         symbol_id: d.id.symbol_id.clone().into_inner(),
-                        name: d.id.name.clone(),
+                        name: d.id.name.to_atom_str(),
                     });
                 }
                 Declaration::TSInterfaceDeclaration(d) => {
                     record.symbols.push(ExportedSymbol {
                         kind: ExportedKind::ValueType,
                         symbol_id: d.id.symbol_id.clone().into_inner(),
-                        name: d.id.name.clone(),
+                        name: d.id.name.to_atom_str(),
                     });
                 }
                 Declaration::TSEnumDeclaration(d) => {
                     record.symbols.push(ExportedSymbol {
                         kind: ExportedKind::ValueType,
                         symbol_id: d.id.symbol_id.clone().into_inner(),
-                        name: d.id.name.clone(),
+                        name: d.id.name.to_atom_str(),
                     });
                 }
                 Declaration::TSModuleDeclaration(d) => {
                     record.symbols.push(ExportedSymbol {
                         kind: ExportedKind::ValueType,
                         symbol_id: None,
-                        name: d.id.name().to_owned(),
+                        name: d.id.name().to_atom_str(),
                     });
                 }
                 Declaration::TSImportEqualsDeclaration(d) => {
                     record.symbols.push(ExportedSymbol {
                         kind: ExportedKind::ValueType,
                         symbol_id: d.id.symbol_id.clone().into_inner(),
-                        name: d.id.name.clone(),
+                        name: d.id.name.to_atom_str(),
                     });
                 }
                 _ => {}
@@ -393,12 +396,12 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
                     ExportedKind::Value
                 },
                 symbol_id: None, // Is this correct?
-                name: specifier.local.name().to_owned(),
+                name: specifier.local.name().to_atom_str(),
             });
         }
 
         if let Some(source) = &export.source {
-            record.source = Some(source.value.to_owned());
+            record.source = Some(source.value.to_atom_str());
         }
 
         if !record.symbols.is_empty() {
@@ -417,7 +420,7 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
         let mut record = Import {
             kind: ImportKind::AsyncStatic,
             module_id: 0,
-            source_request: import.source.value.clone(),
+            source_request: import.source.value.to_atom_str(),
             span: import.span,
             type_only: import.import_kind.is_type(),
             symbols: vec![],
@@ -440,8 +443,8 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
 
                         if source_name.as_str() == "default" {
                             value.kind = ImportedKind::Default;
-                        } else if source_name != &value.name {
-                            value.source_name = Some(source_name.to_owned());
+                        } else if source_name.as_str() != value.name.as_str() {
+                            value.source_name = Some(source_name.to_atom_str());
                         }
 
                         record.symbols.push(value);
@@ -484,7 +487,7 @@ impl<'ast, 'module> Visit<'ast> for ExtractImportsExports<'ast, 'module> {
                 self.module.imports.push(Import {
                     kind: ImportKind::AsyncDynamic,
                     module_id: 0,
-                    source_request: source.value.clone(),
+                    source_request: source.value.to_atom_str(),
                     span: import.span,
                     type_only: false,
                     symbols: vec![],
@@ -527,7 +530,7 @@ fn import_binding_pattern(binding: &BindingPattern, list: &mut Vec<ImportedSymbo
                 kind: ImportedKind::Namespace,
                 source_name: None,
                 symbol_id: ident.symbol_id.clone().into_inner(),
-                name: ident.name.clone(),
+                name: ident.name.to_atom_str(),
             });
         }
 
@@ -547,10 +550,10 @@ fn import_binding_pattern(binding: &BindingPattern, list: &mut Vec<ImportedSymbo
                             source_name: if prop.key.is_specific_id(&ident.name) {
                                 None
                             } else {
-                                prop.key.name()
+                                prop.key.name().map(|n| n.to_atom_str())
                             },
                             symbol_id: ident.symbol_id.clone().into_inner(),
-                            name: ident.name.clone(),
+                            name: ident.name.to_atom_str(),
                         });
                     }
                     _ => {
@@ -558,7 +561,7 @@ fn import_binding_pattern(binding: &BindingPattern, list: &mut Vec<ImportedSymbo
                             kind,
                             source_name: None,
                             symbol_id: None,
-                            name: prop.key.name().clone().unwrap(),
+                            name: prop.key.name().map(|n| n.to_atom_str()).unwrap(),
                         });
                     }
                 };
@@ -570,7 +573,7 @@ fn import_binding_pattern(binding: &BindingPattern, list: &mut Vec<ImportedSymbo
                         kind: ImportedKind::Namespace,
                         source_name: None,
                         symbol_id: None,
-                        name: ident.name.clone(),
+                        name: ident.name.to_atom_str(),
                     });
                 }
             }
@@ -594,7 +597,7 @@ fn export_binding_pattern(binding: &BindingPattern, list: &mut Vec<ExportedSymbo
             list.push(ExportedSymbol {
                 kind: ExportedKind::Value,
                 symbol_id: ident.symbol_id.clone().into_inner(),
-                name: ident.name.clone(),
+                name: ident.name.to_atom_str(),
             });
         }
         BindingPatternKind::ObjectPattern(object) => {

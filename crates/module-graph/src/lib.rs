@@ -1,3 +1,4 @@
+mod atom;
 mod css;
 mod dummy;
 mod js;
@@ -10,6 +11,7 @@ mod text;
 mod types;
 mod yaml;
 
+pub use atom::*;
 pub use css::*;
 pub use dummy::*;
 pub use js::*;
