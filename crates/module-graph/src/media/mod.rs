@@ -14,7 +14,7 @@ pub enum MediaModuleKind {
 #[derive(Debug)]
 pub struct MediaModule {
     pub kind: MediaModuleKind,
-    pub source: Arc<Vec<u8>>,
+    pub source: Arc<Vec<u8>>, // Binary file
 }
 
 impl ModuleSource for MediaModule {
@@ -51,7 +51,7 @@ impl ModuleSource for MediaModule {
             Some("avi" | "mp4" | "mpeg" | "ogv" | "webm") => MediaModuleKind::Video,
 
             _ => {
-                unreachable!();
+                return Err(ModuleGraphError::UnsupportedFileType(module.path.clone()));
             }
         };
 
