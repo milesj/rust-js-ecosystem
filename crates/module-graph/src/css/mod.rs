@@ -55,7 +55,12 @@ impl ModuleSource for CssModule {
                 ..ParserOptions::default()
             },
         )
-        .map_err(|error| CssModuleError::ParseFailed(error.into_owned()))?;
+        .map_err(|error| {
+            Box::new(CssModuleError::ParseFailed {
+                path: module.path.to_owned(),
+                error: error.into_owned(),
+            })
+        })?;
 
         Ok(CssModule {
             exports: FxIndexMap::default(),
@@ -76,7 +81,12 @@ impl ModuleSource for CssModule {
         let css = self
             .sheet
             .to_css(PrinterOptions::default())
-            .map_err(CssModuleError::ParseModuleFailed)?;
+            .map_err(|error| {
+                Box::new(CssModuleError::ParseModuleFailed {
+                    path: module.path.to_owned(),
+                    error,
+                })
+            })?;
 
         let mut map_module_import = |imports: Vec<CssModuleReference>| {
             for import in imports {

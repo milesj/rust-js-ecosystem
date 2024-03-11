@@ -66,10 +66,17 @@ impl ModuleGraph {
         parent_dir: &Path,
         specifier: &str,
     ) -> Result<ModuleId, ModuleGraphError> {
-        let resolved_path = self.resolver.resolve(parent_dir, specifier).unwrap();
+        let resolved_path = self
+            .resolver
+            .resolve(parent_dir, specifier)
+            .map_err(|error| ModuleGraphError::ResolveFailed {
+                dir: parent_dir.to_owned(),
+                specifier: specifier.to_owned(),
+                error: Box::new(error),
+            })?;
 
         self.load_module_at_path(
-            resolved_path.path().to_path_buf().clean(),
+            resolved_path.path().clean(),
             resolved_path.query().map(|query| query.to_owned()),
             resolved_path.fragment().map(|frag| frag.to_owned()),
             resolved_path.package_json().map(Arc::clone),
