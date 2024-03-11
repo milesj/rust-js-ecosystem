@@ -1,7 +1,7 @@
+use crate::atom::AtomStr;
 use crate::module::*;
 use crate::module_graph_error::ModuleGraphError;
 use nodejs_package_json::PackageJson;
-use oxc::span::Atom;
 use starbase_utils::{fs, yaml};
 use std::sync::Arc;
 
@@ -45,7 +45,7 @@ impl ModuleSource for YamlModule {
         export.symbols.push(ExportedSymbol {
             kind: ExportedKind::Default,
             symbol_id: None,
-            name: Atom::from("default"),
+            name: AtomStr::from("default"),
         });
 
         // When an object document, each direct property is an export
@@ -55,7 +55,7 @@ impl ModuleSource for YamlModule {
                     export.symbols.push(ExportedSymbol {
                         kind: ExportedKind::Value,
                         symbol_id: None,
-                        name: Atom::from(key.as_str()),
+                        name: AtomStr::from(key.as_str()),
                     });
                 }
             }

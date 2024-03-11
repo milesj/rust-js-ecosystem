@@ -9,7 +9,7 @@ nodejs_package_json = { version = "0.2.0", path = "../package-json" }
 clean-path = { workspace = true }
 indexmap = { workspace = true }
 lightningcss = "1.0.0-alpha.54"
-oxc = "0.8.0"
+oxc = "0.9.0"
 oxc_resolver = "1.6.0"
 petgraph = { workspace = true, features = ["graphmap"] }
 starbase_utils = { workspace = true, features = ["json", "yaml"] }
