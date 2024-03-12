@@ -274,7 +274,7 @@ impl Module {
 
 impl fmt::Debug for Module {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // Primarily for snapshots + Windows
+        // Primarily for snapshots on Windows
         let path = self.path.to_string_lossy().replace('\\', "/");
 
         f.debug_struct("Module")

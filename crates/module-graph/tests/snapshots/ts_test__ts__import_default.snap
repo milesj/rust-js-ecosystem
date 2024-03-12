@@ -139,35 +139,6 @@ expression: "generate_graph_for_file(sandbox.path(), \"ts/import-def.ts\")"
             },
         },
     },
-    4: Module {
-        exports: [],
-        fragment: None,
-        id: 4,
-        imports: [],
-        package_name: None,
-        path: "/root/ts/export-def-enum.ts",
-        query: None,
-        source: JavaScriptModule {
-            package_type: Unknown,
-            source: "export default enum Status { A, B, C }\n",
-            source_type: SourceType {
-                language: TypeScript {
-                    is_definition_file: false,
-                },
-                module_kind: Module,
-                variant: Standard,
-                always_strict: false,
-            },
-            stats: JavaScriptStats {
-                dynamic_import_count: 0,
-                export_statements: 0,
-                exports_default: false,
-                import_statements: 0,
-                other_statements: 0,
-                require_count: 0,
-            },
-        },
-    },
     1: Module {
         exports: [],
         fragment: None,
@@ -227,31 +198,13 @@ expression: "generate_graph_for_file(sandbox.path(), \"ts/import-def.ts\")"
                 ],
                 type_only: true,
             },
-            Import {
-                kind: AsyncStatic,
-                module_id: 4,
-                source_request: "./export-def-enum",
-                span: Span {
-                    start: 144,
-                    end: 186,
-                },
-                symbols: [
-                    ImportedSymbol {
-                        kind: DefaultType,
-                        source_name: None,
-                        symbol_id: None,
-                        name: "Enum",
-                    },
-                ],
-                type_only: true,
-            },
         ],
         package_name: None,
         path: "/root/ts/import-def.ts",
         query: None,
         source: JavaScriptModule {
             package_type: Unknown,
-            source: "import foo from \"./shared\";\nimport { default as bar } from \"./shared\";\n\n// Importing types\nimport type Interface from \"./export-def-interface\";\nimport type Enum from \"./export-def-enum\";\n",
+            source: "import foo from \"./shared\";\nimport { default as bar } from \"./shared\";\n\n// Importing types\nimport type Interface from \"./export-def-interface\";\n// import type Enum from \"./export-def-enum\";\n",
             source_type: SourceType {
                 language: TypeScript {
                     is_definition_file: false,
@@ -264,7 +217,7 @@ expression: "generate_graph_for_file(sandbox.path(), \"ts/import-def.ts\")"
                 dynamic_import_count: 0,
                 export_statements: 0,
                 exports_default: false,
-                import_statements: 4,
+                import_statements: 3,
                 other_statements: 0,
                 require_count: 0,
             },

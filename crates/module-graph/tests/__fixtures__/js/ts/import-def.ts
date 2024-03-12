@@ -3,4 +3,4 @@ import { default as bar } from "./shared";
 
 // Importing types
 import type Interface from "./export-def-interface";
-import type Enum from "./export-def-enum";
+// import type Enum from "./export-def-enum";

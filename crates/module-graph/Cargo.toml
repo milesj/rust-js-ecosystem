@@ -8,7 +8,8 @@ license = "MIT"
 nodejs_package_json = { version = "0.2.0", path = "../package-json" }
 clean-path = { workspace = true }
 indexmap = { workspace = true }
-lightningcss = "1.0.0-alpha.54"
+lightningcss = { version = "1.0.0-alpha.54", features = ["into_owned"] }
+miette = { workspace = true, optional = true }
 oxc = "0.9.0"
 oxc_resolver = "1.6.0"
 petgraph = { workspace = true, features = ["graphmap"] }
@@ -18,3 +19,7 @@ thiserror = { workspace = true }
 
 [dev-dependencies]
 starbase_sandbox = { workspace = true }
+
+[features]
+default = []
+miette = ["dep:miette", "nodejs_package_json/miette", "starbase_utils/miette"]

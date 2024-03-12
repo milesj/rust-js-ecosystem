@@ -1,3 +1,4 @@
+mod js_error;
 mod stats;
 mod visit_imports_exports;
 
@@ -18,6 +19,7 @@ use std::path::Path;
 // use std::mem;
 use std::sync::Arc;
 
+pub use self::js_error::JsModuleError;
 pub use self::stats::JavaScriptStats;
 
 pub struct JavaScriptModule {
@@ -76,9 +78,23 @@ impl ModuleSource for JavaScriptModule {
         // TODO temporary, move to load
         let source = Arc::clone(&self.source);
         let allocator = Allocator::default();
-        let program = Parser::new(&allocator, &source, self.source_type)
-            .parse()
-            .program;
+        let result = Parser::new(&allocator, &source, self.source_type).parse();
+
+        // Handle failure
+        if result.errors.is_empty() {
+            if result.panicked {
+                return Err(Box::new(JsModuleError::ParsePanicked {
+                    path: module.path.clone(),
+                })
+                .into());
+            }
+        } else if let Some(error) = result.errors.into_iter().next() {
+            return Err(Box::new(JsModuleError::ParseFailed {
+                path: module.path.clone(),
+                error: error.to_string(),
+            })
+            .into());
+        }
 
         // Extract imports and exports
         {
@@ -91,7 +107,7 @@ impl ModuleSource for JavaScriptModule {
                 ast: std::marker::PhantomData,
             };
 
-            visitor.visit_program(&program);
+            visitor.visit_program(&result.program);
             self.stats = stats;
         }
 
@@ -116,10 +132,10 @@ pub enum JavaScriptPackageType {
 impl JavaScriptPackageType {
     pub fn determine(path: &Path, package_json: Option<Arc<PackageJson>>) -> Self {
         if let Some(ext) = path.extension().and_then(|ext| ext.to_str()) {
-            if ext == "cjs" {
+            if ext == "cjs" || ext == "cts" {
                 return Self::Cjs;
             }
-            if ext == "mjs" {
+            if ext == "mjs" || ext == "mts" {
                 return Self::Mjs;
             }
         }

@@ -553,9 +553,9 @@ dependencies = [
 
 [[package]]
 name = "insta"
-version = "1.35.1"
+version = "1.36.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c985c1bef99cf13c58fade470483d81a2bfe846ebde60ed28cc2dddec2df9e2"
+checksum = "0a7c22c4d34ef4788c351e971c52bfdfe7ea2766f8c5466bc175dd46e52ac22e"
 dependencies = [
  "console",
  "lazy_static",
@@ -657,6 +657,7 @@ dependencies = [
  "rayon",
  "serde",
  "smallvec",
+ "static-self",
 ]
 
 [[package]]
@@ -720,11 +721,12 @@ dependencies = [
 
 [[package]]
 name = "miette"
-version = "7.1.0"
+version = "7.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "baed61d13cc3723ee6dbed730a82bfacedc60a85d81da2d77e9c3e8ebc0b504a"
+checksum = "4edc8853320c2a0dab800fbda86253c8938f6ea88510dc92c5f1ed20e794afc1"
 dependencies = [
- "miette-derive 7.1.0",
+ "cfg-if",
+ "miette-derive 7.2.0",
  "thiserror",
  "unicode-width",
 ]
@@ -742,9 +744,9 @@ dependencies = [
 
 [[package]]
 name = "miette-derive"
-version = "7.1.0"
+version = "7.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f301c3f54f98abc6c212ee722f5e5c62e472a334415840669e356f04850051ec"
+checksum = "dcf09caffaac8068c346b6df2a7fc27a177fd20b39421a39ce0a211bde679a6c"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -764,6 +766,7 @@ dependencies = [
  "clean-path",
  "indexmap",
  "lightningcss",
+ "miette 7.2.0",
  "nodejs_package_json 0.2.0",
  "oxc",
  "oxc_resolver",
@@ -779,7 +782,7 @@ name = "nodejs_package_graph"
 version = "0.1.0"
 dependencies = [
  "clean-path",
- "miette 7.1.0",
+ "miette 7.2.0",
  "nodejs_package_json 0.2.0",
  "nodejs_package_managers",
  "petgraph",
@@ -807,7 +810,7 @@ name = "nodejs_package_json"
 version = "0.2.0"
 dependencies = [
  "indexmap",
- "miette 7.1.0",
+ "miette 7.2.0",
  "nodejs_package_json 0.2.0",
  "once_cell",
  "regex",
@@ -1058,6 +1061,7 @@ dependencies = [
  "phf_codegen",
  "precomputed-hash",
  "smallvec",
+ "static-self",
 ]
 
 [[package]]
@@ -1598,9 +1602,9 @@ checksum = "b7c388c1b5e93756d0c740965c41e8822f866621d41acbdf6336a6a168f8840c"
 
 [[package]]
 name = "starbase_sandbox"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46c13185a91009f058c1649eb9692957e3e78398d98a89ed5fc9c3e24844e9c7"
+checksum = "46eb2113d05c21fea19742d5df590641a44373eaa75c9178e6c8888d9ab31286"
 dependencies = [
  "assert_cmd",
  "assert_fs",
@@ -1625,13 +1629,13 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.5.1"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "263d6acfb4522b7a60d349ca181257135c71377ce852c07e97e9eb5adf928efe"
+checksum = "188611d36a605c62158f3b9a1b36a4b3d328d24e0f478a781f77874a8e407dbb"
 dependencies = [
  "dirs",
  "json-strip-comments",
- "miette 7.1.0",
+ "miette 7.2.0",
  "once_cell",
  "regex",
  "relative-path",
@@ -1642,6 +1646,27 @@ dependencies = [
  "thiserror",
  "tracing",
  "wax",
+]
+
+[[package]]
+name = "static-self"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "253e76c8c993a7b1b201b0539228b334582153cd4364292822d2c30776d469c7"
+dependencies = [
+ "smallvec",
+ "static-self-derive",
+]
+
+[[package]]
+name = "static-self-derive"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5268c96d4b907c558a9a52d8492522d6c7b559651a5e1d8f2d551e461b9425d5"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]

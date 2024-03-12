@@ -1,3 +1,5 @@
+mod css_error;
+
 use crate::atom::AtomStr;
 use crate::module::*;
 use crate::module_graph_error::ModuleGraphError;
@@ -12,6 +14,8 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::mem;
 use std::sync::Arc;
+
+pub use css_error::CssModuleError;
 
 pub struct CssModule {
     pub exports: FxIndexMap<String, String>,
@@ -40,26 +44,31 @@ impl ModuleSource for CssModule {
         _package_json: Option<Arc<PackageJson>>,
     ) -> Result<Self, ModuleGraphError> {
         let file_name = fs::file_name(&module.path);
-        let modules = file_name.ends_with(".module.css");
-        let source = fs::read_file(&module.path)?;
+        let css_module = file_name.ends_with(".module.css");
+        let source = Arc::new(fs::read_file(&module.path)?);
 
         let sheet = StyleSheet::parse(
             &source,
             ParserOptions {
                 filename: file_name,
-                css_modules: modules.then(Config::default),
+                css_modules: css_module.then(Config::default),
                 ..ParserOptions::default()
             },
         )
-        .unwrap(); // TODO
+        .map_err(|error| {
+            Box::new(CssModuleError::ParseFailed {
+                path: module.path.to_owned(),
+                error: Box::new(error.into_owned()),
+            })
+        })?;
 
         Ok(CssModule {
             exports: FxIndexMap::default(),
-            module: modules,
+            module: css_module,
             sheet: unsafe {
                 mem::transmute::<StyleSheet<'_, '_>, StyleSheet<'static, 'static>>(sheet)
             },
-            source: Arc::new(source),
+            source,
         })
     }
 
@@ -69,7 +78,15 @@ impl ModuleSource for CssModule {
         }
 
         let mut exports_hashes = BTreeMap::default();
-        let css = self.sheet.to_css(PrinterOptions::default()).unwrap(); // TODO
+        let css = self
+            .sheet
+            .to_css(PrinterOptions::default())
+            .map_err(|error| {
+                Box::new(CssModuleError::ParseModuleFailed {
+                    path: module.path.to_owned(),
+                    error: Box::new(error),
+                })
+            })?;
 
         let mut map_module_import = |imports: Vec<CssModuleReference>| {
             for import in imports {
@@ -146,6 +163,7 @@ impl fmt::Debug for CssModule {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("CssModule")
             .field("exports", &self.exports)
+            .field("module", &self.module)
             .field("source", &self.source)
             .finish()
     }
