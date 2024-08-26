@@ -6,6 +6,9 @@ on:
       - master
   pull_request:
 
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   format:
     name: Format
@@ -47,5 +50,5 @@ jobs:
       - uses: moonrepo/setup-rust@v1
         with:
           bins: cargo-nextest
-          cache-base: main
+          cache-base: master
       - run: cargo nextest run --workspace
