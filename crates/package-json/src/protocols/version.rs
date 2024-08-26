@@ -1,16 +1,16 @@
 use super::workspace::*;
-use once_cell::sync::Lazy;
 use regex::Regex;
 use semver::{Version, VersionReq};
 use serde::Deserialize;
 use std::fmt;
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::sync::LazyLock;
 use thiserror::Error;
 
-static PROTOCOL: Lazy<Regex> = Lazy::new(|| Regex::new("^(?<protocol>[a-z+]+):").unwrap());
+static PROTOCOL: LazyLock<Regex> = LazyLock::new(|| Regex::new("^(?<protocol>[a-z+]+):").unwrap());
 
-static GITHUB: Lazy<Regex> = Lazy::new(|| {
+static GITHUB: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
         "(?<owner>[A-Za-z0-9_.-]+)/(?<repo>[A-Za-z0-9_.-]+)(?:#(?<commit>[A-Za-z0-9_.-/]+))?",
     )

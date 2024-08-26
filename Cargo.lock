@@ -441,7 +441,6 @@ dependencies = [
  "indexmap",
  "miette",
  "nodejs_package_json",
- "once_cell",
  "regex",
  "rustc-hash",
  "semver",
