@@ -4,7 +4,7 @@ version = "0.2.0"
 edition = "2021"
 license = "MIT"
 description = "Shapes for Node.js package.json."
-repository = "https://github.com/rolldown-rs/js-ts-crates"
+repository = "https://github.com/milesj/rust-js-ecosystem"
 
 [dependencies]
 indexmap = { workspace = true, features = ["serde"] }
