@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "A workspace-based package graph for Node.js packages."
-repository = "https://github.com/rolldown-rs/js-ts-crates"
+repository = "https://github.com/milesj/rust-js-ecosystem"
 
 [dependencies]
 nodejs_package_json = { version = "0.2.0", path = "../package-json", features = [
