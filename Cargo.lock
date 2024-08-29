@@ -878,6 +878,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "typescript_tsbuildinfo"
+version = "0.0.1"
+dependencies = [
+ "rustc-hash",
+ "serde",
+ "serde_json",
+ "starbase_sandbox",
+ "typescript_tsbuildinfo",
+]
+
+[[package]]
 name = "typescript_tsconfig_json"
 version = "0.1.4"
 dependencies = [
