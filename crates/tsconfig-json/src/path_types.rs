@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 pub(crate) fn replace_path_config_dir(orig_path: &Path, config_dir: &Path) -> PathBuf {
     let mut next_path = PathBuf::new();
 
-    orig_path.into_iter().for_each(|comp| {
+    orig_path.iter().for_each(|comp| {
         if comp == "${configDir}" {
             next_path.push(config_dir);
         } else {
@@ -33,10 +33,10 @@ impl PathOrGlob {
     pub fn apply_config_dir(&mut self, config_dir: &Path) {
         match self {
             Self::Path(ref mut path) => {
-                *path = replace_path_config_dir(&path, config_dir);
+                *path = replace_path_config_dir(path, config_dir);
             }
             Self::Glob(ref mut glob) => {
-                *glob = replace_string_config_dir(&glob, config_dir);
+                *glob = replace_string_config_dir(glob, config_dir);
             }
         }
     }
