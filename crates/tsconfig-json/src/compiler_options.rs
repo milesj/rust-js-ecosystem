@@ -1,10 +1,11 @@
 #![allow(deprecated)]
 
+use crate::path_types::replace_path_config_dir;
 use indexmap::IndexMap;
 use rustc_hash::{FxHashMap, FxHasher};
 use serde::{Deserialize, Deserializer};
 use std::hash::BuildHasherDefault;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 // Note: We only support fields that are extremely common.
 // Everything else can be accessed with `other_fields`.
@@ -51,6 +52,9 @@ pub struct CompilerOptions {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub incremental: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub isolated_declarations: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub isolated_modules: Option<bool>,
@@ -140,6 +144,42 @@ pub struct CompilerOptions {
     // but consumers may want to access for some reason
     #[serde(flatten)]
     pub other_fields: FxHashMap<String, serde_json::Value>,
+}
+
+impl CompilerOptions {
+    pub fn apply_config_dir(&mut self, config_dir: &Path) {
+        if let Some(path) = &mut self.base_url {
+            *path = replace_path_config_dir(path, config_dir);
+        }
+
+        if let Some(path) = &mut self.declaration_dir {
+            *path = replace_path_config_dir(path, config_dir);
+        }
+
+        if let Some(path) = &mut self.out_dir {
+            *path = replace_path_config_dir(path, config_dir);
+        }
+
+        if let Some(path) = &mut self.out_file {
+            *path = replace_path_config_dir(path, config_dir);
+        }
+
+        if let Some(path) = &mut self.root_dir {
+            *path = replace_path_config_dir(path, config_dir);
+        }
+
+        if let Some(paths) = &mut self.root_dirs {
+            for path in paths.iter_mut() {
+                *path = replace_path_config_dir(path, config_dir);
+            }
+        }
+
+        if let Some(paths) = &mut self.type_roots {
+            for path in paths.iter_mut() {
+                *path = replace_path_config_dir(path, config_dir);
+            }
+        }
+    }
 }
 
 // https://www.typescriptlang.org/tsconfig#jsx
