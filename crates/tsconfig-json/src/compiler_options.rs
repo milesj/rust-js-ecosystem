@@ -87,6 +87,9 @@ pub struct CompilerOptions {
     pub module_suffixes: Option<Vec<String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub no_check: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_emit: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
