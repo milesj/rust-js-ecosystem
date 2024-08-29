@@ -1,7 +1,25 @@
 use serde::Deserialize;
 use std::borrow::Cow;
 use std::fmt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+pub(crate) fn replace_path_config_dir(orig_path: &Path, config_dir: &Path) -> PathBuf {
+    let mut next_path = PathBuf::new();
+
+    orig_path.iter().for_each(|comp| {
+        if comp == "${configDir}" {
+            next_path.push(config_dir);
+        } else {
+            next_path.push(comp);
+        }
+    });
+
+    next_path
+}
+
+pub(crate) fn replace_string_config_dir(orig_path: &str, config_dir: &Path) -> String {
+    orig_path.replace("${configDir}", &config_dir.to_string_lossy())
+}
 
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
@@ -9,6 +27,19 @@ use std::path::PathBuf;
 pub enum PathOrGlob {
     Path(PathBuf),
     Glob(String),
+}
+
+impl PathOrGlob {
+    pub fn apply_config_dir(&mut self, config_dir: &Path) {
+        match self {
+            Self::Path(ref mut path) => {
+                *path = replace_path_config_dir(path, config_dir);
+            }
+            Self::Glob(ref mut glob) => {
+                *glob = replace_string_config_dir(glob, config_dir);
+            }
+        }
+    }
 }
 
 // https://www.typescriptlang.org/tsconfig#include
