@@ -1,6 +1,6 @@
 #![allow(deprecated)]
 
-use crate::path_types::replace_path_config_dir;
+use crate::path_types::*;
 use indexmap::IndexMap;
 use rustc_hash::{FxHashMap, FxHasher};
 use serde::{Deserialize, Deserializer};
@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 // Note: We only support fields that are extremely common.
 // Everything else can be accessed with `other_fields`.
 
-pub type CompilerOptionsPathsMap = IndexMap<String, Vec<String>, BuildHasherDefault<FxHasher>>;
+pub type CompilerOptionsPathsMap = IndexMap<String, Vec<PathOrGlob>, BuildHasherDefault<FxHasher>>;
 
 // https://www.typescriptlang.org/tsconfig#compilerOptions
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
@@ -174,6 +174,14 @@ impl CompilerOptions {
 
         if let Some(path) = &mut self.out_file {
             *path = replace_path_config_dir(path, source_dir, target_dir);
+        }
+
+        if let Some(paths) = &mut self.paths {
+            for (_, path) in paths.iter_mut() {
+                for item in path.iter_mut() {
+                    item.expand(source_dir, target_dir);
+                }
+            }
         }
 
         if let Some(path) = &mut self.root_dir {
