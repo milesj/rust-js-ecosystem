@@ -149,39 +149,101 @@ pub struct CompilerOptions {
     pub other_fields: FxHashMap<String, serde_json::Value>,
 }
 
+macro_rules! extend_option {
+    ($base:expr, $next:expr) => {
+        if let Some(value) = $next {
+            $base = Some(value);
+        }
+    };
+}
+
 impl CompilerOptions {
-    pub fn apply_config_dir(&mut self, config_dir: &Path) {
+    // https://github.com/microsoft/TypeScript/issues/57485#issuecomment-2027787456
+    pub fn expand(&mut self, source_dir: &Path, target_dir: &Path) {
         if let Some(path) = &mut self.base_url {
-            *path = replace_path_config_dir(path, config_dir);
+            *path = replace_path_config_dir(path, source_dir, target_dir);
         }
 
         if let Some(path) = &mut self.declaration_dir {
-            *path = replace_path_config_dir(path, config_dir);
+            *path = replace_path_config_dir(path, source_dir, target_dir);
         }
 
         if let Some(path) = &mut self.out_dir {
-            *path = replace_path_config_dir(path, config_dir);
+            *path = replace_path_config_dir(path, source_dir, target_dir);
         }
 
         if let Some(path) = &mut self.out_file {
-            *path = replace_path_config_dir(path, config_dir);
+            *path = replace_path_config_dir(path, source_dir, target_dir);
         }
 
         if let Some(path) = &mut self.root_dir {
-            *path = replace_path_config_dir(path, config_dir);
+            *path = replace_path_config_dir(path, source_dir, target_dir);
         }
 
         if let Some(paths) = &mut self.root_dirs {
             for path in paths.iter_mut() {
-                *path = replace_path_config_dir(path, config_dir);
+                *path = replace_path_config_dir(path, source_dir, target_dir);
             }
         }
 
         if let Some(paths) = &mut self.type_roots {
             for path in paths.iter_mut() {
-                *path = replace_path_config_dir(path, config_dir);
+                *path = replace_path_config_dir(path, source_dir, target_dir);
             }
         }
+    }
+
+    pub fn extend(&mut self, other: CompilerOptions) {
+        extend_option!(self.allow_js, other.allow_js);
+        extend_option!(self.base_url, other.base_url);
+        extend_option!(self.composite, other.composite);
+        extend_option!(self.custom_conditions, other.custom_conditions);
+        extend_option!(self.declaration_dir, other.declaration_dir);
+        extend_option!(self.declaration_map, other.declaration_map);
+        extend_option!(self.declaration, other.declaration);
+        extend_option!(self.emit_declaration_only, other.emit_declaration_only);
+        extend_option!(self.emit_decorator_metadata, other.emit_decorator_metadata);
+        extend_option!(self.es_module_interop, other.es_module_interop);
+        extend_option!(self.experimental_decorators, other.experimental_decorators);
+        extend_option!(self.incremental, other.incremental);
+        extend_option!(self.isolated_declarations, other.isolated_declarations);
+        extend_option!(self.isolated_modules, other.isolated_modules);
+        extend_option!(self.jsx_factory, other.jsx_factory);
+        extend_option!(self.jsx_fragment_factory, other.jsx_fragment_factory);
+        extend_option!(self.jsx_import_source, other.jsx_import_source);
+        extend_option!(self.jsx, other.jsx);
+        extend_option!(self.lib, other.lib);
+        extend_option!(self.module, other.module);
+        extend_option!(self.module_detection, other.module_detection);
+        extend_option!(self.module_resolution, other.module_resolution);
+        extend_option!(self.module_suffixes, other.module_suffixes);
+        extend_option!(self.no_check, other.no_check);
+        extend_option!(self.no_emit, other.no_emit);
+        extend_option!(self.out_dir, other.out_dir);
+        extend_option!(self.out_file, other.out_file);
+        extend_option!(self.paths, other.paths);
+        extend_option!(self.plugins, other.plugins);
+        extend_option!(self.pretty, other.pretty);
+        extend_option!(self.resolve_json_module, other.resolve_json_module);
+        extend_option!(
+            self.resolve_package_json_exports,
+            other.resolve_package_json_exports
+        );
+        extend_option!(
+            self.resolve_package_json_imports,
+            other.resolve_package_json_imports
+        );
+        extend_option!(self.root_dir, other.root_dir);
+        extend_option!(self.root_dirs, other.root_dirs);
+        extend_option!(self.skip_lib_check, other.skip_lib_check);
+        extend_option!(self.source_map, other.source_map);
+        extend_option!(self.strict, other.strict);
+        extend_option!(self.target, other.target);
+        extend_option!(self.type_roots, other.type_roots);
+        extend_option!(self.types, other.types);
+        extend_option!(self.verbatim_module_syntax, other.verbatim_module_syntax);
+
+        self.other_fields.extend(other.other_fields);
     }
 }
 
