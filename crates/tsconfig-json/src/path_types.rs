@@ -1,24 +1,46 @@
+use clean_path::Clean;
 use serde::Deserialize;
 use std::borrow::Cow;
 use std::fmt;
 use std::path::{Path, PathBuf};
 
-pub(crate) fn replace_path_config_dir(orig_path: &Path, config_dir: &Path) -> PathBuf {
-    let mut next_path = PathBuf::new();
+pub(crate) fn replace_path_config_dir(
+    orig_path: &Path,
+    source_dir: &Path, // Dir where the config exists
+    target_dir: &Path, // Dir of the project to resolve against
+) -> PathBuf {
+    let has_config_token = orig_path.iter().any(|comp| comp == "${configDir}");
 
-    orig_path.iter().for_each(|comp| {
-        if comp == "${configDir}" {
-            next_path.push(config_dir);
-        } else {
-            next_path.push(comp);
-        }
-    });
+    if !has_config_token {
+        return source_dir.join(orig_path).clean();
+    }
 
-    next_path
+    orig_path
+        .iter()
+        .map(|comp| {
+            if comp == "${configDir}" {
+                target_dir.as_os_str()
+            } else {
+                comp
+            }
+        })
+        .collect()
 }
 
-pub(crate) fn replace_string_config_dir(orig_path: &str, config_dir: &Path) -> String {
-    orig_path.replace("${configDir}", &config_dir.to_string_lossy())
+pub(crate) fn replace_string_config_dir(
+    orig_path: &str,
+    source_dir: &Path,
+    target_dir: &Path,
+) -> String {
+    if orig_path.contains("${configDir}") {
+        orig_path.replace("${configDir}", &target_dir.to_string_lossy())
+    } else {
+        source_dir
+            .join(orig_path)
+            .clean()
+            .to_string_lossy()
+            .to_string()
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd)]
@@ -30,13 +52,13 @@ pub enum PathOrGlob {
 }
 
 impl PathOrGlob {
-    pub fn apply_config_dir(&mut self, config_dir: &Path) {
+    pub fn expand(&mut self, source_dir: &Path, target_dir: &Path) {
         match self {
             Self::Path(ref mut path) => {
-                *path = replace_path_config_dir(path, config_dir);
+                *path = replace_path_config_dir(path, source_dir, target_dir);
             }
             Self::Glob(ref mut glob) => {
-                *glob = replace_string_config_dir(glob, config_dir);
+                *glob = replace_string_config_dir(glob, source_dir, target_dir);
             }
         }
     }

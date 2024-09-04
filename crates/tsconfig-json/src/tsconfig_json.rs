@@ -34,32 +34,6 @@ pub struct TsConfigJson {
     pub other_fields: FxHashMap<String, serde_json::Value>,
 }
 
-impl TsConfigJson {
-    pub fn apply_config_dir(&mut self, config_dir: &Path) {
-        if let Some(options) = &mut self.compiler_options {
-            options.apply_config_dir(config_dir);
-        }
-
-        if let Some(include) = &mut self.include {
-            for path in include.iter_mut() {
-                path.apply_config_dir(config_dir);
-            }
-        }
-
-        if let Some(exclude) = &mut self.exclude {
-            for path in exclude.iter_mut() {
-                path.apply_config_dir(config_dir);
-            }
-        }
-
-        if let Some(files) = &mut self.files {
-            for path in files.iter_mut() {
-                *path = replace_path_config_dir(path, config_dir);
-            }
-        }
-    }
-}
-
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-0.html#supporting-multiple-configuration-files-in-extends
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
@@ -76,6 +50,63 @@ pub struct TsConfigExtendsChain {
 }
 
 impl TsConfigJson {
+    pub fn expand(&mut self, source_dir: &Path, target_dir: &Path) {
+        if let Some(options) = &mut self.compiler_options {
+            options.expand(source_dir, target_dir);
+        }
+
+        if let Some(include) = &mut self.include {
+            for path in include.iter_mut() {
+                path.expand(source_dir, target_dir);
+            }
+        }
+
+        if let Some(exclude) = &mut self.exclude {
+            for path in exclude.iter_mut() {
+                path.expand(source_dir, target_dir);
+            }
+        }
+
+        if let Some(files) = &mut self.files {
+            for path in files.iter_mut() {
+                *path = replace_path_config_dir(path, source_dir, target_dir);
+            }
+        }
+
+        if let Some(references) = &mut self.references {
+            for reference in references.iter_mut() {
+                reference.path = source_dir.join(&reference.path).clean();
+            }
+        }
+    }
+
+    pub fn extend(&mut self, other: TsConfigJson) {
+        if let Some(value) = other.compiler_options {
+            self.compiler_options
+                .get_or_insert(Default::default())
+                .extend(value);
+        }
+
+        if let Some(value) = other.include {
+            self.include = Some(value);
+        }
+
+        if let Some(value) = other.exclude {
+            self.exclude = Some(value);
+        }
+
+        if let Some(value) = other.files {
+            self.files = Some(value);
+        }
+
+        // These aren't extendable, so always overwrite with the
+        // other value, even when `None`
+        self.extends = other.extends;
+        self.references = other.references;
+
+        self.other_fields.extend(other.other_fields);
+    }
+
     pub fn resolve_path_in_node_modules<N: AsRef<str>, D: AsRef<Path>>(
         package_file: N,
         starting_dir: D,
@@ -129,9 +160,7 @@ fn resolve_extends_chain_deep(
     chain: &mut Vec<TsConfigExtendsChain>,
 ) -> io::Result<()> {
     let parent_dir = path.parent().unwrap();
-    let mut config: TsConfigJson = serde_json::from_slice(&fs::read(&path)?)?;
-    config.apply_config_dir(parent_dir);
-
+    let config: TsConfigJson = serde_json::from_slice(&fs::read(&path)?)?;
     let mut inner_chain = vec![];
 
     if let Some(extends) = &config.extends {
