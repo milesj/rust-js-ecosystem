@@ -155,3 +155,19 @@ fn range() {
     assert_eq!(VersionProtocol::from_str("1.2.3 - 4.5.6").unwrap(), exp);
     assert_eq!(exp.to_string(), ">=1.2.3, <=4.5.6")
 }
+
+#[test]
+fn catalog() {
+    let exp = VersionProtocol::Catalog(Some("name".into()));
+
+    assert_eq!(VersionProtocol::from_str("catalog:name").unwrap(), exp);
+    assert_eq!(exp.to_string(), "catalog:name")
+}
+
+#[test]
+fn catalog_no_name() {
+    let exp = VersionProtocol::Catalog(None);
+
+    assert_eq!(VersionProtocol::from_str("catalog:").unwrap(), exp);
+    assert_eq!(exp.to_string(), "catalog:");
+}

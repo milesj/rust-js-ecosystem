@@ -48,6 +48,7 @@ pub enum VersionProtocolError {
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[serde(untagged, try_from = "String", into = "String")]
 pub enum VersionProtocol {
+    Catalog(Option<String>),
     File(PathBuf),
     Git {
         reference: Option<String>,
@@ -80,6 +81,13 @@ impl FromStr for VersionProtocol {
             let index = protocol.len();
 
             match protocol {
+                "catalog" => {
+                    return Ok(VersionProtocol::Catalog(if index == value.len() - 1 {
+                        None
+                    } else {
+                        Some(String::from(&value[index + 1..]))
+                    }));
+                }
                 "http" | "https" => {
                     return Ok(VersionProtocol::Url(value.to_owned()));
                 }
@@ -176,6 +184,8 @@ impl fmt::Display for VersionProtocol {
             f,
             "{}",
             match self {
+                VersionProtocol::Catalog(value) =>
+                    format!("catalog:{}", value.as_deref().unwrap_or_default()),
                 VersionProtocol::File(path) => format!("file:{}", path.display()),
                 VersionProtocol::Git { reference, url } => reference
                     .as_ref()

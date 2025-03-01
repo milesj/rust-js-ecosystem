@@ -18,5 +18,5 @@ petgraph = { version = "0.6.5", default-features = false, features = [
 relative-path = "1.9.3"
 rustc-hash = "2.1.0"
 serde_yaml = "0.9.34"
-starbase_sandbox = "0.8.0"
-starbase_utils = { version = "0.9.1", default-features = false }
+starbase_sandbox = "0.9.0"
+starbase_utils = { version = "0.11.1", default-features = false }

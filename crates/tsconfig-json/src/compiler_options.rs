@@ -46,6 +46,9 @@ pub struct CompilerOptions {
     pub emit_decorator_metadata: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub erasable_syntax_only: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub es_module_interop: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -74,6 +77,9 @@ pub struct CompilerOptions {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub lib: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub lib_replacement: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub module: Option<ModuleField>,
@@ -300,10 +306,11 @@ pub enum ModuleField {
     #[deprecated]
     Node12,
     Node16,
+    Node18, // 5.8
     NodeNext,
     #[default]
     None,
-    Preserve, // TS 5.4
+    Preserve, // 5.4
     System,
     Umd,
 }
@@ -325,6 +332,7 @@ impl<'de> Deserialize<'de> for ModuleField {
             "esnext" => Self::EsNext,
             "node12" => Self::Node12,
             "node16" => Self::Node16,
+            "node18" => Self::Node18,
             "nodenext" => Self::NodeNext,
             "preserve" => Self::Preserve,
             "system" => Self::System,
@@ -411,7 +419,7 @@ pub enum TargetField {
     Es2020,
     Es2021,
     Es2022,
-    Es2024,
+    Es2024, // 5.7
     EsNext,
 }
 
