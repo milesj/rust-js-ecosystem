@@ -1,6 +1,7 @@
 use crate::compiler_options::CompilerOptions;
 use crate::path_types::*;
 use clean_path::Clean;
+use relative_path::RelativePathBuf;
 use rustc_hash::FxHashMap;
 use serde::Deserialize;
 use std::path::{Path, PathBuf};
@@ -39,8 +40,8 @@ pub struct TsConfigJson {
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[serde(untagged)]
 pub enum ExtendsField {
-    Single(String),
-    Multiple(Vec<String>),
+    Single(RelativePathBuf),
+    Multiple(Vec<RelativePathBuf>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -75,7 +76,7 @@ impl TsConfigJson {
 
         if let Some(references) = &mut self.references {
             for reference in references.iter_mut() {
-                reference.path.expand(source_dir, target_dir);
+                reference.path.expand_and_resolve(source_dir, target_dir);
             }
         }
     }
@@ -107,6 +108,10 @@ impl TsConfigJson {
         self.other_fields.extend(other.other_fields);
     }
 
+    pub fn resolve_path(path: PathBuf) -> PathBuf {
+        CompilerPath::resolve(path)
+    }
+
     pub fn resolve_path_in_node_modules<N: AsRef<str>, D: AsRef<Path>>(
         package_file: N,
         starting_dir: D,
@@ -115,13 +120,7 @@ impl TsConfigJson {
         let mut current_dir = Some(starting_dir.as_ref());
 
         while let Some(dir) = current_dir {
-            let file_path = if package_file.ends_with(".json") {
-                dir.join("node_modules").join(package_file)
-            } else {
-                dir.join("node_modules")
-                    .join(package_file)
-                    .join("tsconfig.json")
-            };
+            let file_path = Self::resolve_path(dir.join("node_modules").join(package_file));
 
             if file_path.exists() {
                 return Some(file_path);
@@ -169,15 +168,11 @@ fn resolve_extends_chain_deep(
             ExtendsField::Multiple(others) => others.iter().rev().collect(),
         } {
             // File path
-            if extends_from.starts_with('.') {
-                resolve_extends_chain_deep(
-                    if extends_from.ends_with(".json") {
-                        parent_dir.join(extends_from)
-                    } else {
-                        parent_dir.join(extends_from).join("tsconfig.json")
-                    },
-                    &mut inner_chain,
-                )?;
+            if extends_from.as_str().starts_with('.') {
+                let extends_path =
+                    TsConfigJson::resolve_path(extends_from.to_logical_path(parent_dir));
+
+                resolve_extends_chain_deep(extends_path, &mut inner_chain)?;
             }
             // Node module
             else if let Some(package_path) =

@@ -32,6 +32,29 @@ impl CompilerPath {
         }
         .clean();
     }
+
+    pub fn expand_and_resolve(&mut self, source_dir: &Path, target_dir: &Path) {
+        self.expand(source_dir, target_dir);
+        self.expanded_path = Self::resolve(self.expanded_path.clone());
+    }
+
+    pub fn resolve(path: PathBuf) -> PathBuf {
+        // Has the extension: ../tsconfig.json
+        if path.extension().is_some_and(|ext| ext == "json") {
+            return path;
+        }
+
+        // With the extension: ../tsconfig -> ../tsconfig.json
+        let mut ext_path = path.clone();
+        ext_path.set_extension("json");
+
+        if ext_path.exists() {
+            return ext_path;
+        }
+
+        // With the file name: ../ -> ../tsconfig.json
+        path.join("tsconfig.json")
+    }
 }
 
 impl From<&str> for CompilerPath {
