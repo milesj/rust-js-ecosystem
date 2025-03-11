@@ -29,6 +29,52 @@ fn handles_path_types() {
     );
 }
 
+mod resolve_path {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn returns_if_has_ext() {
+        assert_eq!(
+            TsConfigJson::resolve_path("/path/tsconfig.json".into()),
+            PathBuf::from("/path/tsconfig.json"),
+        );
+    }
+
+    #[test]
+    fn returns_if_no_ext() {
+        let sandbox = create_empty_sandbox();
+        sandbox.create_file("tsconfig.json", "");
+
+        assert_eq!(
+            TsConfigJson::resolve_path(sandbox.path().join("tsconfig")),
+            sandbox.path().join("tsconfig.json"),
+        );
+    }
+
+    #[test]
+    fn returns_if_no_file() {
+        let sandbox = create_empty_sandbox();
+        sandbox.create_file("tsconfig.json", "");
+
+        assert_eq!(
+            TsConfigJson::resolve_path(sandbox.path().to_path_buf()),
+            sandbox.path().join("tsconfig.json"),
+        );
+    }
+
+    #[test]
+    fn returns_if_other_ext() {
+        let sandbox = create_empty_sandbox();
+        sandbox.create_file("tsconfig.other.json", "");
+
+        assert_eq!(
+            TsConfigJson::resolve_path(sandbox.path().join("tsconfig.other")),
+            sandbox.path().join("tsconfig.other.json"),
+        );
+    }
+}
+
 mod node_modules_config {
     use super::*;
 
@@ -47,6 +93,21 @@ mod node_modules_config {
 
     #[test]
     fn resolves_with_package_name() {
+        let sandbox = create_empty_sandbox();
+        sandbox.create_file("node_modules/@scope/package/tsconfig.json", "{}");
+
+        assert_eq!(
+            TsConfigJson::resolve_path_in_node_modules("@scope/package", sandbox.path()),
+            Some(
+                sandbox
+                    .path()
+                    .join("node_modules/@scope/package/tsconfig.json")
+            )
+        );
+    }
+
+    #[test]
+    fn resolves_with_package_name_and_rel_file() {
         let sandbox = create_empty_sandbox();
         sandbox.create_file("node_modules/@scope/package/tsconfig.json", "{}");
 
@@ -189,7 +250,7 @@ mod extends_chain {
         let sandbox = create_empty_sandbox();
         sandbox.create_file(
             "tsconfig.json",
-            r#"{ "extends": ["./tsconfig.1.json", "./tsconfig.2.json"], "include": ["file.tsx"] }"#,
+            r#"{ "extends": ["./tsconfig.1.json", "./tsconfig.2"], "include": ["file.tsx"] }"#,
         );
         sandbox.create_file("tsconfig.1.json", r#"{ "include": ["dir/**/*"] }"#);
         sandbox.create_file("tsconfig.2.json", r#"{ "exclude": ["build/**/*"] }"#);
@@ -219,7 +280,7 @@ mod extends_chain {
                     config: TsConfigJson {
                         extends: Some(ExtendsField::Multiple(vec![
                             "./tsconfig.1.json".into(),
-                            "./tsconfig.2.json".into()
+                            "./tsconfig.2".into()
                         ])),
                         include: Some(vec![CompilerPath::from("file.tsx")]),
                         ..TsConfigJson::default()
