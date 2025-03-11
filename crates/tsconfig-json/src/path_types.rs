@@ -39,14 +39,17 @@ impl CompilerPath {
     }
 
     pub fn resolve(path: PathBuf) -> PathBuf {
+        let ext = path.extension().and_then(|ext| ext.to_str());
+
         // Has the extension: ../tsconfig.json
-        if path.extension().is_some_and(|ext| ext == "json") {
+        if ext.is_some_and(|x| x == "json") {
             return path;
         }
 
         // With the extension: ../tsconfig -> ../tsconfig.json
         let mut ext_path = path.clone();
-        ext_path.set_extension("json");
+
+        ext_path.set_extension(ext.map(|x| format!("{x}.json")).unwrap_or("json".into()));
 
         if ext_path.exists() {
             return ext_path;
