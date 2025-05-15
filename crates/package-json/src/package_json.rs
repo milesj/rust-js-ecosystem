@@ -1,5 +1,5 @@
 use crate::protocols::VersionProtocol;
-use crate::{import_export::*, FxIndexMap};
+use crate::{FxIndexMap, import_export::*};
 use rustc_hash::FxHashMap;
 use semver::Version;
 use serde::Deserialize;
