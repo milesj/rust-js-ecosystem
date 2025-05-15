@@ -1,7 +1,7 @@
 [package]
 name = "nodejs_package_graph"
 version = "0.2.2"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 description = "A workspace-based package graph for Node.js packages."
 repository = "https://github.com/milesj/rust-js-ecosystem"
