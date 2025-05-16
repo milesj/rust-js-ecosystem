@@ -1,5 +1,5 @@
-use crate::yarn::{YarnLock, YarnLockError};
 use crate::LockfileDependency;
+use crate::yarn::{YarnLock, YarnLockError};
 
 pub type BunLockbError = YarnLockError;
 
