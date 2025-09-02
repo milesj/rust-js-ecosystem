@@ -1,5 +1,5 @@
 use nodejs_package_json::VersionProtocol;
-use semver::VersionReq;
+use semver::{Version, VersionReq};
 use std::path::PathBuf;
 use std::str::FromStr;
 
@@ -149,6 +149,33 @@ fn portal() {
 }
 
 #[test]
+fn version() {
+    let exp = VersionProtocol::Version(Version::parse("1.2.3").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("1.2.3").unwrap(), exp);
+    assert_eq!(exp.to_string(), "1.2.3")
+}
+
+#[test]
+fn version_meta() {
+    let exp = VersionProtocol::Version(Version::parse("7.0.0-dev.20250828.1").unwrap());
+
+    assert_eq!(
+        VersionProtocol::from_str("7.0.0-dev.20250828.1").unwrap(),
+        exp
+    );
+    assert_eq!(exp.to_string(), "7.0.0-dev.20250828.1")
+}
+
+#[test]
+fn version_build() {
+    let exp = VersionProtocol::Version(Version::parse("2.0.4+20210327").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("2.0.4+20210327").unwrap(), exp);
+    assert_eq!(exp.to_string(), "2.0.4+20210327")
+}
+
+#[test]
 fn range() {
     let exp = VersionProtocol::Requirement(VersionReq::parse(">=1.2.3, <=4.5.6").unwrap());
 
@@ -170,4 +197,44 @@ fn catalog_no_name() {
 
     assert_eq!(VersionProtocol::from_str("catalog:").unwrap(), exp);
     assert_eq!(exp.to_string(), "catalog:");
+}
+
+#[test]
+fn tag() {
+    let exp = VersionProtocol::Tag("latest".into());
+
+    assert_eq!(VersionProtocol::from_str("latest").unwrap(), exp);
+    assert_eq!(exp.to_string(), "latest");
+
+    let exp = VersionProtocol::Tag("next".into());
+
+    assert_eq!(VersionProtocol::from_str("next").unwrap(), exp);
+    assert_eq!(exp.to_string(), "next");
+}
+
+#[test]
+fn tag_version() {
+    let exp = VersionProtocol::Tag("v1.2.3".into());
+
+    assert_eq!(VersionProtocol::from_str("v1.2.3").unwrap(), exp);
+    assert_eq!(exp.to_string(), "v1.2.3");
+}
+
+#[test]
+fn alias_jsr() {
+    let exp = VersionProtocol::Alias("jsr:@std/assert@^1.0.13".into());
+
+    assert_eq!(
+        VersionProtocol::from_str("jsr:@std/assert@^1.0.13").unwrap(),
+        exp
+    );
+    assert_eq!(exp.to_string(), "jsr:@std/assert@^1.0.13");
+}
+
+#[test]
+fn alias_npm() {
+    let exp = VersionProtocol::Alias("npm:pkg@1.0.0".into());
+
+    assert_eq!(VersionProtocol::from_str("npm:pkg@1.0.0").unwrap(), exp);
+    assert_eq!(exp.to_string(), "npm:pkg@1.0.0");
 }

@@ -48,6 +48,7 @@ pub enum VersionProtocolError {
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[serde(untagged, try_from = "String", into = "String")]
 pub enum VersionProtocol {
+    Alias(String),
     Catalog(Option<String>),
     File(PathBuf),
     Git {
@@ -63,6 +64,7 @@ pub enum VersionProtocol {
     Portal(PathBuf),
     Range(Vec<VersionReq>),
     Requirement(VersionReq),
+    Tag(String),
     Url(String),
     Version(Version),
     Workspace(WorkspaceProtocol),
@@ -113,6 +115,9 @@ impl FromStr for VersionProtocol {
                         &value[index + 1..],
                     )?));
                 }
+                "jsr" | "npm" => {
+                    return Ok(VersionProtocol::Alias(value.to_owned()));
+                }
                 _ => {}
             }
         }
@@ -125,8 +130,8 @@ impl FromStr for VersionProtocol {
             });
         }
 
-        if value.contains('-') {
-            let mut parts = value.split('-');
+        if value.contains(" - ") {
+            let mut parts = value.split(" - ");
             let l = parts
                 .next()
                 .ok_or(VersionProtocolError::RangeMissingStartVersion)?
@@ -160,6 +165,11 @@ impl FromStr for VersionProtocol {
             return Ok(VersionProtocol::Requirement(VersionReq::parse(value)?));
         }
 
+        // Better way to capture tags?
+        if value.chars().next().is_some_and(|ch| ch.is_alphabetic()) {
+            return Ok(VersionProtocol::Tag(value.to_owned()));
+        }
+
         Ok(VersionProtocol::Version(Version::parse(value)?))
     }
 }
@@ -184,6 +194,7 @@ impl fmt::Display for VersionProtocol {
             f,
             "{}",
             match self {
+                VersionProtocol::Alias(value) => value.to_owned(),
                 VersionProtocol::Catalog(value) =>
                     format!("catalog:{}", value.as_deref().unwrap_or_default()),
                 VersionProtocol::File(path) => format!("file:{}", path.display()),
@@ -211,6 +222,7 @@ impl fmt::Display for VersionProtocol {
                     .collect::<Vec<_>>()
                     .join(" || "),
                 VersionProtocol::Requirement(req) => req.to_string(),
+                VersionProtocol::Tag(tag) => tag.to_owned(),
                 VersionProtocol::Url(url) => url.to_owned(),
                 VersionProtocol::Version(ver) => ver.to_string(),
                 VersionProtocol::Workspace(ws) => format!("workspace:{ws}"),
