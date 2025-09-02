@@ -1,7 +1,6 @@
 use crate::protocols::VersionProtocol;
 use crate::{FxIndexMap, import_export::*};
 use rustc_hash::FxHashMap;
-use semver::Version;
 use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -26,7 +25,7 @@ pub struct PackageJson {
 
     #[cfg(feature = "protocols")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub version: Option<Version>,
+    pub version: Option<semver::Version>,
 
     #[cfg(not(feature = "protocols"))]
     #[serde(skip_serializing_if = "Option::is_none")]
