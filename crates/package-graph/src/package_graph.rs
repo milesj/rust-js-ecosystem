@@ -208,23 +208,17 @@ impl PackageGraph {
                 match version {
                     // npm
                     VersionProtocol::Requirement(req) => {
-                        if let Some(dep_package) = self.packages.get(name) {
-                            if
+                        if let Some(dep_package) = self.packages.get(name) &&
                             // *
-                            req.comparators.is_empty()
+                            (req.comparators.is_empty()
                                 // ~, ^, etc
                                 || dep_package
                                     .manifest
                                     .version
                                     .as_ref()
-                                    .is_some_and(|ver| req.matches(ver))
-                            {
-                                graph.add_edge(
-                                    package.node_index,
-                                    dep_package.node_index,
-                                    dep_type,
-                                );
-                            }
+                                    .is_some_and(|ver| req.matches(ver)))
+                        {
+                            graph.add_edge(package.node_index, dep_package.node_index, dep_type);
                         }
                     }
                     VersionProtocol::Version(ver) => {
