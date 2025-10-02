@@ -238,3 +238,21 @@ fn alias_npm() {
     assert_eq!(VersionProtocol::from_str("npm:pkg@1.0.0").unwrap(), exp);
     assert_eq!(exp.to_string(), "npm:pkg@1.0.0");
 }
+
+#[test]
+fn special_parts() {
+    let exp = VersionProtocol::Requirement(VersionReq::parse("~1.2").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("1.2.x").unwrap(), exp);
+    assert_eq!(exp.to_string(), "~1.2");
+
+    let exp = VersionProtocol::Requirement(VersionReq::parse("~1").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("1.X").unwrap(), exp);
+    assert_eq!(exp.to_string(), "~1");
+
+    let exp = VersionProtocol::Requirement(VersionReq::parse("~1").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("1.*").unwrap(), exp);
+    assert_eq!(exp.to_string(), "~1");
+}

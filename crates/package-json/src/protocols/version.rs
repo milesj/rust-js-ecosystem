@@ -17,6 +17,21 @@ static GITHUB: LazyLock<Regex> = LazyLock::new(|| {
     .unwrap()
 });
 
+// https://docs.npmjs.com/cli/v7/configuring-npm/package-json#dependencies
+fn clean_version(version: &str) -> String {
+    let value = version
+        .replace(".*", "")
+        .replace(".x", "")
+        .replace(".X", "")
+        .replace("-*", "");
+
+    if value != version && !value.starts_with(['^', '~', '>', '<', '=']) {
+        return format!("~{value}");
+    }
+
+    value
+}
+
 #[derive(Debug, Error)]
 #[cfg_attr(feature = "miette", derive(miette::Diagnostic))]
 pub enum VersionProtocolError {
@@ -142,7 +157,7 @@ impl FromStr for VersionProtocol {
                 .trim();
 
             return Ok(VersionProtocol::Requirement(VersionReq::parse(&format!(
-                ">={l}, <={r}"
+                ">={l}, <={r}",
             ))?));
         }
 
@@ -150,19 +165,10 @@ impl FromStr for VersionProtocol {
             let mut ranges = vec![];
 
             for range in value.split("||") {
-                ranges.push(VersionReq::parse(range.trim())?);
+                ranges.push(VersionReq::parse(&clean_version(range))?);
             }
 
             return Ok(VersionProtocol::Range(ranges));
-        }
-
-        if value.contains('^')
-            || value.contains('~')
-            || value.contains('>')
-            || value.contains('<')
-            || value.contains('=')
-        {
-            return Ok(VersionProtocol::Requirement(VersionReq::parse(value)?));
         }
 
         // Better way to capture tags?
@@ -170,7 +176,18 @@ impl FromStr for VersionProtocol {
             return Ok(VersionProtocol::Tag(value.to_owned()));
         }
 
-        Ok(VersionProtocol::Version(Version::parse(value)?))
+        let value = clean_version(value);
+
+        if value.contains('^')
+            || value.contains('~')
+            || value.contains('>')
+            || value.contains('<')
+            || value.contains('=')
+        {
+            return Ok(VersionProtocol::Requirement(VersionReq::parse(&value)?));
+        }
+
+        Ok(VersionProtocol::Version(Version::parse(&value)?))
     }
 }
 
