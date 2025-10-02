@@ -10,13 +10,13 @@ serde_json = "^1"
 thiserror = "^2"
 
 clean-path = "0.2.1"
-indexmap = "2.11.0"
+indexmap = "2.11.4"
 miette = "7.6.0"
-petgraph = { version = "0.8.2", default-features = false, features = [
+petgraph = { version = "0.8.3", default-features = false, features = [
     "serde-1",
 ] }
 relative-path = "2.0.1"
 rustc-hash = "2.1.0"
 serde_yml = "0.0.12"
-starbase_sandbox = "0.9.7"
-starbase_utils = { version = "0.11.16", default-features = false }
+starbase_sandbox = "0.9.9"
+starbase_utils = { version = "0.11.20", default-features = false }
