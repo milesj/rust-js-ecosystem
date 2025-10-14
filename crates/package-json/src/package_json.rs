@@ -86,6 +86,9 @@ pub struct PackageJson {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workspaces: Option<WorkspacesField>,
 
+    #[serde(alias = "catalogs", skip_serializing_if = "Option::is_none")]
+    pub catalog: Option<DependenciesMap<VersionProtocol>>,
+
     // For all other fields we don't want to explicitly support,
     // but consumers may want to access for some reason
     #[serde(flatten)]
