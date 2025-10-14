@@ -86,8 +86,11 @@ pub struct PackageJson {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workspaces: Option<WorkspacesField>,
 
-    #[serde(alias = "catalogs", skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub catalog: Option<DependenciesMap<VersionProtocol>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub catalogs: Option<BTreeMap<String, DependenciesMap<VersionProtocol>>>,
 
     // For all other fields we don't want to explicitly support,
     // but consumers may want to access for some reason
@@ -136,6 +139,12 @@ pub struct PeerDependencyMetaField {
 pub enum WorkspacesField {
     Globs(Vec<String>),
     Config {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        catalog: Option<DependenciesMap<VersionProtocol>>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        catalogs: Option<BTreeMap<String, DependenciesMap<VersionProtocol>>>,
+
         packages: Vec<String>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
