@@ -10,7 +10,7 @@ repository = "https://github.com/milesj/rust-js-ecosystem"
 package-lock-json-parser = "0.4.0"
 rustc-hash = { workspace = true }
 serde = { workspace = true }
-serde_yml = { workspace = true }
+serde_norway = { workspace = true }
 yarn-lock-parser = "0.13.0"
 
 [features]

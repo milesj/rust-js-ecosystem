@@ -1,7 +1,7 @@
 use crate::LockfileDependency;
 use rustc_hash::FxHashMap;
 use serde::Deserialize;
-use serde_yml::{Error, Value};
+use serde_norway::{Error, Value};
 
 // https://pnpm.io/pnpm-workspace_yaml
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -34,7 +34,7 @@ pub struct PnpmLockYaml {
 
 impl PnpmLockYaml {
     pub fn parse<T: AsRef<str>>(content: T) -> Result<Vec<LockfileDependency>, Error> {
-        let data: PnpmLockYaml = serde_yml::from_str(content.as_ref())?;
+        let data: PnpmLockYaml = serde_norway::from_str(content.as_ref())?;
         let mut deps = vec![];
 
         if let Some(packages) = data.packages {
