@@ -77,6 +77,9 @@ pub struct PackageJson {
 
     // Constraints
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub dev_engines: Option<DevEnginesField>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub engines: Option<EnginesMap>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -150,4 +153,54 @@ pub enum WorkspacesField {
         #[serde(skip_serializing_if = "Option::is_none")]
         nohoist: Option<Vec<String>>,
     },
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[serde(untagged)]
+pub enum OneOrMany<T> {
+    One(T),
+    Many(Vec<T>),
+}
+
+impl<T> OneOrMany<T> {
+    pub fn list(&self) -> Vec<&T> {
+        match self {
+            Self::One(inner) => vec![inner],
+            Self::Many(inner) => Vec::from_iter(inner),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[serde(rename_all = "camelCase")]
+pub struct DevEngineField {
+    pub name: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub on_fail: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<VersionProtocol>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[serde(rename_all = "camelCase")]
+pub struct DevEnginesField {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cpu: Option<OneOrMany<DevEngineField>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub libc: Option<OneOrMany<DevEngineField>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub os: Option<OneOrMany<DevEngineField>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub package_manager: Option<OneOrMany<DevEngineField>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub runtime: Option<OneOrMany<DevEngineField>>,
 }
