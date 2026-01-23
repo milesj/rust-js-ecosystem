@@ -8,7 +8,7 @@ fn empty() {
     let exp = VersionProtocol::Requirement(VersionReq::parse("*").unwrap());
 
     assert_eq!(VersionProtocol::from_str("").unwrap(), exp);
-    assert_eq!(exp.to_string(), "*")
+    assert_eq!(exp.to_string(), "*");
 }
 
 #[test]
@@ -16,7 +16,7 @@ fn star() {
     let exp = VersionProtocol::Requirement(VersionReq::parse("*").unwrap());
 
     assert_eq!(VersionProtocol::from_str("*").unwrap(), exp);
-    assert_eq!(exp.to_string(), "*")
+    assert_eq!(exp.to_string(), "*");
 }
 
 #[test]
@@ -24,7 +24,7 @@ fn file() {
     let exp = VersionProtocol::File(PathBuf::from("../dir"));
 
     assert_eq!(VersionProtocol::from_str("file:../dir").unwrap(), exp);
-    assert_eq!(exp.to_string(), "file:../dir")
+    assert_eq!(exp.to_string(), "file:../dir");
 }
 
 #[test]
@@ -92,7 +92,7 @@ fn github() {
     };
 
     assert_eq!(VersionProtocol::from_str("user/repo-name").unwrap(), exp);
-    assert_eq!(exp.to_string(), "user/repo-name")
+    assert_eq!(exp.to_string(), "user/repo-name");
 }
 
 #[test]
@@ -107,7 +107,7 @@ fn github_with_ref() {
         VersionProtocol::from_str("org-name/repo#feature/branch").unwrap(),
         exp
     );
-    assert_eq!(exp.to_string(), "org-name/repo#feature/branch")
+    assert_eq!(exp.to_string(), "org-name/repo#feature/branch");
 }
 
 #[test]
@@ -118,7 +118,7 @@ fn http_url() {
         VersionProtocol::from_str("http://domain.com/dep.tgz").unwrap(),
         exp
     );
-    assert_eq!(exp.to_string(), "http://domain.com/dep.tgz")
+    assert_eq!(exp.to_string(), "http://domain.com/dep.tgz");
 }
 
 #[test]
@@ -129,7 +129,7 @@ fn https_url() {
         VersionProtocol::from_str("https://domain.com/dep.tgz").unwrap(),
         exp
     );
-    assert_eq!(exp.to_string(), "https://domain.com/dep.tgz")
+    assert_eq!(exp.to_string(), "https://domain.com/dep.tgz");
 }
 
 #[test]
@@ -137,7 +137,7 @@ fn link() {
     let exp = VersionProtocol::Link(PathBuf::from("../dir"));
 
     assert_eq!(VersionProtocol::from_str("link:../dir").unwrap(), exp);
-    assert_eq!(exp.to_string(), "link:../dir")
+    assert_eq!(exp.to_string(), "link:../dir");
 }
 
 #[test]
@@ -145,7 +145,7 @@ fn portal() {
     let exp = VersionProtocol::Portal(PathBuf::from("../dir"));
 
     assert_eq!(VersionProtocol::from_str("portal:../dir").unwrap(), exp);
-    assert_eq!(exp.to_string(), "portal:../dir")
+    assert_eq!(exp.to_string(), "portal:../dir");
 }
 
 #[test]
@@ -153,7 +153,17 @@ fn version() {
     let exp = VersionProtocol::Version(Version::parse("1.2.3").unwrap());
 
     assert_eq!(VersionProtocol::from_str("1.2.3").unwrap(), exp);
-    assert_eq!(exp.to_string(), "1.2.3")
+    assert_eq!(exp.to_string(), "1.2.3");
+
+    let exp = VersionProtocol::Requirement(VersionReq::parse("~1.2").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("1.2").unwrap(), exp);
+    assert_eq!(exp.to_string(), "~1.2");
+
+    let exp = VersionProtocol::Requirement(VersionReq::parse("~1").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("1").unwrap(), exp);
+    assert_eq!(exp.to_string(), "~1");
 }
 
 #[test]
@@ -164,7 +174,7 @@ fn version_meta() {
         VersionProtocol::from_str("7.0.0-dev.20250828.1").unwrap(),
         exp
     );
-    assert_eq!(exp.to_string(), "7.0.0-dev.20250828.1")
+    assert_eq!(exp.to_string(), "7.0.0-dev.20250828.1");
 }
 
 #[test]
@@ -172,7 +182,7 @@ fn version_build() {
     let exp = VersionProtocol::Version(Version::parse("2.0.4+20210327").unwrap());
 
     assert_eq!(VersionProtocol::from_str("2.0.4+20210327").unwrap(), exp);
-    assert_eq!(exp.to_string(), "2.0.4+20210327")
+    assert_eq!(exp.to_string(), "2.0.4+20210327");
 }
 
 #[test]
@@ -180,7 +190,7 @@ fn range() {
     let exp = VersionProtocol::Requirement(VersionReq::parse(">=1.2.3, <=4.5.6").unwrap());
 
     assert_eq!(VersionProtocol::from_str("1.2.3 - 4.5.6").unwrap(), exp);
-    assert_eq!(exp.to_string(), ">=1.2.3, <=4.5.6")
+    assert_eq!(exp.to_string(), ">=1.2.3, <=4.5.6");
 }
 
 #[test]
@@ -188,7 +198,7 @@ fn catalog() {
     let exp = VersionProtocol::Catalog(Some("name".into()));
 
     assert_eq!(VersionProtocol::from_str("catalog:name").unwrap(), exp);
-    assert_eq!(exp.to_string(), "catalog:name")
+    assert_eq!(exp.to_string(), "catalog:name");
 }
 
 #[test]
@@ -254,5 +264,10 @@ fn special_parts() {
     let exp = VersionProtocol::Requirement(VersionReq::parse("~1").unwrap());
 
     assert_eq!(VersionProtocol::from_str("1.*").unwrap(), exp);
+    assert_eq!(exp.to_string(), "~1");
+
+    let exp = VersionProtocol::Requirement(VersionReq::parse("~1").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("1").unwrap(), exp);
     assert_eq!(exp.to_string(), "~1");
 }

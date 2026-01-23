@@ -24,8 +24,9 @@ fn clean_version(version: &str) -> String {
         .replace(".x", "")
         .replace(".X", "")
         .replace("-*", "");
+    let count = value.chars().filter(|c| *c == '.').count();
 
-    if value != version && !value.starts_with(['^', '~', '>', '<', '=']) {
+    if (value != version || count < 2) && !value.starts_with(['^', '~', '>', '<', '=']) {
         return format!("~{value}");
     }
 
