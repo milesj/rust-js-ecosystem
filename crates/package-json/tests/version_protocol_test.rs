@@ -1,4 +1,4 @@
-use nodejs_package_json::VersionProtocol;
+use nodejs_package_json::{VersionProtocol, WorkspaceProtocol};
 use semver::{Version, VersionReq};
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -220,6 +220,12 @@ fn tag() {
 
     assert_eq!(VersionProtocol::from_str("next").unwrap(), exp);
     assert_eq!(exp.to_string(), "next");
+
+    // TODO: Unknown protocol - should that be allowed?
+    let exp = VersionProtocol::Tag("mail:".into());
+
+    assert_eq!(VersionProtocol::from_str("mail:").unwrap(), exp);
+    assert_eq!(exp.to_string(), "mail:");
 }
 
 #[test]
@@ -270,4 +276,45 @@ fn special_parts() {
 
     assert_eq!(VersionProtocol::from_str("1").unwrap(), exp);
     assert_eq!(exp.to_string(), "~1");
+}
+
+#[test]
+fn workspace() {
+    let exp = VersionProtocol::Workspace(WorkspaceProtocol::from_str("*").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("workspace:*").unwrap(), exp);
+    assert_eq!(exp.to_string(), "workspace:*");
+
+    let exp = VersionProtocol::Workspace(WorkspaceProtocol::from_str("~").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("workspace:~").unwrap(), exp);
+    assert_eq!(exp.to_string(), "workspace:~");
+
+    let exp = VersionProtocol::Workspace(WorkspaceProtocol::from_str("^").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("workspace:^").unwrap(), exp);
+    assert_eq!(exp.to_string(), "workspace:^");
+
+    let exp = VersionProtocol::Workspace(WorkspaceProtocol::from_str("^1.5.0").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("workspace:^1.5.0").unwrap(), exp);
+    assert_eq!(exp.to_string(), "workspace:^1.5.0");
+
+    let exp = VersionProtocol::from_str("workspace:**");
+    assert!(exp.is_err());
+}
+
+#[test]
+fn ranges() {
+    let exp = VersionProtocol::Range(vec![
+        VersionReq::parse("^18.18.0").unwrap(),
+        VersionReq::parse("^20.9.0").unwrap(),
+        VersionReq::parse(">=21.1.0").unwrap(),
+    ]);
+
+    assert_eq!(
+        VersionProtocol::from_str("^18.18.0 || ^20.9.0 || >=21.1.0").unwrap(),
+        exp
+    );
+    assert_eq!(exp.to_string(), "^18.18.0 || ^20.9.0 || >=21.1.0");
 }
