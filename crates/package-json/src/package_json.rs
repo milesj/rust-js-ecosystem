@@ -75,6 +75,9 @@ pub struct PackageJson {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub optional_dependencies: Option<DependenciesMap<VersionProtocol>>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolutions: Option<DependenciesMap<VersionProtocol>>,
+
     // Constraints
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dev_engines: Option<DevEnginesField>,

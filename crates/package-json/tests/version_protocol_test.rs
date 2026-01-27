@@ -191,6 +191,11 @@ fn range() {
 
     assert_eq!(VersionProtocol::from_str("1.2.3 - 4.5.6").unwrap(), exp);
     assert_eq!(exp.to_string(), ">=1.2.3, <=4.5.6");
+
+    let exp = VersionProtocol::Requirement(VersionReq::parse(">=4.8.4, <6.0.0").unwrap());
+
+    assert_eq!(VersionProtocol::from_str(">=4.8.4 <6.0.0").unwrap(), exp);
+    assert_eq!(exp.to_string(), ">=4.8.4, <6.0.0");
 }
 
 #[test]
