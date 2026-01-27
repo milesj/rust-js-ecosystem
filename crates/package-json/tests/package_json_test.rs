@@ -132,3 +132,13 @@ fn parses_webpack() {
 
     dbg!(pkg);
 }
+
+#[test]
+fn parses_yarn() {
+    let pkg: PackageJson = serde_json::from_str(
+        &fs::read_to_string(locate_fixture("packages").join("yarn.json")).unwrap(),
+    )
+    .unwrap();
+
+    dbg!(pkg);
+}

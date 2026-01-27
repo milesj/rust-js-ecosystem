@@ -246,7 +246,7 @@ impl fmt::Display for VersionProtocol {
                         .unwrap_or_else(|| github)
                 }
                 VersionProtocol::Link(path) => format!("link:{}", path.display()),
-                VersionProtocol::Patch(patch) => format!("path:{patch}"),
+                VersionProtocol::Patch(patch) => format!("patch:{patch}"),
                 VersionProtocol::Portal(path) => format!("portal:{}", path.display()),
                 VersionProtocol::Range(range) => range
                     .iter()
