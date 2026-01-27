@@ -4,7 +4,9 @@ use nodejs_package_json::{
     WorkspaceProtocol,
 };
 use semver::{Version, VersionReq};
+use starbase_sandbox::locate_fixture;
 use std::collections::BTreeMap;
+use std::fs;
 
 #[test]
 fn serializes_packages_json() {
@@ -79,4 +81,64 @@ fn serializes_packages_json() {
   "packageManager": "npm@1.0.0"
 }"#
     );
+}
+
+#[test]
+fn parses_babel() {
+    let pkg: PackageJson = serde_json::from_str(
+        &fs::read_to_string(locate_fixture("packages").join("babel.json")).unwrap(),
+    )
+    .unwrap();
+
+    dbg!(pkg);
+}
+
+#[test]
+fn parses_eslint() {
+    let pkg: PackageJson = serde_json::from_str(
+        &fs::read_to_string(locate_fixture("packages").join("eslint.json")).unwrap(),
+    )
+    .unwrap();
+
+    dbg!(pkg);
+}
+
+#[test]
+fn parses_typescript() {
+    let pkg: PackageJson = serde_json::from_str(
+        &fs::read_to_string(locate_fixture("packages").join("typescript.json")).unwrap(),
+    )
+    .unwrap();
+
+    dbg!(pkg);
+}
+
+#[test]
+fn parses_typescript_eslint() {
+    let pkg: PackageJson = serde_json::from_str(
+        &fs::read_to_string(locate_fixture("packages").join("typescript-eslint.json")).unwrap(),
+    )
+    .unwrap();
+
+    dbg!(pkg);
+}
+
+#[test]
+fn parses_webpack() {
+    let pkg: PackageJson = serde_json::from_str(
+        &fs::read_to_string(locate_fixture("packages").join("webpack.json")).unwrap(),
+    )
+    .unwrap();
+
+    dbg!(pkg);
+}
+
+#[test]
+fn parses_yarn() {
+    let pkg: PackageJson = serde_json::from_str(
+        &fs::read_to_string(locate_fixture("packages").join("yarn.json")).unwrap(),
+    )
+    .unwrap();
+
+    dbg!(pkg);
 }

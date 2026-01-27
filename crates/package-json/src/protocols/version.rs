@@ -20,6 +20,7 @@ static GITHUB: LazyLock<Regex> = LazyLock::new(|| {
 // https://docs.npmjs.com/cli/v7/configuring-npm/package-json#dependencies
 fn clean_version(version: &str) -> String {
     let value = version
+        .trim()
         .replace(".*", "")
         .replace(".x", "")
         .replace(".X", "")
@@ -77,6 +78,7 @@ pub enum VersionProtocol {
         repo: String,
     },
     Link(PathBuf),
+    Patch(String),
     Portal(PathBuf),
     Range(Vec<VersionReq>),
     Requirement(VersionReq),
@@ -93,6 +95,8 @@ impl FromStr for VersionProtocol {
         if value.is_empty() || value == "*" {
             return Ok(VersionProtocol::Requirement(VersionReq::parse("*")?));
         }
+
+        let value = value.trim();
 
         if let Some(caps) = PROTOCOL.captures(value) {
             let protocol = caps.name("protocol").unwrap().as_str();
@@ -122,6 +126,9 @@ impl FromStr for VersionProtocol {
                 }
                 "link" => {
                     return Ok(VersionProtocol::Link(PathBuf::from(&value[index + 1..])));
+                }
+                "patch" => {
+                    return Ok(VersionProtocol::Patch(String::from(&value[index + 1..])));
                 }
                 "portal" => {
                     return Ok(VersionProtocol::Portal(PathBuf::from(&value[index + 1..])));
@@ -170,6 +177,12 @@ impl FromStr for VersionProtocol {
             }
 
             return Ok(VersionProtocol::Range(ranges));
+        }
+
+        if value.contains(" ") && !value.contains(",") {
+            return Ok(VersionProtocol::Requirement(VersionReq::parse(
+                &value.replace(" ", ", "),
+            )?));
         }
 
         // Better way to capture tags?
@@ -233,6 +246,7 @@ impl fmt::Display for VersionProtocol {
                         .unwrap_or_else(|| github)
                 }
                 VersionProtocol::Link(path) => format!("link:{}", path.display()),
+                VersionProtocol::Patch(patch) => format!("patch:{patch}"),
                 VersionProtocol::Portal(path) => format!("portal:{}", path.display()),
                 VersionProtocol::Range(range) => range
                     .iter()
