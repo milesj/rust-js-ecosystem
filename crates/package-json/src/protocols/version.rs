@@ -19,12 +19,17 @@ static GITHUB: LazyLock<Regex> = LazyLock::new(|| {
 
 // https://docs.npmjs.com/cli/v7/configuring-npm/package-json#dependencies
 fn clean_version(version: &str) -> String {
-    let value = version
+    let mut value = version
         .trim()
         .replace(".*", "")
         .replace(".x", "")
         .replace(".X", "")
         .replace("-*", "");
+
+    if value.contains(" ") && !value.contains(",") {
+        value = value.replace(" ", ", ");
+    }
+
     let count = value.chars().filter(|c| *c == '.').count();
 
     if (value != version || count < 2) && !value.starts_with(['^', '~', '>', '<', '=']) {
@@ -190,12 +195,6 @@ impl FromStr for VersionProtocol {
             }
 
             return Ok(VersionProtocol::Range(ranges));
-        }
-
-        if value.contains(" ") && !value.contains(",") {
-            return Ok(VersionProtocol::Requirement(VersionReq::parse(
-                &value.replace(" ", ", "),
-            )?));
         }
 
         // Better way to capture tags?

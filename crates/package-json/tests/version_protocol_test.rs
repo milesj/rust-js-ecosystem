@@ -322,4 +322,20 @@ fn ranges() {
         exp
     );
     assert_eq!(exp.to_string(), "^18.18.0 || ^20.9.0 || >=21.1.0");
+
+    let exp = VersionProtocol::Range(vec![
+        VersionReq::parse(">=0.11.4, <0.12.0-0").unwrap(),
+        VersionReq::parse(">=0.13.0, <0.14.0-0").unwrap(),
+        VersionReq::parse(">=0.14.0, <0.15.0-0").unwrap(),
+    ]);
+
+    assert_eq!(
+        VersionProtocol::from_str(">=0.11.4 <0.12.0-0 || >=0.13.0 <0.14.0-0 || >=0.14.0 <0.15.0-0")
+            .unwrap(),
+        exp
+    );
+    assert_eq!(
+        exp.to_string(),
+        ">=0.11.4, <0.12.0-0 || >=0.13.0, <0.14.0-0 || >=0.14.0, <0.15.0-0"
+    );
 }
