@@ -47,17 +47,27 @@ pub enum WorkspaceProtocol {
     Version(Version),
 }
 
+impl WorkspaceProtocol {
+    pub fn parse(value: impl AsRef<str>) -> Result<Self, WorkspaceProtocolError> {
+        Self::from_str(value.as_ref())
+    }
+}
+
 impl FromStr for WorkspaceProtocol {
     type Err = WorkspaceProtocolError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         let mut alias = None;
-        let mut value = value;
+        let mut value = value.trim();
 
         // https://pnpm.io/workspaces#referencing-workspace-packages-through-aliases
-        if let Some(index) = value.find('@') {
+        if let Some(index) = value.rfind('@') {
             alias = Some(value[0..index].to_owned());
             value = &value[index + 1..];
+        }
+
+        if value.is_empty() {
+            return Ok(WorkspaceProtocol::Any { alias });
         }
 
         match &value[0..1] {

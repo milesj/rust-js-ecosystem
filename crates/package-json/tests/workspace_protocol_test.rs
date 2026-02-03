@@ -4,6 +4,24 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 #[test]
+fn none() {
+    let exp = WorkspaceProtocol::Any { alias: None };
+
+    assert_eq!(WorkspaceProtocol::from_str("").unwrap(), exp);
+    assert_eq!(exp.to_string(), "*")
+}
+
+#[test]
+fn none_with_alias() {
+    let exp = WorkspaceProtocol::Any {
+        alias: Some("@scope/foo".into()),
+    };
+
+    assert_eq!(WorkspaceProtocol::from_str("@scope/foo@").unwrap(), exp);
+    assert_eq!(exp.to_string(), "@scope/foo@*")
+}
+
+#[test]
 fn star() {
     let exp = WorkspaceProtocol::Any { alias: None };
 

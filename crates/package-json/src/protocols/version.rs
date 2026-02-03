@@ -67,6 +67,7 @@ pub enum VersionProtocolError {
 pub enum VersionProtocol {
     Alias(String),
     Catalog(Option<String>),
+    Exec(PathBuf),
     File(PathBuf),
     Git {
         reference: Option<String>,
@@ -86,6 +87,15 @@ pub enum VersionProtocol {
     Url(String),
     Version(Version),
     Workspace(WorkspaceProtocol),
+
+    // Fallback case instead of hard failing!
+    Unknown(String),
+}
+
+impl VersionProtocol {
+    pub fn parse(value: impl AsRef<str>) -> Result<Self, VersionProtocolError> {
+        Self::from_str(value.as_ref())
+    }
 }
 
 impl FromStr for VersionProtocol {
@@ -121,6 +131,9 @@ impl FromStr for VersionProtocol {
                         reference: parts.next().map(|p| p.to_owned()),
                     });
                 }
+                "exec" => {
+                    return Ok(VersionProtocol::Exec(PathBuf::from(&value[index + 1..])));
+                }
                 "file" => {
                     return Ok(VersionProtocol::File(PathBuf::from(&value[index + 1..])));
                 }
@@ -134,7 +147,7 @@ impl FromStr for VersionProtocol {
                     return Ok(VersionProtocol::Portal(PathBuf::from(&value[index + 1..])));
                 }
                 "workspace" => {
-                    return Ok(VersionProtocol::Workspace(WorkspaceProtocol::from_str(
+                    return Ok(VersionProtocol::Workspace(WorkspaceProtocol::parse(
                         &value[index + 1..],
                     )?));
                 }
@@ -201,7 +214,11 @@ impl FromStr for VersionProtocol {
             return Ok(VersionProtocol::Requirement(VersionReq::parse(&value)?));
         }
 
-        Ok(VersionProtocol::Version(Version::parse(&value)?))
+        if let Ok(version) = Version::parse(&value) {
+            return Ok(VersionProtocol::Version(version));
+        }
+
+        Ok(VersionProtocol::Unknown(value))
     }
 }
 
@@ -228,6 +245,7 @@ impl fmt::Display for VersionProtocol {
                 VersionProtocol::Alias(value) => value.to_owned(),
                 VersionProtocol::Catalog(value) =>
                     format!("catalog:{}", value.as_deref().unwrap_or_default()),
+                VersionProtocol::Exec(path) => format!("exec:{}", path.display()),
                 VersionProtocol::File(path) => format!("file:{}", path.display()),
                 VersionProtocol::Git { reference, url } => reference
                     .as_ref()
@@ -258,6 +276,7 @@ impl fmt::Display for VersionProtocol {
                 VersionProtocol::Url(url) => url.to_owned(),
                 VersionProtocol::Version(ver) => ver.to_string(),
                 VersionProtocol::Workspace(ws) => format!("workspace:{ws}"),
+                VersionProtocol::Unknown(value) => value.to_owned(),
             }
         )
     }
