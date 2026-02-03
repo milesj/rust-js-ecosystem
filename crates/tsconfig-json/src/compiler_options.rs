@@ -307,6 +307,7 @@ pub enum ModuleField {
     Node12,
     Node16,
     Node18, // 5.8
+    Node20, // 5.9
     NodeNext,
     #[default]
     None,
@@ -333,6 +334,7 @@ impl<'de> Deserialize<'de> for ModuleField {
             "node12" => Self::Node12,
             "node16" => Self::Node16,
             "node18" => Self::Node18,
+            "node20" => Self::Node20,
             "nodenext" => Self::NodeNext,
             "preserve" => Self::Preserve,
             "system" => Self::System,
