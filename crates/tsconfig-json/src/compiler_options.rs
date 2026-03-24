@@ -136,6 +136,9 @@ pub struct CompilerOptions {
     pub source_map: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub stable_type_ordering: Option<bool>, // 6.0
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub strict: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -422,6 +425,7 @@ pub enum TargetField {
     Es2021,
     Es2022,
     Es2024, // 5.7
+    Es2025, // 6.0
     EsNext,
 }
 
@@ -446,6 +450,7 @@ impl<'de> Deserialize<'de> for TargetField {
             "es2021" => Self::Es2021,
             "es2022" => Self::Es2022,
             "es2024" => Self::Es2024,
+            "es2025" => Self::Es2025,
             _ => Self::EsNext,
         })
     }
