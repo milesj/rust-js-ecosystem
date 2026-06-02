@@ -13,7 +13,6 @@ relative-path = { workspace = true, features = ["serde"] }
 rustc-hash = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-starbase_utils = { workspace = true, features = ["json"] }
 
 [dev-dependencies]
 typescript_tsconfig_json = { path = ".", features = ["serialize"] }
