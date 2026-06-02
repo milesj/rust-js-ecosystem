@@ -1,6 +1,6 @@
 [package]
 name = "typescript_tsconfig_json"
-version = "0.5.5"
+version = "0.5.6"
 edition = "2024"
 license = "MIT"
 description = "Shapes for TypeScript tsconfig.json."

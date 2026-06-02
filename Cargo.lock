@@ -502,7 +502,7 @@ checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 
 [[package]]
 name = "nodejs_package_graph"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "clean-path",
  "miette",
@@ -516,7 +516,7 @@ dependencies = [
 
 [[package]]
 name = "nodejs_package_json"
-version = "0.4.8"
+version = "0.4.9"
 dependencies = [
  "indexmap",
  "miette",
@@ -532,7 +532,7 @@ dependencies = [
 
 [[package]]
 name = "nodejs_package_managers"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "package-lock-json-parser",
  "rustc-hash",
@@ -1048,7 +1048,7 @@ dependencies = [
 
 [[package]]
 name = "typescript_tsbuildinfo"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "rustc-hash",
  "serde",
@@ -1059,7 +1059,7 @@ dependencies = [
 
 [[package]]
 name = "typescript_tsconfig_json"
-version = "0.5.5"
+version = "0.5.6"
 dependencies = [
  "clean-path",
  "indexmap",
