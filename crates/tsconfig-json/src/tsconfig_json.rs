@@ -4,7 +4,7 @@ use clean_path::Clean;
 use relative_path::RelativePathBuf;
 use rustc_hash::FxHashMap;
 use serde::Deserialize;
-use starbase_utils::json::{self, JsonError};
+use std::fs;
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
@@ -134,7 +134,7 @@ impl TsConfigJson {
 
     pub fn resolve_extends_chain<T: AsRef<Path>>(
         path: T,
-    ) -> Result<Vec<TsConfigExtendsChain>, JsonError> {
+    ) -> Result<Vec<TsConfigExtendsChain>, std::io::Error> {
         let mut chain = vec![];
 
         resolve_extends_chain_deep(path.as_ref().to_owned(), &mut chain)?;
@@ -159,9 +159,10 @@ pub struct ProjectReference {
 fn resolve_extends_chain_deep(
     path: PathBuf,
     chain: &mut Vec<TsConfigExtendsChain>,
-) -> Result<(), JsonError> {
+) -> Result<(), std::io::Error> {
     let parent_dir = path.parent().unwrap();
-    let config: TsConfigJson = json::read_file(&path)?;
+    let content = fs::read(&path)?;
+    let config: TsConfigJson = serde_json::from_slice(&content)?;
     let mut inner_chain = vec![];
 
     if let Some(extends) = &config.extends {
