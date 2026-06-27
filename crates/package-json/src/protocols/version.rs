@@ -17,6 +17,8 @@ static GITHUB: LazyLock<Regex> = LazyLock::new(|| {
     .unwrap()
 });
 
+static WS_OPERATOR: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?<op>[<>=\^~]+)\s+").unwrap());
+
 // https://docs.npmjs.com/cli/v7/configuring-npm/package-json#dependencies
 fn clean_version(version: &str) -> String {
     let mut value = version
@@ -25,6 +27,8 @@ fn clean_version(version: &str) -> String {
         .replace(".x", "")
         .replace(".X", "")
         .replace("-*", "");
+
+    value = WS_OPERATOR.replace_all(&value, "$op").to_string();
 
     if value.contains(" ") && !value.contains(",") {
         value = value.replace(" ", ", ");
