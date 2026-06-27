@@ -167,6 +167,24 @@ fn version() {
 }
 
 #[test]
+fn version_spacing() {
+    let exp = VersionProtocol::Requirement(VersionReq::parse("^1.2.3").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("^ 1.2.3").unwrap(), exp);
+    assert_eq!(exp.to_string(), "^1.2.3");
+
+    let exp = VersionProtocol::Requirement(VersionReq::parse("~1.2").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("~  1.2").unwrap(), exp);
+    assert_eq!(exp.to_string(), "~1.2");
+
+    let exp = VersionProtocol::Requirement(VersionReq::parse("~1").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("   1").unwrap(), exp);
+    assert_eq!(exp.to_string(), "~1");
+}
+
+#[test]
 fn version_meta() {
     let exp = VersionProtocol::Version(Version::parse("7.0.0-dev.20250828.1").unwrap());
 
@@ -187,6 +205,16 @@ fn version_build() {
 
 #[test]
 fn range() {
+    let exp = VersionProtocol::Requirement(VersionReq::parse(">1.2.3").unwrap());
+
+    assert_eq!(VersionProtocol::from_str(">1.2.3").unwrap(), exp);
+    assert_eq!(exp.to_string(), ">1.2.3");
+
+    let exp = VersionProtocol::Requirement(VersionReq::parse("<=4.5.6").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("<=4.5.6").unwrap(), exp);
+    assert_eq!(exp.to_string(), "<=4.5.6");
+
     let exp = VersionProtocol::Requirement(VersionReq::parse(">=1.2.3, <=4.5.6").unwrap());
 
     assert_eq!(VersionProtocol::from_str("1.2.3 - 4.5.6").unwrap(), exp);
@@ -195,6 +223,32 @@ fn range() {
     let exp = VersionProtocol::Requirement(VersionReq::parse(">=4.8.4, <6.0.0").unwrap());
 
     assert_eq!(VersionProtocol::from_str(">=4.8.4 <6.0.0").unwrap(), exp);
+    assert_eq!(exp.to_string(), ">=4.8.4, <6.0.0");
+}
+
+#[test]
+fn range_spacing() {
+    let exp = VersionProtocol::Requirement(VersionReq::parse(">1.2.3").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("> 1.2.3").unwrap(), exp);
+    assert_eq!(exp.to_string(), ">1.2.3");
+
+    let exp = VersionProtocol::Requirement(VersionReq::parse("<=4.5.6").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("<=  4.5.6").unwrap(), exp);
+    assert_eq!(exp.to_string(), "<=4.5.6");
+
+    let exp = VersionProtocol::Requirement(VersionReq::parse(">=1.2.3, <=4.5.6").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("1.2.3 - 4.5.6").unwrap(), exp);
+    assert_eq!(exp.to_string(), ">=1.2.3, <=4.5.6");
+
+    let exp = VersionProtocol::Requirement(VersionReq::parse(">=4.8.4, <6.0.0").unwrap());
+
+    assert_eq!(
+        VersionProtocol::from_str(">=   4.8.4 <  6.0.0").unwrap(),
+        exp
+    );
     assert_eq!(exp.to_string(), ">=4.8.4, <6.0.0");
 }
 
