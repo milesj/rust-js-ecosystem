@@ -279,12 +279,6 @@ fn tag() {
 
     assert_eq!(VersionProtocol::from_str("next").unwrap(), exp);
     assert_eq!(exp.to_string(), "next");
-
-    // TODO: Unknown protocol - should that be allowed?
-    let exp = VersionProtocol::Tag("mail:".into());
-
-    assert_eq!(VersionProtocol::from_str("mail:").unwrap(), exp);
-    assert_eq!(exp.to_string(), "mail:");
 }
 
 #[test]
@@ -392,4 +386,22 @@ fn ranges() {
         exp.to_string(),
         ">=0.11.4, <0.12.0-0 || >=0.13.0, <0.14.0-0 || >=0.14.0, <0.15.0-0"
     );
+}
+
+#[test]
+fn custom_protocol() {
+    let exp = VersionProtocol::CustomProtocol("backstage".into(), "1.0.0".into());
+
+    assert_eq!(VersionProtocol::from_str("backstage:1.0.0").unwrap(), exp);
+    assert_eq!(exp.to_string(), "backstage:1.0.0");
+
+    let exp = VersionProtocol::CustomProtocol("backstage".into(), "^".into());
+
+    assert_eq!(VersionProtocol::from_str("backstage:^").unwrap(), exp);
+    assert_eq!(exp.to_string(), "backstage:^");
+
+    let exp = VersionProtocol::CustomProtocol("mail".into(), "".into());
+
+    assert_eq!(VersionProtocol::from_str("mail:").unwrap(), exp);
+    assert_eq!(exp.to_string(), "mail:");
 }
