@@ -1,16 +1,16 @@
 [package]
 name = "nodejs_package_graph"
-version = "0.3.4"
+version = "0.3.5"
 edition = "2024"
 license = "MIT"
 description = "A workspace-based package graph for Node.js packages."
 repository = "https://github.com/milesj/rust-js-ecosystem"
 
 [dependencies]
-nodejs_package_json = { version = "0.4.10", path = "../package-json", features = [
+nodejs_package_json = { version = "0.4.11", path = "../package-json", features = [
 	"protocols",
 ] }
-nodejs_package_managers = { version = "0.3.4", path = "../package-managers" }
+nodejs_package_managers = { version = "0.3.5", path = "../package-managers" }
 clean-path = { workspace = true }
 miette = { workspace = true, optional = true }
 petgraph = { workspace = true }
