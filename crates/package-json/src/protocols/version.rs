@@ -76,6 +76,7 @@ pub enum VersionProtocolError {
 pub enum VersionProtocol {
     Alias(String),
     Catalog(Option<String>),
+    CustomProtocol(String, String),
     Exec(PathBuf),
     File(PathBuf),
     Git {
@@ -163,7 +164,14 @@ impl FromStr for VersionProtocol {
                 "jsr" | "npm" => {
                     return Ok(VersionProtocol::Alias(value.to_owned()));
                 }
-                _ => {}
+                custom => {
+                    if !value.contains("//") {
+                        return Ok(VersionProtocol::CustomProtocol(
+                            custom.to_owned(),
+                            value[index + 1..].to_owned(),
+                        ));
+                    }
+                }
             }
         }
 
@@ -248,6 +256,7 @@ impl fmt::Display for VersionProtocol {
                 VersionProtocol::Alias(value) => value.to_owned(),
                 VersionProtocol::Catalog(value) =>
                     format!("catalog:{}", value.as_deref().unwrap_or_default()),
+                VersionProtocol::CustomProtocol(protocol, value) => format!("{protocol}:{value}"),
                 VersionProtocol::Exec(path) => format!("exec:{}", path.display()),
                 VersionProtocol::File(path) => format!("file:{}", path.display()),
                 VersionProtocol::Git { reference, url } => reference
