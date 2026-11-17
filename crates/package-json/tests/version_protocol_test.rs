@@ -405,3 +405,27 @@ fn custom_protocol() {
     assert_eq!(VersionProtocol::from_str("mail:").unwrap(), exp);
     assert_eq!(exp.to_string(), "mail:");
 }
+
+#[test]
+fn deserializes_invalid_as_unknown() {
+    let value: VersionProtocol = serde_json::from_str("\"workspace:^not-a-range\"").unwrap();
+
+    assert_eq!(
+        value,
+        VersionProtocol::Unknown("workspace:^not-a-range".into())
+    );
+    assert!(VersionProtocol::parse("workspace:^not-a-range").is_err());
+}
+
+#[test]
+fn deserializes_workspace_requirement() {
+    let value: VersionProtocol = serde_json::from_str("\"workspace:^1\"").unwrap();
+
+    assert_eq!(
+        value,
+        VersionProtocol::Workspace(WorkspaceProtocol::Requirement {
+            alias: None,
+            req: VersionReq::parse("^1").unwrap(),
+        })
+    );
+}

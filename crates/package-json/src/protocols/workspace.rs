@@ -1,4 +1,4 @@
-use semver::Version;
+use semver::{Version, VersionReq};
 use serde::Deserialize;
 use std::fmt;
 use std::path::PathBuf;
@@ -43,6 +43,11 @@ pub enum WorkspaceProtocol {
     },
     // ../file
     File(PathBuf),
+    // ^1, ~1.2, >=1.0.0, etc
+    Requirement {
+        alias: Option<String>,
+        req: VersionReq,
+    },
     // 1.2.3
     Version(Version),
 }
@@ -82,7 +87,16 @@ impl FromStr for WorkspaceProtocol {
                 let mut version = None;
 
                 if value.len() > 1 {
-                    version = Some(Version::parse(&value[1..])?);
+                    match Version::parse(&value[1..]) {
+                        Ok(inner) => version = Some(inner),
+                        // Partial versions, like ^1 or ~1.2
+                        Err(_) => {
+                            return Ok(WorkspaceProtocol::Requirement {
+                                alias,
+                                req: VersionReq::parse(value)?,
+                            });
+                        }
+                    };
                 }
 
                 if value.starts_with('^') {
@@ -97,7 +111,14 @@ impl FromStr for WorkspaceProtocol {
             _ => {}
         };
 
-        Ok(WorkspaceProtocol::Version(Version::parse(value)?))
+        match Version::parse(value) {
+            Ok(version) => Ok(WorkspaceProtocol::Version(version)),
+            // Any other range, like >=1.0.0 or 1
+            Err(_) => Ok(WorkspaceProtocol::Requirement {
+                alias,
+                req: VersionReq::parse(value)?,
+            }),
+        }
     }
 }
 
@@ -141,6 +162,10 @@ impl fmt::Display for WorkspaceProtocol {
                 WorkspaceProtocol::Caret { alias, version } =>
                     format_variant('^', alias.as_ref(), version.as_ref()),
                 WorkspaceProtocol::File(path) => path.display().to_string(),
+                WorkspaceProtocol::Requirement { alias, req } => match alias {
+                    Some(alias) => format!("{alias}@{req}"),
+                    None => req.to_string(),
+                },
                 WorkspaceProtocol::Version(ver) => ver.to_string(),
             }
         )

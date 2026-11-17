@@ -246,6 +246,24 @@ impl PackageGraph {
 
                                 continue;
                             }
+                            WorkspaceProtocol::Requirement { alias, req } => {
+                                if let Some(dep_package) =
+                                    self.packages.get(alias.as_deref().unwrap_or(name))
+                                    && dep_package
+                                        .manifest
+                                        .version
+                                        .as_ref()
+                                        .is_some_and(|ver| req.matches(ver))
+                                {
+                                    graph.add_edge(
+                                        package.node_index,
+                                        dep_package.node_index,
+                                        dep_type,
+                                    );
+                                }
+
+                                continue;
+                            }
                             WorkspaceProtocol::Version(ver) => {
                                 if let Some(dep_package) = self.packages.get(name) {
                                     add_edge_via_version(

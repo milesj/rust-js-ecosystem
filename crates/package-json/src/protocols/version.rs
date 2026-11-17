@@ -233,11 +233,13 @@ impl FromStr for VersionProtocol {
     }
 }
 
+// Deserializing never fails, so that one dependency we can't parse doesn't
+// fail the whole `package.json`. Use `parse` or `from_str` for the error.
 impl TryFrom<String> for VersionProtocol {
     type Error = VersionProtocolError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        Self::from_str(&value)
+        Ok(Self::from_str(&value).unwrap_or(VersionProtocol::Unknown(value)))
     }
 }
 

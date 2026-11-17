@@ -90,9 +90,14 @@ fn tilde_with_alias_and_version() {
 }
 
 #[test]
-#[should_panic(expected = "unexpected end of input while parsing minor version number")]
-fn errors_tilde_invalid_version() {
-    WorkspaceProtocol::from_str("~1.2").unwrap();
+fn tilde_partial_version() {
+    assert_eq!(
+        WorkspaceProtocol::from_str("~1.2").unwrap(),
+        WorkspaceProtocol::Requirement {
+            alias: None,
+            req: semver::VersionReq::parse("~1.2").unwrap(),
+        }
+    );
 }
 
 #[test]
@@ -148,9 +153,14 @@ fn caret_with_alias_and_version() {
 }
 
 #[test]
-#[should_panic(expected = "unexpected end of input while parsing minor version number")]
-fn errors_caret_invalid_version() {
-    WorkspaceProtocol::from_str("^1.2").unwrap();
+fn caret_partial_version() {
+    assert_eq!(
+        WorkspaceProtocol::from_str("^1.2").unwrap(),
+        WorkspaceProtocol::Requirement {
+            alias: None,
+            req: semver::VersionReq::parse("^1.2").unwrap(),
+        }
+    );
 }
 
 #[test]
@@ -190,7 +200,48 @@ fn version() {
 }
 
 #[test]
-#[should_panic(expected = "unexpected end of input while parsing minor version number")]
-fn errors_invalid_version() {
-    WorkspaceProtocol::from_str("1.2").unwrap();
+fn partial_version() {
+    assert_eq!(
+        WorkspaceProtocol::from_str("1.2").unwrap(),
+        WorkspaceProtocol::Requirement {
+            alias: None,
+            req: semver::VersionReq::parse("1.2").unwrap(),
+        }
+    );
+}
+
+#[test]
+fn requirements() {
+    for (value, exp_req) in [
+        ("^1", "^1"),
+        ("~1.2", "~1.2"),
+        (">=1.0.0", ">=1.0.0"),
+        ("1", "^1"),
+    ] {
+        assert_eq!(
+            WorkspaceProtocol::from_str(value).unwrap(),
+            WorkspaceProtocol::Requirement {
+                alias: None,
+                req: semver::VersionReq::parse(exp_req).unwrap(),
+            },
+            "{value}"
+        );
+    }
+}
+
+#[test]
+fn requirement_with_alias() {
+    let exp = WorkspaceProtocol::Requirement {
+        alias: Some("foo".into()),
+        req: semver::VersionReq::parse("^1").unwrap(),
+    };
+
+    assert_eq!(WorkspaceProtocol::from_str("foo@^1").unwrap(), exp);
+    assert_eq!(exp.to_string(), "foo@^1")
+}
+
+#[test]
+#[should_panic(expected = "Semver")]
+fn errors_invalid_requirement() {
+    WorkspaceProtocol::from_str("^not-a-range").unwrap();
 }
