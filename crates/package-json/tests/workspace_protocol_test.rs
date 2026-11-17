@@ -1,5 +1,4 @@
-use nodejs_package_json::WorkspaceProtocol;
-use semver::Version;
+use nodejs_package_json::{Requirement, Version, WorkspaceProtocol};
 use std::path::PathBuf;
 use std::str::FromStr;
 
@@ -95,7 +94,7 @@ fn tilde_partial_version() {
         WorkspaceProtocol::from_str("~1.2").unwrap(),
         WorkspaceProtocol::Requirement {
             alias: None,
-            req: semver::VersionReq::parse("~1.2").unwrap(),
+            req: Requirement::parse("~1.2").unwrap(),
         }
     );
 }
@@ -158,7 +157,7 @@ fn caret_partial_version() {
         WorkspaceProtocol::from_str("^1.2").unwrap(),
         WorkspaceProtocol::Requirement {
             alias: None,
-            req: semver::VersionReq::parse("^1.2").unwrap(),
+            req: Requirement::parse("^1.2").unwrap(),
         }
     );
 }
@@ -205,7 +204,7 @@ fn partial_version() {
         WorkspaceProtocol::from_str("1.2").unwrap(),
         WorkspaceProtocol::Requirement {
             alias: None,
-            req: semver::VersionReq::parse("1.2").unwrap(),
+            req: Requirement::parse("1.2").unwrap(),
         }
     );
 }
@@ -216,13 +215,13 @@ fn requirements() {
         ("^1", "^1"),
         ("~1.2", "~1.2"),
         (">=1.0.0", ">=1.0.0"),
-        ("1", "^1"),
+        ("1", "~1"),
     ] {
         assert_eq!(
             WorkspaceProtocol::from_str(value).unwrap(),
             WorkspaceProtocol::Requirement {
                 alias: None,
-                req: semver::VersionReq::parse(exp_req).unwrap(),
+                req: Requirement::parse(exp_req).unwrap(),
             },
             "{value}"
         );
@@ -233,7 +232,7 @@ fn requirements() {
 fn requirement_with_alias() {
     let exp = WorkspaceProtocol::Requirement {
         alias: Some("foo".into()),
-        req: semver::VersionReq::parse("^1").unwrap(),
+        req: Requirement::parse("^1").unwrap(),
     };
 
     assert_eq!(WorkspaceProtocol::from_str("foo@^1").unwrap(), exp);
@@ -241,7 +240,7 @@ fn requirement_with_alias() {
 }
 
 #[test]
-#[should_panic(expected = "Semver")]
+#[should_panic(expected = "Spec")]
 fn errors_invalid_requirement() {
     WorkspaceProtocol::from_str("^not-a-range").unwrap();
 }

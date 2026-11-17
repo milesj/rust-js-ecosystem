@@ -2,7 +2,8 @@ use crate::package::{DependencyType, Package};
 use crate::package_graph_error::PackageGraphError;
 use clean_path::Clean;
 use nodejs_package_json::{
-    DependenciesMap, PackageJson, Version, VersionProtocol, WorkspaceProtocol, WorkspacesField,
+    DependenciesMap, MatchesVersion, Op, PackageJson, Version, VersionProtocol, WorkspaceProtocol,
+    WorkspacesField,
 };
 use nodejs_package_managers::{PackageManager, pnpm::PnpmWorkspaceYaml};
 use petgraph::Direction;
@@ -210,13 +211,25 @@ impl PackageGraph {
                     VersionProtocol::Requirement(req) => {
                         if let Some(dep_package) = self.packages.get(name) &&
                             // *
-                            (req.comparators.is_empty()
+                            (req.op == Op::Wildcard && req.major.is_none()
                                 // ~, ^, etc
                                 || dep_package
                                     .manifest
                                     .version
                                     .as_ref()
                                     .is_some_and(|ver| req.matches(ver)))
+                        {
+                            graph.add_edge(package.node_index, dep_package.node_index, dep_type);
+                        }
+                    }
+                    // >=1 <2, 1.2.3 - 2.3.4, ^1 || ^2, etc
+                    VersionProtocol::Range(range) => {
+                        if let Some(dep_package) = self.packages.get(name)
+                            && dep_package
+                                .manifest
+                                .version
+                                .as_ref()
+                                .is_some_and(|ver| range.matches(ver))
                         {
                             graph.add_edge(package.node_index, dep_package.node_index, dep_type);
                         }

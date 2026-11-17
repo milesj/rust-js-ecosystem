@@ -1,12 +1,12 @@
 use super::workspace::*;
 use regex::Regex;
-use semver::{Version, VersionReq};
 use serde::Deserialize;
 use std::fmt;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::LazyLock;
 use thiserror::Error;
+use version_spec::{Clause, Op, Range, Requirement, SpecError, Version};
 
 static PROTOCOL: LazyLock<Regex> = LazyLock::new(|| Regex::new("^(?<protocol>[a-z+]+):").unwrap());
 
@@ -17,30 +17,46 @@ static GITHUB: LazyLock<Regex> = LazyLock::new(|| {
     .unwrap()
 });
 
-static WS_OPERATOR: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?<op>[<>=\^~]+)\s+").unwrap());
-
-// https://docs.npmjs.com/cli/v7/configuring-npm/package-json#dependencies
-fn clean_version(version: &str) -> String {
-    let mut value = version
-        .trim()
-        .replace(".*", "")
-        .replace(".x", "")
-        .replace(".X", "")
-        .replace("-*", "");
-
-    value = WS_OPERATOR.replace_all(&value, "$op").to_string();
-
-    if value.contains(" ") && !value.contains(",") {
-        value = value.replace(" ", ", ");
+// A range with a single requirement is unwrapped, like `^1.2` or `>=1`,
+// while anything else remains a range, like `>=1 <2` or `^1 || ^2`
+fn from_range(mut range: Range) -> VersionProtocol {
+    if range.clauses.is_empty() {
+        return VersionProtocol::Requirement(Requirement {
+            op: Op::Wildcard,
+            ..Default::default()
+        });
     }
 
-    let count = value.chars().filter(|c| *c == '.').count();
-
-    if (value != version || count < 2) && !value.starts_with(['^', '~', '>', '<', '=']) {
-        return format!("~{value}");
+    if range.clauses.len() == 1
+        && let Clause::Only(req) = &mut range.clauses[0]
+    {
+        return VersionProtocol::Requirement(std::mem::take(req));
     }
 
-    value
+    VersionProtocol::Range(range)
+}
+
+// Formats a range with npm's syntax, in which requirements that must all
+// match are separated by a space, instead of `&&`
+// https://docs.npmjs.com/cli/v10/configuring-npm/package-json#dependencies
+fn format_range(range: &Range) -> String {
+    if range.clauses.is_empty() {
+        return "*".into();
+    }
+
+    range
+        .clauses
+        .iter()
+        .map(|clause| match clause {
+            Clause::All(reqs) => reqs
+                .iter()
+                .map(|req| req.to_string())
+                .collect::<Vec<_>>()
+                .join(" "),
+            clause => clause.to_string(),
+        })
+        .collect::<Vec<_>>()
+        .join(" || ")
 }
 
 #[derive(Debug, Error)]
@@ -60,9 +76,9 @@ pub enum VersionProtocolError {
     )]
     RangeMissingStopVersion,
 
-    #[error("Failed to parse version or requirement: {0}")]
+    #[error(transparent)]
     #[cfg_attr(feature = "miette", diagnostic(code(package_json::version::invalid)))]
-    Semver(#[from] semver::Error),
+    Spec(#[from] SpecError),
 
     #[error(transparent)]
     #[cfg_attr(feature = "miette", diagnostic(transparent))]
@@ -91,8 +107,8 @@ pub enum VersionProtocol {
     Link(PathBuf),
     Patch(String),
     Portal(PathBuf),
-    Range(Vec<VersionReq>),
-    Requirement(VersionReq),
+    Range(Range),
+    Requirement(Requirement),
     Tag(String),
     Url(String),
     Version(Version),
@@ -112,11 +128,11 @@ impl FromStr for VersionProtocol {
     type Err = VersionProtocolError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        if value.is_empty() || value == "*" {
-            return Ok(VersionProtocol::Requirement(VersionReq::parse("*")?));
-        }
-
         let value = value.trim();
+
+        if value.is_empty() || value == "*" {
+            return Ok(VersionProtocol::Requirement(Requirement::parse("*")?));
+        }
 
         if let Some(caps) = PROTOCOL.captures(value) {
             let protocol = caps.name("protocol").unwrap().as_str();
@@ -184,6 +200,12 @@ impl FromStr for VersionProtocol {
         }
 
         if value.contains(" - ") {
+            if let Ok(range) = Range::parse(value) {
+                return Ok(from_range(range));
+            }
+
+            // A bounded range requires full versions, while npm
+            // also supports partial versions, like `1.2 - 2`
             let mut parts = value.split(" - ");
             let l = parts
                 .next()
@@ -194,19 +216,11 @@ impl FromStr for VersionProtocol {
                 .ok_or(VersionProtocolError::RangeMissingStopVersion)?
                 .trim();
 
-            return Ok(VersionProtocol::Requirement(VersionReq::parse(&format!(
-                ">={l}, <={r}",
-            ))?));
+            return Ok(from_range(Range::parse(format!(">={l} <={r}"))?));
         }
 
         if value.contains("||") {
-            let mut ranges = vec![];
-
-            for range in value.split("||") {
-                ranges.push(VersionReq::parse(&clean_version(range))?);
-            }
-
-            return Ok(VersionProtocol::Range(ranges));
+            return Ok(from_range(Range::parse(value)?));
         }
 
         // Better way to capture tags?
@@ -214,22 +228,20 @@ impl FromStr for VersionProtocol {
             return Ok(VersionProtocol::Tag(value.to_owned()));
         }
 
-        let value = clean_version(value);
-
-        if value.contains('^')
-            || value.contains('~')
-            || value.contains('>')
-            || value.contains('<')
-            || value.contains('=')
-        {
-            return Ok(VersionProtocol::Requirement(VersionReq::parse(&value)?));
-        }
-
-        if let Ok(version) = Version::parse(&value) {
+        if let Ok(version) = Version::parse(value) {
             return Ok(VersionProtocol::Version(version));
         }
 
-        Ok(VersionProtocol::Unknown(value))
+        match Range::parse(value) {
+            Ok(range) => Ok(from_range(range)),
+            Err(error) => {
+                if value.contains(['^', '~', '>', '<', '=']) {
+                    Err(error.into())
+                } else {
+                    Ok(VersionProtocol::Unknown(value.to_owned()))
+                }
+            }
+        }
     }
 }
 
@@ -280,11 +292,7 @@ impl fmt::Display for VersionProtocol {
                 VersionProtocol::Link(path) => format!("link:{}", path.display()),
                 VersionProtocol::Patch(patch) => format!("patch:{patch}"),
                 VersionProtocol::Portal(path) => format!("portal:{}", path.display()),
-                VersionProtocol::Range(range) => range
-                    .iter()
-                    .map(|r| r.to_string())
-                    .collect::<Vec<_>>()
-                    .join(" || "),
+                VersionProtocol::Range(range) => format_range(range),
                 VersionProtocol::Requirement(req) => req.to_string(),
                 VersionProtocol::Tag(tag) => tag.to_owned(),
                 VersionProtocol::Url(url) => url.to_owned(),

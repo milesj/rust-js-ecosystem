@@ -10,13 +10,13 @@ repository = "https://github.com/milesj/rust-js-ecosystem"
 indexmap = { workspace = true, features = ["serde"] }
 miette = { workspace = true, optional = true }
 rustc-hash = { workspace = true }
-semver = { workspace = true, features = ["serde"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 
 # protocols
 regex = { workspace = true, optional = true }
+version_spec = { workspace = true, optional = true }
 
 [dev-dependencies]
 nodejs_package_json = { path = ".", features = ["protocols", "serialize"] }
@@ -25,5 +25,5 @@ starbase_sandbox = { workspace = true }
 [features]
 default = []
 miette = ["dep:miette"]
-protocols = ["dep:regex"]
+protocols = ["dep:regex", "dep:version_spec"]
 serialize = []

@@ -1,9 +1,8 @@
 use indexmap::IndexMap;
 use nodejs_package_json::{
-    DependencyMetaField, ImportExportField, ImportExportMap, PackageJson, VersionProtocol,
-    WorkspaceProtocol,
+    DependencyMetaField, ImportExportField, ImportExportMap, PackageJson, Requirement, Version,
+    VersionProtocol, WorkspaceProtocol,
 };
-use semver::{Version, VersionReq};
 use starbase_sandbox::locate_fixture;
 use std::collections::BTreeMap;
 use std::fs;
@@ -36,7 +35,7 @@ fn serializes_packages_json() {
         dependencies: Some(BTreeMap::from_iter([
             (
                 "@moonrepo/cli".into(),
-                VersionProtocol::Requirement(VersionReq::parse("^1.20").unwrap()),
+                VersionProtocol::Requirement(Requirement::parse("^1.20").unwrap()),
             ),
             (
                 "vite".into(),
@@ -168,7 +167,7 @@ fn skips_fields_that_cant_be_parsed() {
 
     assert_eq!(
         deps.get("a").unwrap(),
-        &VersionProtocol::Requirement(VersionReq::parse("^1.0.0").unwrap())
+        &VersionProtocol::Requirement(Requirement::parse("^1.0.0").unwrap())
     );
     assert_eq!(
         deps.get("b").unwrap(),

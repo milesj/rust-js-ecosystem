@@ -46,7 +46,7 @@ pub struct PackageJson {
         deserialize_with = "lenient",
         skip_serializing_if = "Option::is_none"
     )]
-    pub version: Option<semver::Version>,
+    pub version: Option<version_spec::Version>,
 
     #[cfg(not(feature = "protocols"))]
     #[serde(

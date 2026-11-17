@@ -56,6 +56,17 @@ mod monorepo {
         }
 
         #[test]
+        fn links_version_range_if_match() {
+            let sandbox = create_sandbox("graph-protocols");
+            let graph = PackageGraph::generate(sandbox.path()).unwrap();
+
+            assert_eq!(
+                graph.dependencies_of("ver-range").unwrap(),
+                vec![("a".into(), DependencyType::Production)]
+            );
+        }
+
+        #[test]
         fn links_file() {
             let sandbox = create_sandbox("graph-protocols");
             let graph = PackageGraph::generate(sandbox.path()).unwrap();

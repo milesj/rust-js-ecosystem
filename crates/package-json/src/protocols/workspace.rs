@@ -1,9 +1,9 @@
-use semver::{Version, VersionReq};
 use serde::Deserialize;
 use std::fmt;
 use std::path::PathBuf;
 use std::str::FromStr;
 use thiserror::Error;
+use version_spec::{Requirement, SpecError, Version};
 
 #[derive(Debug, Error)]
 #[cfg_attr(feature = "miette", derive(miette::Diagnostic))]
@@ -15,12 +15,12 @@ pub enum WorkspaceProtocolError {
     )]
     StarNoVersion,
 
-    #[error("Failed to parse version: {0}")]
+    #[error(transparent)]
     #[cfg_attr(
         feature = "miette",
         diagnostic(code(package_json::workspace::invalid_version))
     )]
-    Semver(#[from] semver::Error),
+    Spec(#[from] SpecError),
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
@@ -46,7 +46,7 @@ pub enum WorkspaceProtocol {
     // ^1, ~1.2, >=1.0.0, etc
     Requirement {
         alias: Option<String>,
-        req: VersionReq,
+        req: Requirement,
     },
     // 1.2.3
     Version(Version),
@@ -93,7 +93,7 @@ impl FromStr for WorkspaceProtocol {
                         Err(_) => {
                             return Ok(WorkspaceProtocol::Requirement {
                                 alias,
-                                req: VersionReq::parse(value)?,
+                                req: Requirement::parse(value)?,
                             });
                         }
                     };
@@ -116,7 +116,7 @@ impl FromStr for WorkspaceProtocol {
             // Any other range, like >=1.0.0 or 1
             Err(_) => Ok(WorkspaceProtocol::Requirement {
                 alias,
-                req: VersionReq::parse(value)?,
+                req: Requirement::parse(value)?,
             }),
         }
     }
