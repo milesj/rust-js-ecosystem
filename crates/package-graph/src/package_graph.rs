@@ -2,15 +2,17 @@ use crate::package::{DependencyType, Package};
 use crate::package_graph_error::PackageGraphError;
 use clean_path::Clean;
 use nodejs_package_json::{
-    DependenciesMap, MatchesVersion, Op, PackageJson, Version, VersionProtocol, WorkspaceProtocol,
-    WorkspacesField,
+    Clause, DependenciesMap, MatchesVersion, Op, PackageJson, Range, VersionProtocol,
+    WorkspaceProtocol, WorkspacesField,
 };
 use nodejs_package_managers::{PackageManager, pnpm::PnpmWorkspaceYaml};
 use petgraph::Direction;
 use petgraph::graph::DiGraph;
 use petgraph::visit::EdgeRef;
 use starbase_utils::{glob, json, yaml};
+use std::borrow::Cow;
 use std::collections::BTreeMap;
+use std::collections::btree_map::Entry;
 use std::path::{Path, PathBuf};
 
 pub type PackageGraphType = DiGraph<String, DependencyType>;
@@ -121,7 +123,7 @@ impl PackageGraph {
             return Ok(());
         }
 
-        let mut packages = BTreeMap::new();
+        let mut packages = BTreeMap::<String, Package>::new();
         let mut index = 1; // Root is 0
 
         let mut dirs = glob::walk(&self.root, &self.package_globs)?;
@@ -140,7 +142,19 @@ impl PackageGraph {
                 let mut package = Package::new(dir, manifest);
                 package.index = index;
 
-                packages.insert(package.get_name()?.to_owned(), package);
+                match packages.entry(package.get_name()?.to_owned()) {
+                    Entry::Occupied(entry) => {
+                        return Err(PackageGraphError::DuplicatePackageName {
+                            name: entry.key().to_owned(),
+                            first: entry.get().root.clone(),
+                            second: package.root,
+                        });
+                    }
+                    Entry::Vacant(entry) => {
+                        entry.insert(package);
+                    }
+                };
+
                 index += 1;
             }
         }
@@ -191,16 +205,6 @@ impl PackageGraph {
             }
         };
 
-        let add_edge_via_version = |graph: &mut PackageGraphType,
-                                    package: &Package,
-                                    dep_package: &Package,
-                                    version: &Version,
-                                    dep_type: DependencyType| {
-            if dep_package.manifest.version.as_ref() == Some(version) {
-                graph.add_edge(package.node_index, dep_package.node_index, dep_type);
-            }
-        };
-
         let add_edges = |graph: &mut PackageGraphType,
                          package: &Package,
                          deps: &DependenciesMap<VersionProtocol>,
@@ -234,9 +238,18 @@ impl PackageGraph {
                             graph.add_edge(package.node_index, dep_package.node_index, dep_type);
                         }
                     }
+                    // Build metadata is ignored, like `1.2.3+build`
                     VersionProtocol::Version(ver) => {
-                        if let Some(dep_package) = self.packages.get(name) {
-                            add_edge_via_version(graph, package, dep_package, ver, dep_type);
+                        let req = ver.to_requirement(Op::Exact);
+
+                        if let Some(dep_package) = self.packages.get(name)
+                            && dep_package
+                                .manifest
+                                .version
+                                .as_ref()
+                                .is_some_and(|ver| req.matches(ver))
+                        {
+                            graph.add_edge(package.node_index, dep_package.node_index, dep_type);
                         }
                     }
                     // npm, pnpm, yarn
@@ -249,21 +262,36 @@ impl PackageGraph {
                         }
                     }
                     VersionProtocol::Workspace(ws) => {
-                        // A missing requirement matches any version, like `*` or `^`,
+                        let single = |req| {
+                            Cow::Owned(Range {
+                                clauses: vec![Clause::Only(req)],
+                            })
+                        };
+
+                        // A missing range matches any version, like `*` or `^`,
                         // while a version is matched as a range, like `^1.2.3`
-                        let (alias, req) = match ws {
+                        let (alias, range) = match ws {
                             WorkspaceProtocol::Any { alias } => (alias, None),
-                            WorkspaceProtocol::Tilde { alias, version } => {
-                                (alias, version.as_ref().map(|v| v.to_requirement(Op::Tilde)))
-                            }
-                            WorkspaceProtocol::Caret { alias, version } => {
-                                (alias, version.as_ref().map(|v| v.to_requirement(Op::Caret)))
+                            WorkspaceProtocol::Tilde { alias, version } => (
+                                alias,
+                                version
+                                    .as_ref()
+                                    .map(|v| single(v.to_requirement(Op::Tilde))),
+                            ),
+                            WorkspaceProtocol::Caret { alias, version } => (
+                                alias,
+                                version
+                                    .as_ref()
+                                    .map(|v| single(v.to_requirement(Op::Caret))),
+                            ),
+                            WorkspaceProtocol::Range { alias, range } => {
+                                (alias, Some(Cow::Borrowed(range)))
                             }
                             WorkspaceProtocol::Requirement { alias, req } => {
-                                (alias, Some(req.to_owned()))
+                                (alias, Some(single(req.to_owned())))
                             }
                             WorkspaceProtocol::Version { alias, version } => {
-                                (alias, Some(version.to_requirement(Op::Exact)))
+                                (alias, Some(single(version.to_requirement(Op::Exact))))
                             }
                             WorkspaceProtocol::File(path) => {
                                 if let Some(dep_package) = self.packages.get(name) {
@@ -276,12 +304,12 @@ impl PackageGraph {
 
                         if let Some(dep_package) =
                             self.packages.get(alias.as_deref().unwrap_or(name))
-                            && req.is_none_or(|req| {
+                            && range.is_none_or(|range| {
                                 dep_package
                                     .manifest
                                     .version
                                     .as_ref()
-                                    .is_some_and(|ver| req.matches(ver))
+                                    .is_some_and(|ver| range.matches(ver))
                             })
                         {
                             graph.add_edge(package.node_index, dep_package.node_index, dep_type);

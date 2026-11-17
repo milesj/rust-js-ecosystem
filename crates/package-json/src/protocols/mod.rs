@@ -1,4 +1,7 @@
 #[cfg(feature = "protocols")]
+mod range;
+
+#[cfg(feature = "protocols")]
 mod version;
 
 #[cfg(feature = "protocols")]

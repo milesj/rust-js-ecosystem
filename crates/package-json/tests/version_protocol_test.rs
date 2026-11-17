@@ -517,3 +517,56 @@ fn ranges_exact_versions() {
     assert_eq!(VersionProtocol::from_str(">=1.0.0 1.5.0").unwrap(), exp);
     assert_eq!(exp.to_string(), ">=1.0.0 1.5.0");
 }
+
+#[test]
+fn x_wildcard() {
+    let exp = VersionProtocol::Requirement(Requirement::parse("*").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("x").unwrap(), exp);
+    assert_eq!(VersionProtocol::from_str("X").unwrap(), exp);
+}
+
+#[test]
+fn hosted_git_shorthand() {
+    for value in [
+        "github:user/repo",
+        "gitlab:user/repo#v1.0.0",
+        "bitbucket:user/repo",
+        "gist:11081aaa281",
+    ] {
+        let (url, reference) = match value.split_once('#') {
+            Some((url, reference)) => (url, Some(reference.to_owned())),
+            None => (value, None),
+        };
+        let exp = VersionProtocol::Git {
+            reference,
+            url: url.into(),
+        };
+
+        assert_eq!(VersionProtocol::from_str(value).unwrap(), exp, "{value}");
+        assert_eq!(exp.to_string(), value);
+    }
+}
+
+#[test]
+fn ranges_partial_bounds() {
+    let exp = VersionProtocol::Range(Range::parse(">=1 <=2 || >=3 <=4").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("1 - 2 || 3 - 4").unwrap(), exp);
+    assert_eq!(exp.to_string(), ">=1 <=2 || >=3 <=4");
+
+    // Full versions are kept as a bounded range
+    let exp = VersionProtocol::Range(Range::parse("1.2.3 - 2.0.0 || >=3.1 <=4").unwrap());
+
+    assert_eq!(
+        VersionProtocol::from_str("1.2.3 - 2.0.0 || 3.1 - 4").unwrap(),
+        exp
+    );
+    assert_eq!(exp.to_string(), "1.2.3 - 2.0.0 || >=3.1 <=4");
+}
+
+#[test]
+fn errors_range_missing_bound() {
+    assert!(VersionProtocol::parse("1.2.3 - || 2").is_err());
+    assert!(VersionProtocol::parse("^1 ||  - 2").is_err());
+}

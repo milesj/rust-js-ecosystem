@@ -8,5 +8,8 @@
   },
   "peerDependencies": {
     "c": "workspace:~1.2.0"
+  },
+  "optionalDependencies": {
+    "c": "workspace:>=1.1.0 <2"
   }
 }

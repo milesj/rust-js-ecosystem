@@ -206,6 +206,17 @@ mod monorepo {
         }
 
         #[test]
+        fn links_version_ignoring_build_metadata() {
+            let sandbox = create_sandbox("graph-protocols");
+            let graph = PackageGraph::generate(sandbox.path()).unwrap();
+
+            assert_eq!(
+                graph.dependencies_of("ver-build").unwrap(),
+                vec![("d".into(), DependencyType::Production)]
+            );
+        }
+
+        #[test]
         fn links_path() {
             let sandbox = create_sandbox("graph-protocols");
             let graph = PackageGraph::generate(sandbox.path()).unwrap();
@@ -236,6 +247,7 @@ mod monorepo {
             assert_eq!(
                 graph.dependencies_of("ws-range").unwrap(),
                 vec![
+                    ("c".into(), DependencyType::Optional),
                     ("c".into(), DependencyType::Peer),
                     ("c".into(), DependencyType::Production),
                 ]
@@ -250,6 +262,7 @@ mod monorepo {
             assert_eq!(
                 graph.dependents_of("c").unwrap(),
                 vec![
+                    ("ws-range".into(), DependencyType::Optional),
                     ("ws-range".into(), DependencyType::Peer),
                     ("ws-range".into(), DependencyType::Production),
                 ]
@@ -330,8 +343,28 @@ mod package_root {
     }
 }
 
-mod large_workspace {
+mod workspace_packages {
     use super::*;
+
+    #[test]
+    fn errors_for_duplicate_package_names() {
+        let sandbox = create_empty_sandbox();
+        sandbox.create_file(
+            "package.json",
+            r#"{"name": "root", "workspaces": ["packages/*"]}"#,
+        );
+        sandbox.create_file("packages/a/package.json", r#"{"name": "same"}"#);
+        sandbox.create_file("packages/b/package.json", r#"{"name": "same"}"#);
+
+        let Err(error) = PackageGraph::generate(sandbox.path()) else {
+            panic!("expected an error");
+        };
+
+        assert!(matches!(
+            error,
+            PackageGraphError::DuplicatePackageName { ref name, .. } if name == "same"
+        ));
+    }
 
     #[test]
     fn supports_more_than_255_packages() {

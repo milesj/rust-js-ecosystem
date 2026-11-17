@@ -1,4 +1,4 @@
-use nodejs_package_json::{Requirement, Version, WorkspaceProtocol};
+use nodejs_package_json::{Range, Requirement, Version, WorkspaceProtocol};
 use std::path::PathBuf;
 use std::str::FromStr;
 
@@ -275,4 +275,40 @@ fn errors_invalid_requirement() {
 fn errors_non_ascii() {
     assert!(WorkspaceProtocol::from_str("é").is_err());
     assert!(WorkspaceProtocol::from_str("foo@é").is_err());
+}
+
+#[test]
+fn range() {
+    for (value, exp_range) in [
+        (">=1 <2", ">=1 <2"),
+        ("^1 || ^2", "^1 || ^2"),
+        ("1.2.3 || 2.0.0", "=1.2.3 || =2.0.0"),
+        ("1 - 2", ">=1 <=2"),
+    ] {
+        let exp = WorkspaceProtocol::Range {
+            alias: None,
+            range: Range::parse(exp_range).unwrap(),
+        };
+
+        assert_eq!(WorkspaceProtocol::from_str(value).unwrap(), exp, "{value}");
+    }
+
+    let exp = WorkspaceProtocol::Range {
+        alias: None,
+        range: Range::parse("^1.2.3 || ^2").unwrap(),
+    };
+
+    assert_eq!(WorkspaceProtocol::from_str("^1.2.3 || ^2").unwrap(), exp);
+    assert_eq!(exp.to_string(), "^1.2.3 || ^2");
+}
+
+#[test]
+fn range_with_alias() {
+    let exp = WorkspaceProtocol::Range {
+        alias: Some("foo".into()),
+        range: Range::parse(">=1 <2").unwrap(),
+    };
+
+    assert_eq!(WorkspaceProtocol::from_str("foo@>=1 <2").unwrap(), exp);
+    assert_eq!(exp.to_string(), "foo@>=1 <2");
 }

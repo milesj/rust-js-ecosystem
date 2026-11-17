@@ -176,6 +176,68 @@ fn skips_fields_that_cant_be_parsed() {
 }
 
 #[test]
+fn keeps_dependencies_that_arent_strings() {
+    let pkg: PackageJson = serde_json::from_str(
+        r#"{
+    "dependencies": {
+        "a": "^1.0.0",
+        "b": 1,
+        "c": { "version": "1.0.0" }
+    }
+}"#,
+    )
+    .unwrap();
+
+    let deps = pkg.dependencies.unwrap();
+
+    assert_eq!(
+        deps.get("a").unwrap(),
+        &VersionProtocol::Requirement(Requirement::parse("^1.0.0").unwrap())
+    );
+    assert_eq!(
+        deps.get("b").unwrap(),
+        &VersionProtocol::Unknown("1".into())
+    );
+    assert_eq!(
+        deps.get("c").unwrap(),
+        &VersionProtocol::Unknown(r#"{"version":"1.0.0"}"#.into())
+    );
+}
+
+#[test]
+fn keeps_the_order_of_maps() {
+    let pkg: PackageJson = serde_json::from_str(
+        r#"{
+    "scripts": { "z-build": "a", "a-test": "b" },
+    "exports": {
+        ".": { "node": "./n.js", "import": "./i.mjs", "default": "./d.js" }
+    }
+}"#,
+    )
+    .unwrap();
+
+    assert_eq!(
+        pkg.scripts.unwrap().keys().collect::<Vec<_>>(),
+        ["z-build", "a-test"]
+    );
+
+    let Some(ImportExportField::Map(exports)) = pkg.exports else {
+        unreachable!();
+    };
+    let Some(ImportExportField::Map(conditions)) = exports.values().next() else {
+        unreachable!();
+    };
+
+    assert_eq!(
+        conditions
+            .keys()
+            .map(|key| key.to_string())
+            .collect::<Vec<_>>(),
+        ["node", "import", "default"]
+    );
+}
+
+#[test]
 fn parses_workspaces_without_packages() {
     let pkg: PackageJson = serde_json::from_str(
         r#"{

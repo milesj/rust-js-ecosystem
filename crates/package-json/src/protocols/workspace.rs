@@ -1,9 +1,10 @@
+use super::range::*;
 use serde::Deserialize;
 use std::fmt;
 use std::path::PathBuf;
 use std::str::FromStr;
 use thiserror::Error;
-use version_spec::{Requirement, SpecError, Version};
+use version_spec::{Clause, Range, Requirement, SpecError, Version};
 
 #[derive(Debug, Error)]
 #[cfg_attr(feature = "miette", derive(miette::Diagnostic))]
@@ -43,6 +44,11 @@ pub enum WorkspaceProtocol {
     },
     // ../file
     File(PathBuf),
+    // >=1 <2, ^1 || ^2, etc
+    Range {
+        alias: Option<String>,
+        range: Range,
+    },
     // ^1, ~1.2, >=1.0.0, etc
     Requirement {
         alias: Option<String>,
@@ -91,25 +97,19 @@ impl FromStr for WorkspaceProtocol {
                 return Ok(WorkspaceProtocol::Any { alias });
             }
             '^' | '~' => {
-                let mut version = None;
+                // Without a version or with a full version, like `^` or `^1.2.3`,
+                // otherwise it's parsed below, like `^1.2` or `^1 || ^2`
+                let version = match &value[1..] {
+                    "" => Some(None),
+                    rest => Version::parse(rest).ok().map(Some),
+                };
 
-                if value.len() > 1 {
-                    match Version::parse(&value[1..]) {
-                        Ok(inner) => version = Some(inner),
-                        // Partial versions, like ^1 or ~1.2
-                        Err(_) => {
-                            return Ok(WorkspaceProtocol::Requirement {
-                                alias,
-                                req: Requirement::parse(value)?,
-                            });
-                        }
-                    };
-                }
-
-                if value.starts_with('^') {
-                    return Ok(WorkspaceProtocol::Caret { alias, version });
-                } else {
-                    return Ok(WorkspaceProtocol::Tilde { alias, version });
+                if let Some(version) = version {
+                    return Ok(if first == '^' {
+                        WorkspaceProtocol::Caret { alias, version }
+                    } else {
+                        WorkspaceProtocol::Tilde { alias, version }
+                    });
                 }
             }
             // A path can't have an alias, so fall through to fail parsing
@@ -119,14 +119,27 @@ impl FromStr for WorkspaceProtocol {
             _ => {}
         };
 
-        match Version::parse(value) {
-            Ok(version) => Ok(WorkspaceProtocol::Version { alias, version }),
-            // Any other range, like >=1.0.0 or 1
-            Err(_) => Ok(WorkspaceProtocol::Requirement {
-                alias,
-                req: Requirement::parse(value)?,
-            }),
+        if let Ok(version) = Version::parse(value) {
+            return Ok(WorkspaceProtocol::Version { alias, version });
         }
+
+        // Any other requirement or range, like `1`, `>=1.0.0`, or `>=1 <2`
+        let mut range = parse_range(value)?;
+
+        if range.clauses.is_empty() {
+            return Ok(WorkspaceProtocol::Any { alias });
+        }
+
+        if range.clauses.len() == 1
+            && let Clause::Only(req) = &mut range.clauses[0]
+        {
+            return Ok(WorkspaceProtocol::Requirement {
+                alias,
+                req: std::mem::take(req),
+            });
+        }
+
+        Ok(WorkspaceProtocol::Range { alias, range })
     }
 }
 
@@ -170,6 +183,10 @@ impl fmt::Display for WorkspaceProtocol {
                 WorkspaceProtocol::Caret { alias, version } =>
                     format_variant('^', alias.as_ref(), version.as_ref()),
                 WorkspaceProtocol::File(path) => path.display().to_string(),
+                WorkspaceProtocol::Range { alias, range } => match alias {
+                    Some(alias) => format!("{alias}@{}", format_range(range)),
+                    None => format_range(range),
+                },
                 WorkspaceProtocol::Requirement { alias, req } => match alias {
                     Some(alias) => format!("{alias}@{req}"),
                     None => req.to_string(),

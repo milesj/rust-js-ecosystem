@@ -1,6 +1,7 @@
+use super::range::*;
 use super::workspace::*;
 use regex::Regex;
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use std::fmt;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -43,56 +44,6 @@ fn parse_git(value: &str) -> VersionProtocol {
     }
 }
 
-// npm matches a full version without an operator exactly, like the `1.2.3` in
-// `1.2.3 || 2`, while version_spec defaults to `~`, so add an explicit `=`
-fn parse_range(value: &str) -> Result<Range, SpecError> {
-    let value = value
-        .split("||")
-        .map(|clause| {
-            // A bounded range requires versions without an operator
-            if clause.contains(" - ") {
-                return clause.trim().to_owned();
-            }
-
-            let mut reqs = vec![];
-            let mut op = String::new();
-
-            for part in clause.split([' ', ',']) {
-                if part.is_empty() || part == "&&" {
-                    continue;
-                }
-
-                // An operator may be separated from its version, like `>= 1.2.3`
-                if part
-                    .chars()
-                    .all(|ch| matches!(ch, '<' | '>' | '=' | '~' | '^' | '!'))
-                {
-                    op.push_str(part);
-                    continue;
-                }
-
-                if op.is_empty() && Version::parse(part).is_ok() {
-                    reqs.push(format!("={part}"));
-                } else {
-                    reqs.push(format!("{op}{part}"));
-                }
-
-                op.clear();
-            }
-
-            // A dangling operator fails to parse
-            if !op.is_empty() {
-                reqs.push(op);
-            }
-
-            reqs.join(" ")
-        })
-        .collect::<Vec<_>>()
-        .join(" || ");
-
-    Range::parse(value)
-}
-
 // A range with a single requirement is unwrapped, like `^1.2` or `>=1`,
 // while anything else remains a range, like `>=1 <2` or `^1 || ^2`
 fn from_range(mut range: Range) -> VersionProtocol {
@@ -112,58 +63,9 @@ fn from_range(mut range: Range) -> VersionProtocol {
     VersionProtocol::Range(range)
 }
 
-// An exact match on a full version is written without an operator,
-// as it was most likely parsed without one, like `1.2.3 || 2`
-fn format_requirement(req: &Requirement) -> String {
-    let value = req.to_string();
-
-    match value.strip_prefix('=') {
-        Some(version) if req.op == Op::Exact && req.patch.is_some() => version.to_owned(),
-        _ => value,
-    }
-}
-
-// Formats a range with npm's syntax, in which requirements that must all
-// match are separated by a space, instead of `&&`
-// https://docs.npmjs.com/cli/v10/configuring-npm/package-json#dependencies
-fn format_range(range: &Range) -> String {
-    if range.clauses.is_empty() {
-        return "*".into();
-    }
-
-    range
-        .clauses
-        .iter()
-        .map(|clause| match clause {
-            Clause::All(reqs) => reqs
-                .iter()
-                .map(format_requirement)
-                .collect::<Vec<_>>()
-                .join(" "),
-            Clause::Only(req) => format_requirement(req),
-            clause => clause.to_string(),
-        })
-        .collect::<Vec<_>>()
-        .join(" || ")
-}
-
 #[derive(Debug, Error)]
 #[cfg_attr(feature = "miette", derive(miette::Diagnostic))]
 pub enum VersionProtocolError {
-    #[error("Missing start version for range.")]
-    #[cfg_attr(
-        feature = "miette",
-        diagnostic(code(package_json::version::missing_range_start))
-    )]
-    RangeMissingStartVersion,
-
-    #[error("Missing stop version for range.")]
-    #[cfg_attr(
-        feature = "miette",
-        diagnostic(code(package_json::version::missing_range_stop))
-    )]
-    RangeMissingStopVersion,
-
     #[error(transparent)]
     #[cfg_attr(feature = "miette", diagnostic(code(package_json::version::invalid)))]
     Spec(#[from] SpecError),
@@ -174,9 +76,9 @@ pub enum VersionProtocolError {
 }
 
 // https://docs.npmjs.com/cli/v10/configuring-npm/package-json#dependencies
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
-#[serde(untagged, try_from = "String", into = "String")]
+#[cfg_attr(feature = "serialize", serde(into = "String"))]
 pub enum VersionProtocol {
     Alias(String),
     Catalog(Option<String>),
@@ -219,7 +121,7 @@ impl FromStr for VersionProtocol {
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         let value = value.trim();
 
-        if value.is_empty() || value == "*" {
+        if matches!(value, "" | "*" | "x" | "X") {
             return Ok(VersionProtocol::Requirement(Requirement::parse("*")?));
         }
 
@@ -243,7 +145,9 @@ impl FromStr for VersionProtocol {
                 "http" | "https" => {
                     return Ok(VersionProtocol::Url(value.to_owned()));
                 }
-                "git" | "git+ssh" | "git+http" | "git+https" | "git+file" => {
+                "git" | "git+ssh" | "git+http" | "git+https" | "git+file"
+                // Hosted git shorthands
+                | "bitbucket" | "gist" | "github" | "gitlab" => {
                     return Ok(parse_git(value));
                 }
                 "exec" => {
@@ -292,27 +196,7 @@ impl FromStr for VersionProtocol {
             });
         }
 
-        if value.contains(" - ") {
-            if let Ok(range) = parse_range(value) {
-                return Ok(from_range(range));
-            }
-
-            // A bounded range requires full versions, while npm
-            // also supports partial versions, like `1.2 - 2`
-            let mut parts = value.split(" - ");
-            let l = parts
-                .next()
-                .ok_or(VersionProtocolError::RangeMissingStartVersion)?
-                .trim();
-            let r = parts
-                .next()
-                .ok_or(VersionProtocolError::RangeMissingStopVersion)?
-                .trim();
-
-            return Ok(from_range(Range::parse(format!(">={l} <={r}"))?));
-        }
-
-        if value.contains("||") {
+        if value.contains(" - ") || value.contains("||") {
             return Ok(from_range(parse_range(value)?));
         }
 
@@ -339,7 +223,19 @@ impl FromStr for VersionProtocol {
 }
 
 // Deserializing never fails, so that one dependency we can't parse doesn't
-// fail the whole `package.json`. Use `parse` or `from_str` for the error.
+// fail the whole `package.json`, including values that aren't a string.
+// Use `parse` or `from_str` for the error.
+impl<'de> Deserialize<'de> for VersionProtocol {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        Ok(match serde_json::Value::deserialize(deserializer)? {
+            serde_json::Value::String(value) => {
+                Self::from_str(&value).unwrap_or(Self::Unknown(value))
+            }
+            value => Self::Unknown(value.to_string()),
+        })
+    }
+}
+
 impl TryFrom<String> for VersionProtocol {
     type Error = VersionProtocolError;
 
