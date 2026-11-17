@@ -1,0 +1,6 @@
+{
+  "name": "ver-build",
+  "dependencies": {
+    "d": "2.0.0"
+  }
+}

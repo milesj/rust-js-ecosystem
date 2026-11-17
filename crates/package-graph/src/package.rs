@@ -11,7 +11,7 @@ pub struct Package {
 
     // Index based on load + insertion order.
     // The root package is always 0.
-    pub index: u8,
+    pub index: usize,
 
     // Index in the package graph.
     pub node_index: NodeIndex,

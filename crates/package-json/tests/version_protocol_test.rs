@@ -1,11 +1,13 @@
-use nodejs_package_json::{VersionProtocol, WorkspaceProtocol};
-use semver::{Version, VersionReq};
+use nodejs_package_json::{
+    MatchesVersion, Range, Requirement, Version, VersionProtocol, WorkspaceProtocol,
+};
+
 use std::path::PathBuf;
 use std::str::FromStr;
 
 #[test]
 fn empty() {
-    let exp = VersionProtocol::Requirement(VersionReq::parse("*").unwrap());
+    let exp = VersionProtocol::Requirement(Requirement::parse("*").unwrap());
 
     assert_eq!(VersionProtocol::from_str("").unwrap(), exp);
     assert_eq!(exp.to_string(), "*");
@@ -13,7 +15,7 @@ fn empty() {
 
 #[test]
 fn star() {
-    let exp = VersionProtocol::Requirement(VersionReq::parse("*").unwrap());
+    let exp = VersionProtocol::Requirement(Requirement::parse("*").unwrap());
 
     assert_eq!(VersionProtocol::from_str("*").unwrap(), exp);
     assert_eq!(exp.to_string(), "*");
@@ -155,12 +157,12 @@ fn version() {
     assert_eq!(VersionProtocol::from_str("1.2.3").unwrap(), exp);
     assert_eq!(exp.to_string(), "1.2.3");
 
-    let exp = VersionProtocol::Requirement(VersionReq::parse("~1.2").unwrap());
+    let exp = VersionProtocol::Requirement(Requirement::parse("~1.2").unwrap());
 
     assert_eq!(VersionProtocol::from_str("1.2").unwrap(), exp);
     assert_eq!(exp.to_string(), "~1.2");
 
-    let exp = VersionProtocol::Requirement(VersionReq::parse("~1").unwrap());
+    let exp = VersionProtocol::Requirement(Requirement::parse("~1").unwrap());
 
     assert_eq!(VersionProtocol::from_str("1").unwrap(), exp);
     assert_eq!(exp.to_string(), "~1");
@@ -168,17 +170,17 @@ fn version() {
 
 #[test]
 fn version_spacing() {
-    let exp = VersionProtocol::Requirement(VersionReq::parse("^1.2.3").unwrap());
+    let exp = VersionProtocol::Requirement(Requirement::parse("^1.2.3").unwrap());
 
     assert_eq!(VersionProtocol::from_str("^ 1.2.3").unwrap(), exp);
     assert_eq!(exp.to_string(), "^1.2.3");
 
-    let exp = VersionProtocol::Requirement(VersionReq::parse("~1.2").unwrap());
+    let exp = VersionProtocol::Requirement(Requirement::parse("~1.2").unwrap());
 
     assert_eq!(VersionProtocol::from_str("~  1.2").unwrap(), exp);
     assert_eq!(exp.to_string(), "~1.2");
 
-    let exp = VersionProtocol::Requirement(VersionReq::parse("~1").unwrap());
+    let exp = VersionProtocol::Requirement(Requirement::parse("~1").unwrap());
 
     assert_eq!(VersionProtocol::from_str("   1").unwrap(), exp);
     assert_eq!(exp.to_string(), "~1");
@@ -205,51 +207,59 @@ fn version_build() {
 
 #[test]
 fn range() {
-    let exp = VersionProtocol::Requirement(VersionReq::parse(">1.2.3").unwrap());
+    let exp = VersionProtocol::Requirement(Requirement::parse(">1.2.3").unwrap());
 
     assert_eq!(VersionProtocol::from_str(">1.2.3").unwrap(), exp);
     assert_eq!(exp.to_string(), ">1.2.3");
 
-    let exp = VersionProtocol::Requirement(VersionReq::parse("<=4.5.6").unwrap());
+    let exp = VersionProtocol::Requirement(Requirement::parse("<=4.5.6").unwrap());
 
     assert_eq!(VersionProtocol::from_str("<=4.5.6").unwrap(), exp);
     assert_eq!(exp.to_string(), "<=4.5.6");
 
-    let exp = VersionProtocol::Requirement(VersionReq::parse(">=1.2.3, <=4.5.6").unwrap());
+    let exp = VersionProtocol::Range(Range::parse("1.2.3 - 4.5.6").unwrap());
 
     assert_eq!(VersionProtocol::from_str("1.2.3 - 4.5.6").unwrap(), exp);
-    assert_eq!(exp.to_string(), ">=1.2.3, <=4.5.6");
+    assert_eq!(exp.to_string(), "1.2.3 - 4.5.6");
 
-    let exp = VersionProtocol::Requirement(VersionReq::parse(">=4.8.4, <6.0.0").unwrap());
+    let exp = VersionProtocol::Range(Range::parse(">=4.8.4 <6.0.0").unwrap());
 
     assert_eq!(VersionProtocol::from_str(">=4.8.4 <6.0.0").unwrap(), exp);
-    assert_eq!(exp.to_string(), ">=4.8.4, <6.0.0");
+    assert_eq!(exp.to_string(), ">=4.8.4 <6.0.0");
+}
+
+#[test]
+fn range_partial_bounds() {
+    let exp = VersionProtocol::Range(Range::parse(">=1.2 <=2").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("1.2 - 2").unwrap(), exp);
+    assert_eq!(exp.to_string(), ">=1.2 <=2");
 }
 
 #[test]
 fn range_spacing() {
-    let exp = VersionProtocol::Requirement(VersionReq::parse(">1.2.3").unwrap());
+    let exp = VersionProtocol::Requirement(Requirement::parse(">1.2.3").unwrap());
 
     assert_eq!(VersionProtocol::from_str("> 1.2.3").unwrap(), exp);
     assert_eq!(exp.to_string(), ">1.2.3");
 
-    let exp = VersionProtocol::Requirement(VersionReq::parse("<=4.5.6").unwrap());
+    let exp = VersionProtocol::Requirement(Requirement::parse("<=4.5.6").unwrap());
 
     assert_eq!(VersionProtocol::from_str("<=  4.5.6").unwrap(), exp);
     assert_eq!(exp.to_string(), "<=4.5.6");
 
-    let exp = VersionProtocol::Requirement(VersionReq::parse(">=1.2.3, <=4.5.6").unwrap());
+    let exp = VersionProtocol::Range(Range::parse("1.2.3 - 4.5.6").unwrap());
 
     assert_eq!(VersionProtocol::from_str("1.2.3 - 4.5.6").unwrap(), exp);
-    assert_eq!(exp.to_string(), ">=1.2.3, <=4.5.6");
+    assert_eq!(exp.to_string(), "1.2.3 - 4.5.6");
 
-    let exp = VersionProtocol::Requirement(VersionReq::parse(">=4.8.4, <6.0.0").unwrap());
+    let exp = VersionProtocol::Range(Range::parse(">=4.8.4 <6.0.0").unwrap());
 
     assert_eq!(
         VersionProtocol::from_str(">=   4.8.4 <  6.0.0").unwrap(),
         exp
     );
-    assert_eq!(exp.to_string(), ">=4.8.4, <6.0.0");
+    assert_eq!(exp.to_string(), ">=4.8.4 <6.0.0");
 }
 
 #[test]
@@ -310,22 +320,22 @@ fn alias_npm() {
 
 #[test]
 fn special_parts() {
-    let exp = VersionProtocol::Requirement(VersionReq::parse("~1.2").unwrap());
+    let exp = VersionProtocol::Requirement(Requirement::parse("1.2.*").unwrap());
 
     assert_eq!(VersionProtocol::from_str("1.2.x").unwrap(), exp);
-    assert_eq!(exp.to_string(), "~1.2");
+    assert_eq!(exp.to_string(), "1.2.*");
 
-    let exp = VersionProtocol::Requirement(VersionReq::parse("~1").unwrap());
+    let exp = VersionProtocol::Requirement(Requirement::parse("1.*").unwrap());
 
     assert_eq!(VersionProtocol::from_str("1.X").unwrap(), exp);
-    assert_eq!(exp.to_string(), "~1");
+    assert_eq!(exp.to_string(), "1.*");
 
-    let exp = VersionProtocol::Requirement(VersionReq::parse("~1").unwrap());
+    let exp = VersionProtocol::Requirement(Requirement::parse("1.*").unwrap());
 
     assert_eq!(VersionProtocol::from_str("1.*").unwrap(), exp);
-    assert_eq!(exp.to_string(), "~1");
+    assert_eq!(exp.to_string(), "1.*");
 
-    let exp = VersionProtocol::Requirement(VersionReq::parse("~1").unwrap());
+    let exp = VersionProtocol::Requirement(Requirement::parse("~1").unwrap());
 
     assert_eq!(VersionProtocol::from_str("1").unwrap(), exp);
     assert_eq!(exp.to_string(), "~1");
@@ -359,11 +369,7 @@ fn workspace() {
 
 #[test]
 fn ranges() {
-    let exp = VersionProtocol::Range(vec![
-        VersionReq::parse("^18.18.0").unwrap(),
-        VersionReq::parse("^20.9.0").unwrap(),
-        VersionReq::parse(">=21.1.0").unwrap(),
-    ]);
+    let exp = VersionProtocol::Range(Range::parse("^18.18.0 || ^20.9.0 || >=21.1.0").unwrap());
 
     assert_eq!(
         VersionProtocol::from_str("^18.18.0 || ^20.9.0 || >=21.1.0").unwrap(),
@@ -371,11 +377,9 @@ fn ranges() {
     );
     assert_eq!(exp.to_string(), "^18.18.0 || ^20.9.0 || >=21.1.0");
 
-    let exp = VersionProtocol::Range(vec![
-        VersionReq::parse(">=0.11.4, <0.12.0-0").unwrap(),
-        VersionReq::parse(">=0.13.0, <0.14.0-0").unwrap(),
-        VersionReq::parse(">=0.14.0, <0.15.0-0").unwrap(),
-    ]);
+    let exp = VersionProtocol::Range(
+        Range::parse(">=0.11.4 <0.12.0-0 || >=0.13.0 <0.14.0-0 || >=0.14.0 <0.15.0-0").unwrap(),
+    );
 
     assert_eq!(
         VersionProtocol::from_str(">=0.11.4 <0.12.0-0 || >=0.13.0 <0.14.0-0 || >=0.14.0 <0.15.0-0")
@@ -384,7 +388,7 @@ fn ranges() {
     );
     assert_eq!(
         exp.to_string(),
-        ">=0.11.4, <0.12.0-0 || >=0.13.0, <0.14.0-0 || >=0.14.0, <0.15.0-0"
+        ">=0.11.4 <0.12.0-0 || >=0.13.0 <0.14.0-0 || >=0.14.0 <0.15.0-0"
     );
 }
 
@@ -404,4 +408,165 @@ fn custom_protocol() {
 
     assert_eq!(VersionProtocol::from_str("mail:").unwrap(), exp);
     assert_eq!(exp.to_string(), "mail:");
+}
+
+#[test]
+fn deserializes_invalid_as_unknown() {
+    let value: VersionProtocol = serde_json::from_str("\"workspace:^not-a-range\"").unwrap();
+
+    assert_eq!(
+        value,
+        VersionProtocol::Unknown("workspace:^not-a-range".into())
+    );
+    assert!(VersionProtocol::parse("workspace:^not-a-range").is_err());
+}
+
+#[test]
+fn deserializes_workspace_requirement() {
+    let value: VersionProtocol = serde_json::from_str("\"workspace:^1\"").unwrap();
+
+    assert_eq!(
+        value,
+        VersionProtocol::Workspace(WorkspaceProtocol::Requirement {
+            alias: None,
+            req: Requirement::parse("^1").unwrap(),
+        })
+    );
+}
+
+#[test]
+fn local_path() {
+    for path in [
+        "../foo/bar",
+        "./foo.tgz",
+        "~/foo/bar",
+        "/abs/path/pkg",
+        "C:\\foo\\bar",
+        "c:/foo/bar",
+    ] {
+        let exp = VersionProtocol::Path(PathBuf::from(path));
+
+        assert_eq!(VersionProtocol::from_str(path).unwrap(), exp, "{path}");
+        assert_eq!(exp.to_string(), path);
+    }
+}
+
+#[test]
+fn git_scp() {
+    let exp = VersionProtocol::Git {
+        reference: Some("v1.0.27".into()),
+        url: "git@github.com:npm/cli.git".into(),
+    };
+
+    assert_eq!(
+        VersionProtocol::from_str("git@github.com:npm/cli.git#v1.0.27").unwrap(),
+        exp
+    );
+    assert_eq!(exp.to_string(), "git@github.com:npm/cli.git#v1.0.27");
+}
+
+#[test]
+fn github_with_semver_ref() {
+    let exp = VersionProtocol::GitHub {
+        reference: Some("semver:^5.0".into()),
+        owner: "user".into(),
+        repo: "repo".into(),
+    };
+
+    assert_eq!(
+        VersionProtocol::from_str("user/repo#semver:^5.0").unwrap(),
+        exp
+    );
+    assert_eq!(exp.to_string(), "user/repo#semver:^5.0");
+}
+
+#[test]
+fn github_not_shorthand() {
+    let value = VersionProtocol::from_str("foo/bar/baz").unwrap();
+
+    assert!(!matches!(value, VersionProtocol::GitHub { .. }));
+    assert_eq!(value.to_string(), "foo/bar/baz");
+}
+
+#[test]
+fn ranges_exact_versions() {
+    let exp = VersionProtocol::Range(Range::parse("=1.2.3 || =2.0.0").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("1.2.3 || 2.0.0").unwrap(), exp);
+    assert_eq!(exp.to_string(), "1.2.3 || 2.0.0");
+
+    let VersionProtocol::Range(range) = exp else {
+        unreachable!();
+    };
+
+    assert!(range.matches(&Version::parse("1.2.3").unwrap()));
+    assert!(!range.matches(&Version::parse("1.2.9").unwrap()));
+
+    // Explicit operators are kept
+    let exp = VersionProtocol::Range(Range::parse("~1.2.3 || >=2.0.0").unwrap());
+
+    assert_eq!(
+        VersionProtocol::from_str("~1.2.3 || >= 2.0.0").unwrap(),
+        exp
+    );
+    assert_eq!(exp.to_string(), "~1.2.3 || >=2.0.0");
+
+    // Within a range that must all match
+    let exp = VersionProtocol::Range(Range::parse(">=1.0.0 =1.5.0").unwrap());
+
+    assert_eq!(VersionProtocol::from_str(">=1.0.0 1.5.0").unwrap(), exp);
+    assert_eq!(exp.to_string(), ">=1.0.0 1.5.0");
+}
+
+#[test]
+fn x_wildcard() {
+    let exp = VersionProtocol::Requirement(Requirement::parse("*").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("x").unwrap(), exp);
+    assert_eq!(VersionProtocol::from_str("X").unwrap(), exp);
+}
+
+#[test]
+fn hosted_git_shorthand() {
+    for value in [
+        "github:user/repo",
+        "gitlab:user/repo#v1.0.0",
+        "bitbucket:user/repo",
+        "gist:11081aaa281",
+    ] {
+        let (url, reference) = match value.split_once('#') {
+            Some((url, reference)) => (url, Some(reference.to_owned())),
+            None => (value, None),
+        };
+        let exp = VersionProtocol::Git {
+            reference,
+            url: url.into(),
+        };
+
+        assert_eq!(VersionProtocol::from_str(value).unwrap(), exp, "{value}");
+        assert_eq!(exp.to_string(), value);
+    }
+}
+
+#[test]
+fn ranges_partial_bounds() {
+    let exp = VersionProtocol::Range(Range::parse(">=1 <=2 || >=3 <=4").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("1 - 2 || 3 - 4").unwrap(), exp);
+    assert_eq!(exp.to_string(), ">=1 <=2 || >=3 <=4");
+
+    // Full versions are kept as a bounded range
+    let exp = VersionProtocol::Range(Range::parse("1.2.3 - 2.0.0 || >=3.1 <=4").unwrap());
+
+    assert_eq!(
+        VersionProtocol::from_str("1.2.3 - 2.0.0 || 3.1 - 4").unwrap(),
+        exp
+    );
+    assert_eq!(exp.to_string(), "1.2.3 - 2.0.0 || >=3.1 <=4");
+}
+
+#[test]
+fn errors_range_missing_bound() {
+    assert!(VersionProtocol::parse("1.2.3 - || 2").is_err());
+    assert!(VersionProtocol::parse("^1 ||  - 2").is_err());
 }

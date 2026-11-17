@@ -8,6 +8,21 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 #[cfg_attr(feature = "miette", derive(miette::Diagnostic))]
 pub enum PackageGraphError {
+    #[error(
+        "Package name `{name}` is used by multiple packages, in {} and {}.",
+        .first.display(),
+        .second.display()
+    )]
+    #[cfg_attr(
+        feature = "miette",
+        diagnostic(code(package_graph::duplicate_package_name))
+    )]
+    DuplicatePackageName {
+        name: String,
+        first: PathBuf,
+        second: PathBuf,
+    },
+
     #[error("Package requires a `name` field. Missing in {0}.")]
     #[cfg_attr(
         feature = "miette",

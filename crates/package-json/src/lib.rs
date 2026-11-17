@@ -5,7 +5,8 @@ mod protocols;
 pub use import_export::*;
 pub use package_json::*;
 pub use protocols::*;
-pub use semver::{Version, VersionReq};
+#[cfg(feature = "protocols")]
+pub use version_spec::{Clause, MatchesVersion, Op, Range, Requirement, SpecError, Version};
 
 use indexmap::IndexMap;
 use rustc_hash::FxHasher;

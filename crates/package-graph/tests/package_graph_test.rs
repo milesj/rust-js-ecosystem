@@ -1,5 +1,6 @@
 use nodejs_package_graph::*;
-use starbase_sandbox::{assert_snapshot, create_sandbox};
+use nodejs_package_managers::PackageManager;
+use starbase_sandbox::{assert_snapshot, create_empty_sandbox, create_sandbox};
 
 mod polyrepo {
     use super::*;
@@ -51,6 +52,17 @@ mod monorepo {
 
             assert_eq!(
                 graph.dependencies_of("ver-req").unwrap(),
+                vec![("a".into(), DependencyType::Production)]
+            );
+        }
+
+        #[test]
+        fn links_version_range_if_match() {
+            let sandbox = create_sandbox("graph-protocols");
+            let graph = PackageGraph::generate(sandbox.path()).unwrap();
+
+            assert_eq!(
+                graph.dependencies_of("ver-range").unwrap(),
                 vec![("a".into(), DependencyType::Production)]
             );
         }
@@ -194,6 +206,70 @@ mod monorepo {
         }
 
         #[test]
+        fn links_version_ignoring_build_metadata() {
+            let sandbox = create_sandbox("graph-protocols");
+            let graph = PackageGraph::generate(sandbox.path()).unwrap();
+
+            assert_eq!(
+                graph.dependencies_of("ver-build").unwrap(),
+                vec![("d".into(), DependencyType::Production)]
+            );
+        }
+
+        #[test]
+        fn links_path() {
+            let sandbox = create_sandbox("graph-protocols");
+            let graph = PackageGraph::generate(sandbox.path()).unwrap();
+
+            assert_eq!(
+                graph.dependencies_of("path").unwrap(),
+                vec![("a".into(), DependencyType::Production)]
+            );
+        }
+
+        #[test]
+        fn links_workspace_version_with_alias() {
+            let sandbox = create_sandbox("graph-protocols");
+            let graph = PackageGraph::generate(sandbox.path()).unwrap();
+
+            assert_eq!(
+                graph.dependencies_of("ws-version-alias").unwrap(),
+                vec![("a".into(), DependencyType::Production)]
+            );
+        }
+
+        #[test]
+        fn links_workspace_caret_and_tilde_as_ranges() {
+            let sandbox = create_sandbox("graph-protocols");
+            let graph = PackageGraph::generate(sandbox.path()).unwrap();
+
+            // c is 1.2.0, so ~1.0.0 doesn't match
+            assert_eq!(
+                graph.dependencies_of("ws-range").unwrap(),
+                vec![
+                    ("c".into(), DependencyType::Optional),
+                    ("c".into(), DependencyType::Peer),
+                    ("c".into(), DependencyType::Production),
+                ]
+            );
+        }
+
+        #[test]
+        fn returns_dependents() {
+            let sandbox = create_sandbox("graph-protocols");
+            let graph = PackageGraph::generate(sandbox.path()).unwrap();
+
+            assert_eq!(
+                graph.dependents_of("c").unwrap(),
+                vec![
+                    ("ws-range".into(), DependencyType::Optional),
+                    ("ws-range".into(), DependencyType::Peer),
+                    ("ws-range".into(), DependencyType::Production),
+                ]
+            );
+        }
+
+        #[test]
         fn supports_optional() {
             let sandbox = create_sandbox("graph-protocols");
             let graph = PackageGraph::generate(sandbox.path()).unwrap();
@@ -239,5 +315,78 @@ mod monorepo_yarn {
         let graph = PackageGraph::generate(sandbox.path()).unwrap();
 
         assert_snapshot!(graph.to_dot())
+    }
+}
+
+mod package_root {
+    use super::*;
+
+    #[test]
+    fn detects_bun_text_lockfile() {
+        let sandbox = create_empty_sandbox();
+        sandbox.create_file("bun.lock", "{}");
+
+        let (root, manager) = PackageGraph::find_package_root(sandbox.path()).unwrap();
+
+        assert_eq!(root, sandbox.path());
+        assert!(manager == PackageManager::Bun);
+    }
+
+    #[test]
+    fn detects_bun_binary_lockfile() {
+        let sandbox = create_empty_sandbox();
+        sandbox.create_file("bun.lockb", "");
+
+        let (_, manager) = PackageGraph::find_package_root(sandbox.path()).unwrap();
+
+        assert!(manager == PackageManager::Bun);
+    }
+}
+
+mod workspace_packages {
+    use super::*;
+
+    #[test]
+    fn errors_for_duplicate_package_names() {
+        let sandbox = create_empty_sandbox();
+        sandbox.create_file(
+            "package.json",
+            r#"{"name": "root", "workspaces": ["packages/*"]}"#,
+        );
+        sandbox.create_file("packages/a/package.json", r#"{"name": "same"}"#);
+        sandbox.create_file("packages/b/package.json", r#"{"name": "same"}"#);
+
+        let Err(error) = PackageGraph::generate(sandbox.path()) else {
+            panic!("expected an error");
+        };
+
+        assert!(matches!(
+            error,
+            PackageGraphError::DuplicatePackageName { ref name, .. } if name == "same"
+        ));
+    }
+
+    #[test]
+    fn supports_more_than_255_packages() {
+        let sandbox = create_empty_sandbox();
+        sandbox.create_file(
+            "package.json",
+            r#"{"name": "root", "workspaces": ["packages/*"]}"#,
+        );
+
+        for i in 0..300 {
+            sandbox.create_file(
+                format!("packages/p{i}/package.json"),
+                format!(r#"{{"name": "p{i}"}}"#),
+            );
+        }
+
+        let graph = PackageGraph::generate(sandbox.path()).unwrap();
+
+        assert_eq!(graph.packages.len(), 300);
+        assert_eq!(
+            graph.packages.values().map(|pkg| pkg.index).max(),
+            Some(300)
+        );
     }
 }

@@ -1,68 +1,74 @@
+use super::range::*;
 use super::workspace::*;
 use regex::Regex;
-use semver::{Version, VersionReq};
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use std::fmt;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::LazyLock;
 use thiserror::Error;
+use version_spec::{Clause, Op, Range, Requirement, SpecError, Version};
 
 static PROTOCOL: LazyLock<Regex> = LazyLock::new(|| Regex::new("^(?<protocol>[a-z+]+):").unwrap());
 
 static GITHUB: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(
-        "(?<owner>[A-Za-z0-9_.-]+)/(?<repo>[A-Za-z0-9_.-]+)(?:#(?<commit>[A-Za-z0-9_.-/]+))?",
-    )
-    .unwrap()
+    Regex::new("^(?<owner>[A-Za-z0-9_.-]+)/(?<repo>[A-Za-z0-9_.-]+)(?:#(?<commit>.+))?$").unwrap()
 });
 
-static WS_OPERATOR: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?<op>[<>=\^~]+)\s+").unwrap());
+// SCP-like git URLs without a protocol, like `git@github.com:npm/cli.git`
+static GIT_SCP: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new("^[A-Za-z0-9_.-]+@[A-Za-z0-9_.-]+:").unwrap());
 
-// https://docs.npmjs.com/cli/v7/configuring-npm/package-json#dependencies
-fn clean_version(version: &str) -> String {
-    let mut value = version
-        .trim()
-        .replace(".*", "")
-        .replace(".x", "")
-        .replace(".X", "")
-        .replace("-*", "");
+// https://docs.npmjs.com/cli/v10/configuring-npm/package-json#local-paths
+fn is_local_path(value: &str) -> bool {
+    let bytes = value.as_bytes();
 
-    value = WS_OPERATOR.replace_all(&value, "$op").to_string();
+    value.starts_with(['.', '/', '\\'])
+        || value.starts_with("~/")
+        // Windows drives, like `C:\`
+        || bytes.len() > 2
+            && bytes[0].is_ascii_alphabetic()
+            && bytes[1] == b':'
+            && matches!(bytes[2], b'/' | b'\\')
+}
 
-    if value.contains(" ") && !value.contains(",") {
-        value = value.replace(" ", ", ");
+fn parse_git(value: &str) -> VersionProtocol {
+    let (url, reference) = match value.split_once('#') {
+        Some((url, reference)) => (url, Some(reference.to_owned())),
+        None => (value, None),
+    };
+
+    VersionProtocol::Git {
+        reference,
+        url: url.to_owned(),
+    }
+}
+
+// A range with a single requirement is unwrapped, like `^1.2` or `>=1`,
+// while anything else remains a range, like `>=1 <2` or `^1 || ^2`
+fn from_range(mut range: Range) -> VersionProtocol {
+    if range.clauses.is_empty() {
+        return VersionProtocol::Requirement(Requirement {
+            op: Op::Wildcard,
+            ..Default::default()
+        });
     }
 
-    let count = value.chars().filter(|c| *c == '.').count();
-
-    if (value != version || count < 2) && !value.starts_with(['^', '~', '>', '<', '=']) {
-        return format!("~{value}");
+    if range.clauses.len() == 1
+        && let Clause::Only(req) = &mut range.clauses[0]
+    {
+        return VersionProtocol::Requirement(std::mem::take(req));
     }
 
-    value
+    VersionProtocol::Range(range)
 }
 
 #[derive(Debug, Error)]
 #[cfg_attr(feature = "miette", derive(miette::Diagnostic))]
 pub enum VersionProtocolError {
-    #[error("Missing start version for range.")]
-    #[cfg_attr(
-        feature = "miette",
-        diagnostic(code(package_json::version::missing_range_start))
-    )]
-    RangeMissingStartVersion,
-
-    #[error("Missing stop version for range.")]
-    #[cfg_attr(
-        feature = "miette",
-        diagnostic(code(package_json::version::missing_range_stop))
-    )]
-    RangeMissingStopVersion,
-
-    #[error("Failed to parse version or requirement: {0}")]
+    #[error(transparent)]
     #[cfg_attr(feature = "miette", diagnostic(code(package_json::version::invalid)))]
-    Semver(#[from] semver::Error),
+    Spec(#[from] SpecError),
 
     #[error(transparent)]
     #[cfg_attr(feature = "miette", diagnostic(transparent))]
@@ -70,9 +76,9 @@ pub enum VersionProtocolError {
 }
 
 // https://docs.npmjs.com/cli/v10/configuring-npm/package-json#dependencies
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
-#[serde(untagged, try_from = "String", into = "String")]
+#[cfg_attr(feature = "serialize", serde(into = "String"))]
 pub enum VersionProtocol {
     Alias(String),
     Catalog(Option<String>),
@@ -90,9 +96,10 @@ pub enum VersionProtocol {
     },
     Link(PathBuf),
     Patch(String),
+    Path(PathBuf),
     Portal(PathBuf),
-    Range(Vec<VersionReq>),
-    Requirement(VersionReq),
+    Range(Range),
+    Requirement(Requirement),
     Tag(String),
     Url(String),
     Version(Version),
@@ -112,11 +119,16 @@ impl FromStr for VersionProtocol {
     type Err = VersionProtocolError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        if value.is_empty() || value == "*" {
-            return Ok(VersionProtocol::Requirement(VersionReq::parse("*")?));
+        let value = value.trim();
+
+        if matches!(value, "" | "*" | "x" | "X") {
+            return Ok(VersionProtocol::Requirement(Requirement::parse("*")?));
         }
 
-        let value = value.trim();
+        // Before protocols, as a Windows drive looks like one, like `c:/`
+        if is_local_path(value) {
+            return Ok(VersionProtocol::Path(PathBuf::from(value)));
+        }
 
         if let Some(caps) = PROTOCOL.captures(value) {
             let protocol = caps.name("protocol").unwrap().as_str();
@@ -133,13 +145,10 @@ impl FromStr for VersionProtocol {
                 "http" | "https" => {
                     return Ok(VersionProtocol::Url(value.to_owned()));
                 }
-                "git" | "git+ssh" | "git+http" | "git+https" | "git+file" => {
-                    let mut parts = value.split('#');
-
-                    return Ok(VersionProtocol::Git {
-                        url: parts.next().unwrap().to_owned(),
-                        reference: parts.next().map(|p| p.to_owned()),
-                    });
+                "git" | "git+ssh" | "git+http" | "git+https" | "git+file"
+                // Hosted git shorthands
+                | "bitbucket" | "gist" | "github" | "gitlab" => {
+                    return Ok(parse_git(value));
                 }
                 "exec" => {
                     return Ok(VersionProtocol::Exec(PathBuf::from(&value[index + 1..])));
@@ -175,6 +184,10 @@ impl FromStr for VersionProtocol {
             }
         }
 
+        if GIT_SCP.is_match(value) {
+            return Ok(parse_git(value));
+        }
+
         if let Some(caps) = GITHUB.captures(value) {
             return Ok(VersionProtocol::GitHub {
                 owner: caps.name("owner").unwrap().as_str().to_owned(),
@@ -183,30 +196,8 @@ impl FromStr for VersionProtocol {
             });
         }
 
-        if value.contains(" - ") {
-            let mut parts = value.split(" - ");
-            let l = parts
-                .next()
-                .ok_or(VersionProtocolError::RangeMissingStartVersion)?
-                .trim();
-            let r = parts
-                .next()
-                .ok_or(VersionProtocolError::RangeMissingStopVersion)?
-                .trim();
-
-            return Ok(VersionProtocol::Requirement(VersionReq::parse(&format!(
-                ">={l}, <={r}",
-            ))?));
-        }
-
-        if value.contains("||") {
-            let mut ranges = vec![];
-
-            for range in value.split("||") {
-                ranges.push(VersionReq::parse(&clean_version(range))?);
-            }
-
-            return Ok(VersionProtocol::Range(ranges));
+        if value.contains(" - ") || value.contains("||") {
+            return Ok(from_range(parse_range(value)?));
         }
 
         // Better way to capture tags?
@@ -214,22 +205,34 @@ impl FromStr for VersionProtocol {
             return Ok(VersionProtocol::Tag(value.to_owned()));
         }
 
-        let value = clean_version(value);
-
-        if value.contains('^')
-            || value.contains('~')
-            || value.contains('>')
-            || value.contains('<')
-            || value.contains('=')
-        {
-            return Ok(VersionProtocol::Requirement(VersionReq::parse(&value)?));
-        }
-
-        if let Ok(version) = Version::parse(&value) {
+        if let Ok(version) = Version::parse(value) {
             return Ok(VersionProtocol::Version(version));
         }
 
-        Ok(VersionProtocol::Unknown(value))
+        match parse_range(value) {
+            Ok(range) => Ok(from_range(range)),
+            Err(error) => {
+                if value.contains(['^', '~', '>', '<', '=']) {
+                    Err(error.into())
+                } else {
+                    Ok(VersionProtocol::Unknown(value.to_owned()))
+                }
+            }
+        }
+    }
+}
+
+// Deserializing never fails, so that one dependency we can't parse doesn't
+// fail the whole `package.json`, including values that aren't a string.
+// Use `parse` or `from_str` for the error.
+impl<'de> Deserialize<'de> for VersionProtocol {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        Ok(match serde_json::Value::deserialize(deserializer)? {
+            serde_json::Value::String(value) => {
+                Self::from_str(&value).unwrap_or(Self::Unknown(value))
+            }
+            value => Self::Unknown(value.to_string()),
+        })
     }
 }
 
@@ -237,7 +240,7 @@ impl TryFrom<String> for VersionProtocol {
     type Error = VersionProtocolError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        Self::from_str(&value)
+        Ok(Self::from_str(&value).unwrap_or(VersionProtocol::Unknown(value)))
     }
 }
 
@@ -277,12 +280,9 @@ impl fmt::Display for VersionProtocol {
                 }
                 VersionProtocol::Link(path) => format!("link:{}", path.display()),
                 VersionProtocol::Patch(patch) => format!("patch:{patch}"),
+                VersionProtocol::Path(path) => path.display().to_string(),
                 VersionProtocol::Portal(path) => format!("portal:{}", path.display()),
-                VersionProtocol::Range(range) => range
-                    .iter()
-                    .map(|r| r.to_string())
-                    .collect::<Vec<_>>()
-                    .join(" || "),
+                VersionProtocol::Range(range) => format_range(range),
                 VersionProtocol::Requirement(req) => req.to_string(),
                 VersionProtocol::Tag(tag) => tag.to_owned(),
                 VersionProtocol::Url(url) => url.to_owned(),

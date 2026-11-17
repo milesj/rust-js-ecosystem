@@ -1,0 +1,15 @@
+{
+  "name": "ws-range",
+  "dependencies": {
+    "c": "workspace:^1.0.0"
+  },
+  "devDependencies": {
+    "c": "workspace:~1.0.0"
+  },
+  "peerDependencies": {
+    "c": "workspace:~1.2.0"
+  },
+  "optionalDependencies": {
+    "c": "workspace:>=1.1.0 <2"
+  }
+}
