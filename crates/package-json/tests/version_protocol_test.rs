@@ -1,4 +1,6 @@
-use nodejs_package_json::{Range, Requirement, Version, VersionProtocol, WorkspaceProtocol};
+use nodejs_package_json::{
+    MatchesVersion, Range, Requirement, Version, VersionProtocol, WorkspaceProtocol,
+};
 
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -430,4 +432,88 @@ fn deserializes_workspace_requirement() {
             req: Requirement::parse("^1").unwrap(),
         })
     );
+}
+
+#[test]
+fn local_path() {
+    for path in [
+        "../foo/bar",
+        "./foo.tgz",
+        "~/foo/bar",
+        "/abs/path/pkg",
+        "C:\\foo\\bar",
+        "c:/foo/bar",
+    ] {
+        let exp = VersionProtocol::Path(PathBuf::from(path));
+
+        assert_eq!(VersionProtocol::from_str(path).unwrap(), exp, "{path}");
+        assert_eq!(exp.to_string(), path);
+    }
+}
+
+#[test]
+fn git_scp() {
+    let exp = VersionProtocol::Git {
+        reference: Some("v1.0.27".into()),
+        url: "git@github.com:npm/cli.git".into(),
+    };
+
+    assert_eq!(
+        VersionProtocol::from_str("git@github.com:npm/cli.git#v1.0.27").unwrap(),
+        exp
+    );
+    assert_eq!(exp.to_string(), "git@github.com:npm/cli.git#v1.0.27");
+}
+
+#[test]
+fn github_with_semver_ref() {
+    let exp = VersionProtocol::GitHub {
+        reference: Some("semver:^5.0".into()),
+        owner: "user".into(),
+        repo: "repo".into(),
+    };
+
+    assert_eq!(
+        VersionProtocol::from_str("user/repo#semver:^5.0").unwrap(),
+        exp
+    );
+    assert_eq!(exp.to_string(), "user/repo#semver:^5.0");
+}
+
+#[test]
+fn github_not_shorthand() {
+    let value = VersionProtocol::from_str("foo/bar/baz").unwrap();
+
+    assert!(!matches!(value, VersionProtocol::GitHub { .. }));
+    assert_eq!(value.to_string(), "foo/bar/baz");
+}
+
+#[test]
+fn ranges_exact_versions() {
+    let exp = VersionProtocol::Range(Range::parse("=1.2.3 || =2.0.0").unwrap());
+
+    assert_eq!(VersionProtocol::from_str("1.2.3 || 2.0.0").unwrap(), exp);
+    assert_eq!(exp.to_string(), "1.2.3 || 2.0.0");
+
+    let VersionProtocol::Range(range) = exp else {
+        unreachable!();
+    };
+
+    assert!(range.matches(&Version::parse("1.2.3").unwrap()));
+    assert!(!range.matches(&Version::parse("1.2.9").unwrap()));
+
+    // Explicit operators are kept
+    let exp = VersionProtocol::Range(Range::parse("~1.2.3 || >=2.0.0").unwrap());
+
+    assert_eq!(
+        VersionProtocol::from_str("~1.2.3 || >= 2.0.0").unwrap(),
+        exp
+    );
+    assert_eq!(exp.to_string(), "~1.2.3 || >=2.0.0");
+
+    // Within a range that must all match
+    let exp = VersionProtocol::Range(Range::parse(">=1.0.0 =1.5.0").unwrap());
+
+    assert_eq!(VersionProtocol::from_str(">=1.0.0 1.5.0").unwrap(), exp);
+    assert_eq!(exp.to_string(), ">=1.0.0 1.5.0");
 }

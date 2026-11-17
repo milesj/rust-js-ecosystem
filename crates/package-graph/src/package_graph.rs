@@ -79,7 +79,7 @@ impl PackageGraph {
 
         while let Some(dir) = current_dir {
             // bun
-            if dir.join("bun.lockb").exists() {
+            if dir.join("bun.lock").exists() || dir.join("bun.lockb").exists() {
                 return Some((dir.to_owned(), PackageManager::Bun));
             }
             // pnpm
@@ -194,9 +194,9 @@ impl PackageGraph {
         let add_edge_via_version = |graph: &mut PackageGraphType,
                                     package: &Package,
                                     dep_package: &Package,
-                                    version: Option<&Version>,
+                                    version: &Version,
                                     dep_type: DependencyType| {
-            if version.is_none() || version == dep_package.manifest.version.as_ref() {
+            if dep_package.manifest.version.as_ref() == Some(version) {
                 graph.add_edge(package.node_index, dep_package.node_index, dep_type);
             }
         };
@@ -236,56 +236,38 @@ impl PackageGraph {
                     }
                     VersionProtocol::Version(ver) => {
                         if let Some(dep_package) = self.packages.get(name) {
-                            add_edge_via_version(graph, package, dep_package, Some(ver), dep_type);
+                            add_edge_via_version(graph, package, dep_package, ver, dep_type);
                         }
                     }
-                    // pnpm, yarn
+                    // npm, pnpm, yarn
                     VersionProtocol::File(path)
                     | VersionProtocol::Link(path)
+                    | VersionProtocol::Path(path)
                     | VersionProtocol::Portal(path) => {
                         if let Some(dep_package) = self.packages.get(name) {
                             add_edge_via_path(graph, package, dep_package, path, dep_type);
                         }
                     }
                     VersionProtocol::Workspace(ws) => {
-                        let (alias, version) = match ws {
-                            WorkspaceProtocol::Any { alias } => (alias, &None),
-                            WorkspaceProtocol::Tilde { alias, version } => (alias, version),
-                            WorkspaceProtocol::Caret { alias, version } => (alias, version),
+                        // A missing requirement matches any version, like `*` or `^`,
+                        // while a version is matched as a range, like `^1.2.3`
+                        let (alias, req) = match ws {
+                            WorkspaceProtocol::Any { alias } => (alias, None),
+                            WorkspaceProtocol::Tilde { alias, version } => {
+                                (alias, version.as_ref().map(|v| v.to_requirement(Op::Tilde)))
+                            }
+                            WorkspaceProtocol::Caret { alias, version } => {
+                                (alias, version.as_ref().map(|v| v.to_requirement(Op::Caret)))
+                            }
+                            WorkspaceProtocol::Requirement { alias, req } => {
+                                (alias, Some(req.to_owned()))
+                            }
+                            WorkspaceProtocol::Version { alias, version } => {
+                                (alias, Some(version.to_requirement(Op::Exact)))
+                            }
                             WorkspaceProtocol::File(path) => {
                                 if let Some(dep_package) = self.packages.get(name) {
                                     add_edge_via_path(graph, package, dep_package, path, dep_type);
-                                }
-
-                                continue;
-                            }
-                            WorkspaceProtocol::Requirement { alias, req } => {
-                                if let Some(dep_package) =
-                                    self.packages.get(alias.as_deref().unwrap_or(name))
-                                    && dep_package
-                                        .manifest
-                                        .version
-                                        .as_ref()
-                                        .is_some_and(|ver| req.matches(ver))
-                                {
-                                    graph.add_edge(
-                                        package.node_index,
-                                        dep_package.node_index,
-                                        dep_type,
-                                    );
-                                }
-
-                                continue;
-                            }
-                            WorkspaceProtocol::Version(ver) => {
-                                if let Some(dep_package) = self.packages.get(name) {
-                                    add_edge_via_version(
-                                        graph,
-                                        package,
-                                        dep_package,
-                                        Some(ver),
-                                        dep_type,
-                                    );
                                 }
 
                                 continue;
@@ -294,14 +276,15 @@ impl PackageGraph {
 
                         if let Some(dep_package) =
                             self.packages.get(alias.as_deref().unwrap_or(name))
+                            && req.is_none_or(|req| {
+                                dep_package
+                                    .manifest
+                                    .version
+                                    .as_ref()
+                                    .is_some_and(|ver| req.matches(ver))
+                            })
                         {
-                            add_edge_via_version(
-                                graph,
-                                package,
-                                dep_package,
-                                version.as_ref(),
-                                dep_type,
-                            );
+                            graph.add_edge(package.node_index, dep_package.node_index, dep_type);
                         }
                     }
                     _ => {}
@@ -372,7 +355,7 @@ impl PackageGraph {
             .edges_directed(package.node_index, Direction::Incoming)
             .map(|edge| {
                 (
-                    self.graph.node_weight(edge.target()).unwrap().to_owned(),
+                    self.graph.node_weight(edge.source()).unwrap().to_owned(),
                     edge.weight().to_owned(),
                 )
             })

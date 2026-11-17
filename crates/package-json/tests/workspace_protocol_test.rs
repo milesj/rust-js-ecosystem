@@ -175,6 +175,19 @@ fn file_relative() {
 }
 
 #[test]
+fn file_with_at() {
+    let exp = WorkspaceProtocol::File(PathBuf::from("../@scope/foo"));
+
+    assert_eq!(WorkspaceProtocol::from_str("../@scope/foo").unwrap(), exp);
+    assert_eq!(exp.to_string(), "../@scope/foo")
+}
+
+#[test]
+fn errors_file_with_alias() {
+    assert!(WorkspaceProtocol::from_str("foo@../dir").is_err());
+}
+
+#[test]
 fn file_absolute() {
     assert_eq!(
         WorkspaceProtocol::from_str("/dir").unwrap(),
@@ -188,14 +201,27 @@ fn file_absolute() {
 
 #[test]
 fn version() {
+    let exp = WorkspaceProtocol::Version {
+        alias: None,
+        version: Version::new(1, 2, 3),
+    };
+
+    assert_eq!(WorkspaceProtocol::from_str("1.2.3").unwrap(), exp);
+    assert_eq!(exp.to_string(), "1.2.3")
+}
+
+#[test]
+fn version_with_alias() {
+    let exp = WorkspaceProtocol::Version {
+        alias: Some("@scope/foo".into()),
+        version: Version::new(1, 2, 3),
+    };
+
     assert_eq!(
-        WorkspaceProtocol::from_str("1.2.3").unwrap(),
-        WorkspaceProtocol::Version(Version::new(1, 2, 3))
+        WorkspaceProtocol::from_str("@scope/foo@1.2.3").unwrap(),
+        exp
     );
-    assert_eq!(
-        WorkspaceProtocol::Version(Version::new(1, 2, 3)).to_string(),
-        "1.2.3"
-    )
+    assert_eq!(exp.to_string(), "@scope/foo@1.2.3")
 }
 
 #[test]
@@ -243,4 +269,10 @@ fn requirement_with_alias() {
 #[should_panic(expected = "Spec")]
 fn errors_invalid_requirement() {
     WorkspaceProtocol::from_str("^not-a-range").unwrap();
+}
+
+#[test]
+fn errors_non_ascii() {
+    assert!(WorkspaceProtocol::from_str("é").is_err());
+    assert!(WorkspaceProtocol::from_str("foo@é").is_err());
 }

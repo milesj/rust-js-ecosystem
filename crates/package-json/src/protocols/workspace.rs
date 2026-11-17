@@ -49,7 +49,10 @@ pub enum WorkspaceProtocol {
         req: Requirement,
     },
     // 1.2.3
-    Version(Version),
+    Version {
+        alias: Option<String>,
+        version: Version,
+    },
 }
 
 impl WorkspaceProtocol {
@@ -66,24 +69,28 @@ impl FromStr for WorkspaceProtocol {
         let mut value = value.trim();
 
         // https://pnpm.io/workspaces#referencing-workspace-packages-through-aliases
-        if let Some(index) = value.rfind('@') {
+        // An alias may start with a scope's `@`, but not a path character,
+        // so that a path containing an `@`, like `../@scope/pkg`, isn't split
+        if !value.starts_with(['.', '_', '/'])
+            && let Some((index, _)) = value.char_indices().skip(1).find(|(_, ch)| *ch == '@')
+        {
             alias = Some(value[0..index].to_owned());
             value = &value[index + 1..];
         }
 
-        if value.is_empty() {
+        let Some(first) = value.chars().next() else {
             return Ok(WorkspaceProtocol::Any { alias });
-        }
+        };
 
-        match &value[0..1] {
-            "*" => {
+        match first {
+            '*' => {
                 if value.len() != 1 {
                     return Err(WorkspaceProtocolError::StarNoVersion);
                 }
 
                 return Ok(WorkspaceProtocol::Any { alias });
             }
-            "^" | "~" => {
+            '^' | '~' => {
                 let mut version = None;
 
                 if value.len() > 1 {
@@ -105,14 +112,15 @@ impl FromStr for WorkspaceProtocol {
                     return Ok(WorkspaceProtocol::Tilde { alias, version });
                 }
             }
-            "." | "/" => {
+            // A path can't have an alias, so fall through to fail parsing
+            '.' | '/' if alias.is_none() => {
                 return Ok(WorkspaceProtocol::File(PathBuf::from(value)));
             }
             _ => {}
         };
 
         match Version::parse(value) {
-            Ok(version) => Ok(WorkspaceProtocol::Version(version)),
+            Ok(version) => Ok(WorkspaceProtocol::Version { alias, version }),
             // Any other range, like >=1.0.0 or 1
             Err(_) => Ok(WorkspaceProtocol::Requirement {
                 alias,
@@ -166,7 +174,10 @@ impl fmt::Display for WorkspaceProtocol {
                     Some(alias) => format!("{alias}@{req}"),
                     None => req.to_string(),
                 },
-                WorkspaceProtocol::Version(ver) => ver.to_string(),
+                WorkspaceProtocol::Version { alias, version } => match alias {
+                    Some(alias) => format!("{alias}@{version}"),
+                    None => version.to_string(),
+                },
             }
         )
     }

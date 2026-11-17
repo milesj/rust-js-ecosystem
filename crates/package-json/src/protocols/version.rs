@@ -11,11 +11,87 @@ use version_spec::{Clause, Op, Range, Requirement, SpecError, Version};
 static PROTOCOL: LazyLock<Regex> = LazyLock::new(|| Regex::new("^(?<protocol>[a-z+]+):").unwrap());
 
 static GITHUB: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(
-        "(?<owner>[A-Za-z0-9_.-]+)/(?<repo>[A-Za-z0-9_.-]+)(?:#(?<commit>[A-Za-z0-9_.-/]+))?",
-    )
-    .unwrap()
+    Regex::new("^(?<owner>[A-Za-z0-9_.-]+)/(?<repo>[A-Za-z0-9_.-]+)(?:#(?<commit>.+))?$").unwrap()
 });
+
+// SCP-like git URLs without a protocol, like `git@github.com:npm/cli.git`
+static GIT_SCP: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new("^[A-Za-z0-9_.-]+@[A-Za-z0-9_.-]+:").unwrap());
+
+// https://docs.npmjs.com/cli/v10/configuring-npm/package-json#local-paths
+fn is_local_path(value: &str) -> bool {
+    let bytes = value.as_bytes();
+
+    value.starts_with(['.', '/', '\\'])
+        || value.starts_with("~/")
+        // Windows drives, like `C:\`
+        || bytes.len() > 2
+            && bytes[0].is_ascii_alphabetic()
+            && bytes[1] == b':'
+            && matches!(bytes[2], b'/' | b'\\')
+}
+
+fn parse_git(value: &str) -> VersionProtocol {
+    let (url, reference) = match value.split_once('#') {
+        Some((url, reference)) => (url, Some(reference.to_owned())),
+        None => (value, None),
+    };
+
+    VersionProtocol::Git {
+        reference,
+        url: url.to_owned(),
+    }
+}
+
+// npm matches a full version without an operator exactly, like the `1.2.3` in
+// `1.2.3 || 2`, while version_spec defaults to `~`, so add an explicit `=`
+fn parse_range(value: &str) -> Result<Range, SpecError> {
+    let value = value
+        .split("||")
+        .map(|clause| {
+            // A bounded range requires versions without an operator
+            if clause.contains(" - ") {
+                return clause.trim().to_owned();
+            }
+
+            let mut reqs = vec![];
+            let mut op = String::new();
+
+            for part in clause.split([' ', ',']) {
+                if part.is_empty() || part == "&&" {
+                    continue;
+                }
+
+                // An operator may be separated from its version, like `>= 1.2.3`
+                if part
+                    .chars()
+                    .all(|ch| matches!(ch, '<' | '>' | '=' | '~' | '^' | '!'))
+                {
+                    op.push_str(part);
+                    continue;
+                }
+
+                if op.is_empty() && Version::parse(part).is_ok() {
+                    reqs.push(format!("={part}"));
+                } else {
+                    reqs.push(format!("{op}{part}"));
+                }
+
+                op.clear();
+            }
+
+            // A dangling operator fails to parse
+            if !op.is_empty() {
+                reqs.push(op);
+            }
+
+            reqs.join(" ")
+        })
+        .collect::<Vec<_>>()
+        .join(" || ");
+
+    Range::parse(value)
+}
 
 // A range with a single requirement is unwrapped, like `^1.2` or `>=1`,
 // while anything else remains a range, like `>=1 <2` or `^1 || ^2`
@@ -36,6 +112,17 @@ fn from_range(mut range: Range) -> VersionProtocol {
     VersionProtocol::Range(range)
 }
 
+// An exact match on a full version is written without an operator,
+// as it was most likely parsed without one, like `1.2.3 || 2`
+fn format_requirement(req: &Requirement) -> String {
+    let value = req.to_string();
+
+    match value.strip_prefix('=') {
+        Some(version) if req.op == Op::Exact && req.patch.is_some() => version.to_owned(),
+        _ => value,
+    }
+}
+
 // Formats a range with npm's syntax, in which requirements that must all
 // match are separated by a space, instead of `&&`
 // https://docs.npmjs.com/cli/v10/configuring-npm/package-json#dependencies
@@ -50,9 +137,10 @@ fn format_range(range: &Range) -> String {
         .map(|clause| match clause {
             Clause::All(reqs) => reqs
                 .iter()
-                .map(|req| req.to_string())
+                .map(format_requirement)
                 .collect::<Vec<_>>()
                 .join(" "),
+            Clause::Only(req) => format_requirement(req),
             clause => clause.to_string(),
         })
         .collect::<Vec<_>>()
@@ -106,6 +194,7 @@ pub enum VersionProtocol {
     },
     Link(PathBuf),
     Patch(String),
+    Path(PathBuf),
     Portal(PathBuf),
     Range(Range),
     Requirement(Requirement),
@@ -134,6 +223,11 @@ impl FromStr for VersionProtocol {
             return Ok(VersionProtocol::Requirement(Requirement::parse("*")?));
         }
 
+        // Before protocols, as a Windows drive looks like one, like `c:/`
+        if is_local_path(value) {
+            return Ok(VersionProtocol::Path(PathBuf::from(value)));
+        }
+
         if let Some(caps) = PROTOCOL.captures(value) {
             let protocol = caps.name("protocol").unwrap().as_str();
             let index = protocol.len();
@@ -150,12 +244,7 @@ impl FromStr for VersionProtocol {
                     return Ok(VersionProtocol::Url(value.to_owned()));
                 }
                 "git" | "git+ssh" | "git+http" | "git+https" | "git+file" => {
-                    let mut parts = value.split('#');
-
-                    return Ok(VersionProtocol::Git {
-                        url: parts.next().unwrap().to_owned(),
-                        reference: parts.next().map(|p| p.to_owned()),
-                    });
+                    return Ok(parse_git(value));
                 }
                 "exec" => {
                     return Ok(VersionProtocol::Exec(PathBuf::from(&value[index + 1..])));
@@ -191,6 +280,10 @@ impl FromStr for VersionProtocol {
             }
         }
 
+        if GIT_SCP.is_match(value) {
+            return Ok(parse_git(value));
+        }
+
         if let Some(caps) = GITHUB.captures(value) {
             return Ok(VersionProtocol::GitHub {
                 owner: caps.name("owner").unwrap().as_str().to_owned(),
@@ -200,7 +293,7 @@ impl FromStr for VersionProtocol {
         }
 
         if value.contains(" - ") {
-            if let Ok(range) = Range::parse(value) {
+            if let Ok(range) = parse_range(value) {
                 return Ok(from_range(range));
             }
 
@@ -220,7 +313,7 @@ impl FromStr for VersionProtocol {
         }
 
         if value.contains("||") {
-            return Ok(from_range(Range::parse(value)?));
+            return Ok(from_range(parse_range(value)?));
         }
 
         // Better way to capture tags?
@@ -232,7 +325,7 @@ impl FromStr for VersionProtocol {
             return Ok(VersionProtocol::Version(version));
         }
 
-        match Range::parse(value) {
+        match parse_range(value) {
             Ok(range) => Ok(from_range(range)),
             Err(error) => {
                 if value.contains(['^', '~', '>', '<', '=']) {
@@ -291,6 +384,7 @@ impl fmt::Display for VersionProtocol {
                 }
                 VersionProtocol::Link(path) => format!("link:{}", path.display()),
                 VersionProtocol::Patch(patch) => format!("patch:{patch}"),
+                VersionProtocol::Path(path) => path.display().to_string(),
                 VersionProtocol::Portal(path) => format!("portal:{}", path.display()),
                 VersionProtocol::Range(range) => format_range(range),
                 VersionProtocol::Requirement(req) => req.to_string(),
